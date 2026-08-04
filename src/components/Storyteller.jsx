@@ -1,32 +1,42 @@
 import React, { useState } from 'react';
-import { BookOpen, Sparkles, RefreshCw, Volume2, Mic, MicOff, Languages, Trash2 } from 'lucide-react';
+import { BookOpen, Sparkles, RefreshCw, Volume2, Mic, MicOff, Languages, Trash2, HelpCircle, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateStory } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
-import { evaluateSpeech } from '../services/speechEvaluation';
+import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 
 export default function Storyteller() {
-  const { selectedWords, clearSelectedWords, apiKey, addNotification, t } = useApp();
+  const { selectedWords, clearSelectedWords, apiKey, addNotification, t, voicePreset, setVoicePreset, voicePresets } = useApp();
   const [genre, setGenre] = useState('adventure');
   const [cefrLevel, setCefrLevel] = useState('B1');
   const [showArabic, setShowArabic] = useState(true);
   const [loading, setLoading] = useState(false);
+
   const [storyLines, setStoryLines] = useState([
     {
+      sceneNumber: 1,
       text: 'Once upon a time in a thrilling adventure, the brave team decided to explore the ancient ruins.',
-      arabic: 'في يوم من الأيام في مغامرة مثيرة، قرر الفريق الشجاع استكشاف الأنقاض القديمة.'
+      arabic: 'في يوم من الأيام في مغامرة مثيرة، قرر الفريق الشجاع استكشاف الأنقاض القديمة.',
+      focusWord: 'adventure',
+      comprehensionQuestion: 'What did the brave team decide to explore?',
+      correctAnswer: 'The ancient ruins'
     },
     {
+      sceneNumber: 2,
       text: 'They knew that to achieve their ultimate goal, they could not abandon their initial strategy.',
-      arabic: 'كانوا يعلمون أنه لتحقيق هدفهم النهائي، لا يمكنهم التخلي عن استراتيجيتهم الأولية.'
+      arabic: 'كانوا يعلمون أنه لتحقيق هدفهم النهائي، لا يمكنهم التخلي عن استراتيجيتهم الأولية.',
+      focusWord: 'achieve',
+      comprehensionQuestion: 'What could they not abandon?',
+      correctAnswer: 'Their initial strategy'
     }
   ]);
 
   const [activeLineIndex, setActiveLineIndex] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [lineSpeechResults, setLineSpeechResults] = useState({});
+  const [showAnswers, setShowAnswers] = useState({});
 
   const handleGenerateStory = async () => {
     setLoading(true);
@@ -45,10 +55,13 @@ export default function Storyteller() {
     }
   };
 
-  const handlePlayLine = (text) => playAudio(text);
+  const handlePlayLine = (text) => {
+    playAudio(text, { presetId: voicePreset });
+  };
 
   const handleRecordLine = (index, targetText) => {
     if (isRecording && activeLineIndex === index) {
+      stopListening();
       setIsRecording(false);
       setActiveLineIndex(null);
       return;
@@ -57,7 +70,7 @@ export default function Storyteller() {
     setIsRecording(true);
     setActiveLineIndex(index);
 
-    evaluateSpeech(
+    recordAndEvaluateSpeech(
       targetText,
       (res) => {
         setIsRecording(false);
@@ -67,7 +80,7 @@ export default function Storyteller() {
       (err) => {
         setIsRecording(false);
         setActiveLineIndex(null);
-        addNotification(`Speech error: ${err}`, 'warning');
+        addNotification(`Speech error: ${err.message || err}`, 'warning');
       }
     );
   };
@@ -123,7 +136,7 @@ export default function Storyteller() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               {t('genreLabel')}
@@ -131,7 +144,7 @@ export default function Storyteller() {
             <select
               value={genre}
               onChange={(e) => setGenre(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500 text-xs font-medium"
             >
               <option value="adventure">Adventure & Quest</option>
               <option value="sci-fi">Sci-Fi & Future</option>
@@ -145,12 +158,12 @@ export default function Storyteller() {
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
               {t('difficultyLabel')}
             </label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               {['A1', 'A2', 'B1', 'B2'].map((lvl) => (
                 <button
                   key={lvl}
                   onClick={() => setCefrLevel(lvl)}
-                  className={`py-3 rounded-2xl text-xs font-bold transition-all ${
+                  className={`py-2.5 rounded-xl text-xs font-bold transition-all ${
                     cefrLevel === lvl
                       ? 'bg-amber-500 text-slate-950 font-bold'
                       : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'
@@ -160,6 +173,23 @@ export default function Storyteller() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Narrator Voice
+            </label>
+            <select
+              value={voicePreset}
+              onChange={(e) => setVoicePreset(e.target.value)}
+              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-3 py-3 text-cyan-300 focus:outline-none focus:border-cyan-500 text-xs font-medium"
+            >
+              {voicePresets.map((vp) => (
+                <option key={vp.id} value={vp.id}>
+                  {vp.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -185,14 +215,22 @@ export default function Storyteller() {
         </div>
       </div>
 
-      {/* Story Cards */}
+      {/* Story Scene Cards */}
       <div className="space-y-4">
         {storyLines.map((line, idx) => {
           const res = lineSpeechResults[idx];
+          const hasAnswer = showAnswers[idx];
+
           return (
             <div key={idx} className="glass-panel p-6 rounded-3xl border border-cyan-900/30 space-y-4">
               <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-bold text-amber-400">Line {idx + 1}</span>
+                <span className="font-bold text-amber-400 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-mono">
+                    {line.sceneNumber || idx + 1}
+                  </span>
+                  Scene {idx + 1}
+                </span>
+
                 <div className="flex items-center gap-2">
                   <button onClick={() => handlePlayLine(line.text)} className="p-2 bg-cyan-600/80 hover:bg-cyan-500 text-white rounded-xl">
                     <Volume2 className="w-4 h-4" />
@@ -211,7 +249,7 @@ export default function Storyteller() {
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
-                <SentenceTokenViewer sentence={line.text} />
+                <SentenceTokenViewer sentence={line.text} targetWord={line.focusWord} />
               </div>
 
               {res && (
@@ -220,6 +258,28 @@ export default function Storyteller() {
                   speechResult={res}
                   onClose={() => setLineSpeechResults((prev) => ({ ...prev, [idx]: null }))}
                 />
+              )}
+
+              {/* Comprehension Quiz Item */}
+              {line.comprehensionQuestion && (
+                <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-900/40 text-xs space-y-2">
+                  <div className="flex items-center justify-between text-cyan-300 font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <HelpCircle className="w-4 h-4 text-cyan-400" /> {line.comprehensionQuestion}
+                    </span>
+                    <button
+                      onClick={() => setShowAnswers((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                      className="text-amber-400 hover:underline text-[11px]"
+                    >
+                      {hasAnswer ? 'Hide Answer' : 'Check Answer'}
+                    </button>
+                  </div>
+                  {hasAnswer && (
+                    <div className="p-2 bg-slate-900 rounded-xl text-emerald-400 font-bold border border-emerald-500/30">
+                      ✓ {line.correctAnswer}
+                    </div>
+                  )}
+                </div>
               )}
 
               {showArabic && line.arabic && (

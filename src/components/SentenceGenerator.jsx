@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
-import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check } from 'lucide-react';
+import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check, BookOpen } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateSentence } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
-import { evaluateSpeech } from '../services/speechEvaluation';
+import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 
 export default function SentenceGenerator() {
-  const { apiKey, addNotification, t } = useApp();
+  const { apiKey, addNotification, t, voicePreset, setVoicePreset, voicePresets } = useApp();
   const [targetWord, setTargetWord] = useState('abandon');
   const [length, setLength] = useState('medium');
   const [position, setPosition] = useState('any');
   const [style, setStyle] = useState('Casual Conversation');
-  const [sentence, setSentence] = useState('They decided not to abandon their ambitious project after receiving support.');
-  const [loading, setLoading] = useState(false);
+  const [tense, setTense] = useState('Present');
 
-  // Speech Recording State
+  const [aiResult, setAiResult] = useState({
+    sentence: 'They decided not to abandon their ambitious project after receiving support.',
+    arabic: 'قرروا عدم التخلي عن مشروعهم الطموح بعد تلقي الدعم.',
+    grammarNote: 'Natural B2 verb usage in complex past clause.'
+  });
+
+  const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [speechResult, setSpeechResult] = useState(null);
 
@@ -30,9 +35,13 @@ export default function SentenceGenerator() {
     setSpeechResult(null);
 
     try {
-      const result = await generateSentence(targetWord, length, position, style, apiKey);
-      setSentence(result);
-      addNotification(`Generated sentence for "${targetWord}"`, 'success');
+      const res = await generateSentence(targetWord, length, position, style, tense, apiKey);
+      if (typeof res === 'object') {
+        setAiResult(res);
+      } else {
+        setAiResult({ sentence: res, arabic: '', grammarNote: '' });
+      }
+      addNotification(`AI generated new sentence for "${targetWord}"`, 'success');
     } catch (err) {
       addNotification('Failed to generate sentence.', 'error');
     } finally {
@@ -41,11 +50,14 @@ export default function SentenceGenerator() {
   };
 
   const handlePlaySentence = () => {
-    if (sentence) playAudio(sentence);
+    if (aiResult?.sentence) {
+      playAudio(aiResult.sentence, { presetId: voicePreset });
+    }
   };
 
   const handleRecordSentence = () => {
     if (isRecording) {
+      stopListening();
       setIsRecording(false);
       return;
     }
@@ -53,15 +65,15 @@ export default function SentenceGenerator() {
     setIsRecording(true);
     setSpeechResult(null);
 
-    evaluateSpeech(
-      sentence,
+    recordAndEvaluateSpeech(
+      aiResult.sentence,
       (res) => {
         setIsRecording(false);
         setSpeechResult(res);
       },
       (err) => {
         setIsRecording(false);
-        addNotification(`Speech error: ${err}`, 'warning');
+        addNotification(`Speech error: ${err.message || err}`, 'warning');
       }
     );
   };
@@ -79,7 +91,7 @@ export default function SentenceGenerator() {
         <p className="text-slate-400 text-sm sm:text-base max-w-2xl">{t('sentenceSubtitle')}</p>
       </div>
 
-      {/* Controls */}
+      {/* Advanced Control Panel */}
       <div className="glass-panel p-6 rounded-3xl border border-cyan-900/30 space-y-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -108,6 +120,23 @@ export default function SentenceGenerator() {
               <option value="Academic B2">Academic B2 Level</option>
               <option value="Business">Business Context</option>
               <option value="Story Format">Story Format</option>
+            </select>
+          </div>
+
+          <div className="w-full sm:w-44">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              Grammar Tense
+            </label>
+            <select
+              value={tense}
+              onChange={(e) => setTense(e.target.value)}
+              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500"
+            >
+              <option value="Present">Present Simple</option>
+              <option value="Past">Past Simple</option>
+              <option value="Future">Future Tense</option>
+              <option value="Present Perfect">Present Perfect</option>
+              <option value="Conditional">Conditional</option>
             </select>
           </div>
         </div>
@@ -176,7 +205,8 @@ export default function SentenceGenerator() {
         </button>
       </div>
 
-      {sentence && (
+      {/* Result Card */}
+      {aiResult && aiResult.sentence && (
         <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 space-y-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
@@ -192,16 +222,46 @@ export default function SentenceGenerator() {
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/90 border border-cyan-900/40">
-            <SentenceTokenViewer sentence={sentence} targetWord={targetWord} />
+            <SentenceTokenViewer sentence={aiResult.sentence} targetWord={targetWord} />
           </div>
 
+          {/* Arabic Translation */}
+          {aiResult.arabic && (
+            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-right dir-rtl">
+              <p className="text-base font-bold text-amber-300">{aiResult.arabic}</p>
+            </div>
+          )}
+
+          {/* Grammar Note */}
+          {aiResult.grammarNote && (
+            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs flex items-center gap-2">
+              <BookOpen className="w-4 h-4 shrink-0" />
+              <span>{aiResult.grammarNote}</span>
+            </div>
+          )}
+
+          {/* Action Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-            <button
-              onClick={handlePlaySentence}
-              className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-medium transition-all shadow-lg"
-            >
-              <Volume2 className="w-5 h-5" /> {t('listenSentence')}
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={voicePreset}
+                onChange={(e) => setVoicePreset(e.target.value)}
+                className="bg-slate-900 text-xs text-slate-300 p-2.5 rounded-xl border border-slate-800 focus:outline-none"
+              >
+                {voicePresets.map((vp) => (
+                  <option key={vp.id} value={vp.id}>
+                    {vp.name}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={handlePlaySentence}
+                className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-medium transition-all shadow-lg"
+              >
+                <Volume2 className="w-5 h-5" /> {t('listenSentence')}
+              </button>
+            </div>
 
             <button
               onClick={handleRecordSentence}
@@ -216,7 +276,7 @@ export default function SentenceGenerator() {
 
           {speechResult && (
             <SpeechScoreVisualizer
-              targetText={sentence}
+              targetText={aiResult.sentence}
               speechResult={speechResult}
               onClose={() => setSpeechResult(null)}
             />

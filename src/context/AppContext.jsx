@@ -1,106 +1,84 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { translations } from '../data/translations';
+import { DEFAULT_GEMINI_KEY } from '../services/geminiService';
+import { VOICE_PRESETS } from '../services/audioService';
 
-// Create AppContext
 const AppContext = createContext(null);
 
-// Storage keys
 const STORAGE_KEYS = {
   FAVORITES: 'oxford3000_favorites',
   MASTERED: 'oxford3000_mastered',
   API_KEY: 'oxford3000_gemini_api_key',
   CUSTOM_WORDS: 'oxford3000_custom_words',
   LANGUAGE: 'oxford3000_language',
+  VOICE_PRESET: 'oxford3000_voice_preset',
 };
 
-// Safe localStorage loader
 const loadFromStorage = (key, fallback) => {
   try {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : fallback;
   } catch (err) {
-    console.error(`Error loading ${key} from localStorage:`, err);
     return fallback;
   }
 };
 
-// Safe localStorage saver
 const saveToStorage = (key, value) => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (err) {
-    console.error(`Error saving ${key} to localStorage:`, err);
-  }
+  } catch (err) {}
 };
 
 export const AppProvider = ({ children }) => {
-  // Active Tab state ('grid', 'sentence', 'story', 'tutor', 'flashcards', 'quiz', 'analytics')
   const [activeTab, setActiveTab] = useState('grid');
 
-  // UI Language State ('en' | 'ar')
   const [language, setLanguage] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
     return stored || 'en';
   });
 
-  // Favorites state
-  const [favorites, setFavorites] = useState(() => loadFromStorage(STORAGE_KEYS.FAVORITES, []));
-
-  // Mastered words state
-  const [mastered, setMastered] = useState(() => loadFromStorage(STORAGE_KEYS.MASTERED, []));
-
-  // Custom fetched lexicon terms state
-  const [customWords, setCustomWords] = useState(() => loadFromStorage(STORAGE_KEYS.CUSTOM_WORDS, []));
-
-  // Selected words for Storyteller (Max 5)
-  const [selectedWords, setSelectedWords] = useState([]);
-
-  // Custom Gemini API Key state
-  const [apiKey, setApiKey] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.API_KEY);
-    return stored !== null ? stored : (import.meta.env.VITE_GEMINI_API_KEY || '');
+  const [voicePreset, setVoicePreset] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.VOICE_PRESET);
+    return stored || 'us-female';
   });
 
-  // Modal UI state
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [favorites, setFavorites] = useState(() => loadFromStorage(STORAGE_KEYS.FAVORITES, []));
+  const [mastered, setMastered] = useState(() => loadFromStorage(STORAGE_KEYS.MASTERED, []));
+  const [customWords, setCustomWords] = useState(() => loadFromStorage(STORAGE_KEYS.CUSTOM_WORDS, []));
+  const [selectedWords, setSelectedWords] = useState([]);
 
-  // Toast Notification System state
+  // Default API Key set to provided Gemini key AIzaSyC747z4ewiUEQTenTLdphM11WLbr1EVbXs
+  const [apiKey, setApiKey] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.API_KEY);
+    return stored !== null && stored.trim() !== '' ? stored : DEFAULT_GEMINI_KEY;
+  });
+
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
-  // Sync Language
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.LANGUAGE, language);
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
   }, [language]);
 
-  // Translation helper function
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.VOICE_PRESET, voicePreset);
+  }, [voicePreset]);
+
   const t = useCallback((key) => {
     const langDict = translations[language] || translations.en;
     return langDict[key] || translations.en[key] || key;
   }, [language]);
 
-  // Toggle Language
   const toggleLanguage = useCallback(() => {
     setLanguage((prev) => (prev === 'en' ? 'ar' : 'en'));
   }, []);
 
-  // Sync favorites
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.FAVORITES, favorites);
-  }, [favorites]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.FAVORITES, favorites); }, [favorites]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.MASTERED, mastered); }, [mastered]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.CUSTOM_WORDS, customWords); }, [customWords]);
 
-  // Sync mastered
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.MASTERED, mastered);
-  }, [mastered]);
-
-  // Sync custom words
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.CUSTOM_WORDS, customWords);
-  }, [customWords]);
-
-  // Sync API Key
   useEffect(() => {
     if (apiKey) {
       localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey);
@@ -109,15 +87,11 @@ export const AppProvider = ({ children }) => {
     }
   }, [apiKey]);
 
-  // Toast Notification handler
   const addNotification = useCallback((message, type = 'info', duration = 3000) => {
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
     setNotifications((prev) => [...prev, { id, message, type }]);
-
     if (duration > 0) {
-      setTimeout(() => {
-        removeNotification(id);
-      }, duration);
+      setTimeout(() => { removeNotification(id); }, duration);
     }
   }, []);
 
@@ -125,7 +99,6 @@ export const AppProvider = ({ children }) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
-  // Toggle Favorites
   const toggleFavorite = useCallback((wordTerm) => {
     setFavorites((prev) => {
       const exists = prev.includes(wordTerm);
@@ -140,7 +113,6 @@ export const AppProvider = ({ children }) => {
 
   const isFavorite = useCallback((wordTerm) => favorites.includes(wordTerm), [favorites]);
 
-  // Toggle Mastered
   const toggleMastered = useCallback((wordTerm) => {
     setMastered((prev) => {
       const exists = prev.includes(wordTerm);
@@ -155,7 +127,6 @@ export const AppProvider = ({ children }) => {
 
   const isMastered = useCallback((wordTerm) => mastered.includes(wordTerm), [mastered]);
 
-  // Selected Words for Storyteller
   const toggleSelectWord = useCallback((wordObj) => {
     setSelectedWords((prev) => {
       const term = typeof wordObj === 'string' ? wordObj : wordObj.word;
@@ -182,7 +153,6 @@ export const AppProvider = ({ children }) => {
     return selectedWords.some((w) => (typeof w === 'string' ? w : w.word) === term);
   }, [selectedWords]);
 
-  // Add Custom AI Term
   const addCustomWord = useCallback((wordObj) => {
     setCustomWords((prev) => {
       const exists = prev.some((w) => w.word.toLowerCase() === wordObj.word.toLowerCase());
@@ -193,46 +163,42 @@ export const AppProvider = ({ children }) => {
   }, [addNotification]);
 
   const value = {
-    // Language i18n
     language,
     setLanguage,
     toggleLanguage,
     t,
 
-    // Tab Navigation
+    voicePreset,
+    setVoicePreset,
+    voicePresets: VOICE_PRESETS,
+
     activeTab,
     setActiveTab,
 
-    // Favorites
     favorites,
     toggleFavorite,
     isFavorite,
     favoritesCount: favorites.length,
 
-    // Mastered
     mastered,
     toggleMastered,
     isMastered,
     masteredCount: mastered.length,
 
-    // Selected Words for Storyteller
     selectedWords,
     toggleSelectWord,
     clearSelectedWords,
     isSelectedWord,
     selectedWordsCount: selectedWords.length,
 
-    // Custom Terms
     customWords,
     addCustomWord,
 
-    // API Key State
     apiKey,
     setApiKey,
     isApiKeyModalOpen,
     setIsApiKeyModalOpen,
 
-    // Toast Notifications
     notifications,
     addNotification,
     removeNotification,
@@ -241,7 +207,6 @@ export const AppProvider = ({ children }) => {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
-// Custom Hook
 export const useApp = () => {
   const context = useContext(AppContext);
   if (!context) {

@@ -4,8 +4,9 @@ import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { fetchMissingTerm } from '../services/geminiService';
 import { startListening, stopListening, evaluateSpeech } from '../services/speechEvaluation';
-import { SentenceTokenViewer } from './SentenceTokenViewer';
-import { SpeechScoreVisualizer } from './SpeechScoreVisualizer';
+import SentenceTokenViewer from './SentenceTokenViewer';
+import SpeechScoreVisualizer from './SpeechScoreVisualizer';
+import WordModal from './WordModal';
 
 // CEFR Level Color Badge Mapping
 const CEFR_BADGES = {
@@ -39,7 +40,7 @@ const POS_STYLES = {
 };
 
 // Individual Interactive Lexicon Card Component
-const LexiconCard = React.memo(({ wordObj }) => {
+const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
   const {
     isFavorite,
     toggleFavorite,
@@ -49,6 +50,7 @@ const LexiconCard = React.memo(({ wordObj }) => {
     toggleSelectWord,
     selectedWordsCount,
     addNotification,
+    voicePreset,
   } = useApp();
 
   const [isPlayingWord, setIsPlayingWord] = useState(false);
@@ -73,7 +75,7 @@ const LexiconCard = React.memo(({ wordObj }) => {
     e.stopPropagation();
     try {
       setIsPlayingWord(true);
-      await playAudio(wordObj.word, 'en-US', 0.85);
+      await playAudio(wordObj.word, { speed: 0.85, presetId: voicePreset });
     } catch (err) {
       console.error('TTS playback error:', err);
     } finally {
@@ -86,7 +88,7 @@ const LexiconCard = React.memo(({ wordObj }) => {
     if (!wordObj.example) return;
     try {
       setIsPlayingExample(true);
-      await playAudio(wordObj.example, 'en-US', 0.9);
+      await playAudio(wordObj.example, { speed: 0.9, presetId: voicePreset });
     } catch (err) {
       console.error('TTS example playback error:', err);
     } finally {
@@ -133,7 +135,8 @@ const LexiconCard = React.memo(({ wordObj }) => {
 
   return (
     <div
-      className={`group relative flex flex-col justify-between p-5 rounded-2xl transition-all duration-300 glass-card-interactive ${
+      onClick={() => onCardClick && onCardClick(wordObj)}
+      className={`group relative flex flex-col justify-between p-5 rounded-2xl cursor-pointer transition-all duration-300 glass-card-interactive ${
         selected
           ? 'ring-2 ring-cyan-400/80 bg-cyan-950/20 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
           : mastered
@@ -357,6 +360,7 @@ export const LexiconGrid = () => {
 
   // Gemini Missing Term State
   const [isFetchingTerm, setIsFetchingTerm] = useState(false);
+  const [activeModalWord, setActiveModalWord] = useState(null);
 
   // Merge static oxford3000 dataset with dynamic custom words
   const fullDataset = useMemo(() => {
@@ -613,7 +617,11 @@ export const LexiconGrid = () => {
       {paginatedWords.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {paginatedWords.map((wordObj) => (
-            <LexiconCard key={`${wordObj.word}-${wordObj.id}`} wordObj={wordObj} />
+            <LexiconCard
+              key={`${wordObj.word}-${wordObj.id}`}
+              wordObj={wordObj}
+              onCardClick={setActiveModalWord}
+            />
           ))}
         </div>
       ) : (
@@ -727,6 +735,14 @@ export const LexiconGrid = () => {
             Last »
           </button>
         </div>
+      )}
+
+      {/* Interactive Word Modal */}
+      {activeModalWord && (
+        <WordModal
+          word={activeModalWord}
+          onClose={() => setActiveModalWord(null)}
+        />
       )}
     </div>
   );

@@ -1,18 +1,55 @@
 /**
- * Oxford 3000 CEFR Lexicon Application - Dual Audio TTS Engine Service
- * Primary: Native Web Speech API (window.speechSynthesis)
- * Fallback: Google Translate TTS API Stream via HTML5 Audio Element
+ * Oxford 3000 CEFR Lexicon Application - Advanced Audio TTS Engine Service
+ * Supports multiple human-like voices (US Female, US Male, UK Female, UK Male), pitch, rate, and fallback.
  */
 
 let currentAudioElement = null;
 let isPlaying = false;
 let currentResolve = null;
 
+export const VOICE_PRESETS = [
+  { id: 'us-female', name: 'US English - Natural Female (Karen / Samantha)', lang: 'en-US', gender: 'female' },
+  { id: 'us-male', name: 'US English - Natural Male (Guy / Alex)', lang: 'en-US', gender: 'male' },
+  { id: 'uk-female', name: 'UK English - Natural Female (Fiona / Victoria)', lang: 'en-GB', gender: 'female' },
+  { id: 'uk-male', name: 'UK English - Natural Male (Oliver / Daniel)', lang: 'en-GB', gender: 'male' }
+];
+
 /**
- * Builds the stream URL for Google Translate TTS API fallback.
- * @param {string} text - Text to synthesize
- * @param {string} lang - Language code (e.g. 'en-US')
- * @returns {string} Fully encoded TTS stream URL
+ * Returns available Web Speech API voices filtered for English.
+ */
+export const getAvailableVoices = () => {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window) || !window.speechSynthesis.getVoices) {
+    return [];
+  }
+  const voices = window.speechSynthesis.getVoices() || [];
+  return voices.filter(v => v && v.lang && v.lang.toLowerCase().startsWith('en'));
+};
+
+/**
+ * Helper to select specific voice preset.
+ */
+const getVoiceByPreset = (presetId = 'us-female') => {
+  const voices = getAvailableVoices();
+  if (!voices || voices.length === 0) return null;
+
+  const preset = VOICE_PRESETS.find(p => p.id === presetId) || VOICE_PRESETS[0];
+
+  // Search by exact locale first
+  const langMatch = voices.filter(v => v.lang.toLowerCase().replace('_', '-') === preset.lang.toLowerCase());
+
+  if (preset.gender === 'female') {
+    const female = langMatch.find(v => /female|samantha|zira|karen|victoria|fiona|google us english|natural/i.test(v.name));
+    if (female) return female;
+  } else if (preset.gender === 'male') {
+    const male = langMatch.find(v => /male|guy|alex|david|george|daniel|oliver|google uk english male/i.test(v.name));
+    if (male) return male;
+  }
+
+  return langMatch[0] || voices.find(v => v.default) || voices[0] || null;
+};
+
+/**
+ * Build Google Translate TTS fallback stream URL
  */
 export const buildGoogleTtsUrl = (text, lang = 'en-US') => {
   if (!text || typeof text !== 'string') return '';
@@ -21,38 +58,7 @@ export const buildGoogleTtsUrl = (text, lang = 'en-US') => {
 };
 
 /**
- * Helper to select the best matching SpeechSynthesis voice for a given language tag.
- * @param {string} lang - Requested language tag (e.g. 'en-US')
- * @returns {SpeechSynthesisVoice|null}
- */
-const getMatchingVoice = (lang) => {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window) || !window.speechSynthesis.getVoices) {
-    return null;
-  }
-  const voices = window.speechSynthesis.getVoices();
-  if (!voices || voices.length === 0) return null;
-
-  const targetLang = (lang || 'en-US').toLowerCase();
-  const baseLang = targetLang.split('-')[0];
-
-  // 1. Exact match (case-insensitive, normalized dashes)
-  const exact = voices.find(v => v && v.lang && v.lang.toLowerCase().replace('_', '-') === targetLang);
-  if (exact) return exact;
-
-  // 2. Base language match (e.g., 'en')
-  const baseMatch = voices.find(v => v && v.lang && v.lang.toLowerCase().startsWith(baseLang));
-  if (baseMatch) return baseMatch;
-
-  // 3. Default voice or first available
-  return voices.find(v => v && v.default) || voices[0] || null;
-};
-
-/**
- * Secondary Engine: Plays text stream via Google Translate TTS HTML5 Audio element.
- * @param {string} text - Text to speak
- * @param {string} lang - Language code
- * @param {number} speed - Playback speed rate
- * @param {Function} onComplete - Completion callback to resolve playAudio Promise
+ * Secondary Engine: Google Translate TTS Stream
  */
 const playGoogleTtsFallback = (text, lang, speed, onComplete) => {
   const url = buildGoogleTtsUrl(text, lang);
@@ -78,55 +84,38 @@ const playGoogleTtsFallback = (text, lang, speed, onComplete) => {
 
     currentAudioElement.onended = finish;
     currentAudioElement.onerror = (err) => {
-      console.warn('Google TTS Audio stream playback error:', err);
+      console.warn('Google TTS stream error:', err);
       finish();
     };
 
     const playPromise = currentAudioElement.play();
     if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          // In test environments (MockAudio) or when duration is undefined/NaN, finish cleanly
-          if (
-            currentAudioElement &&
-            (currentAudioElement.constructor.name === 'MockAudio' || typeof currentAudioElement.duration === 'undefined')
-          ) {
-            finish();
-          }
-        })
-        .catch((e) => {
-          console.warn('Google TTS Audio play interrupted or blocked:', e);
-          finish();
-        });
+      playPromise.then(() => {}).catch(() => finish());
     } else {
-      if (
-        currentAudioElement &&
-        (currentAudioElement.constructor.name === 'MockAudio' || typeof currentAudioElement.duration === 'undefined')
-      ) {
-        finish();
-      }
+      finish();
     }
   } catch (e) {
-    console.warn('Error creating HTML5 Audio element:', e);
     currentAudioElement = null;
     if (onComplete) onComplete();
   }
 };
 
 /**
- * Plays audio using Web Speech API (primary) or Google Translate TTS (fallback).
- * @param {string} text - Text to speak
- * @param {string} lang - Language code (default 'en-US')
- * @param {number} speed - Playback speed rate (e.g. 0.6 slow, 0.9 normal)
- * @returns {Promise<void>} Resolves when audio playback completes
+ * Plays audio using Web Speech API or Google Translate TTS.
  */
-export const playAudio = async (text, lang = 'en-US', speed = 0.9) => {
-  // Always stop previous playback before starting new audio
+export const playAudio = async (text, options = {}) => {
   stopAudio();
 
   if (!text || typeof text !== 'string' || !text.trim()) {
     return Promise.resolve();
   }
+
+  const {
+    presetId = 'us-female',
+    speed = 0.9,
+    pitch = 1.0,
+    lang = 'en-US'
+  } = typeof options === 'object' ? options : { speed: options };
 
   const trimmed = text.trim();
   isPlaying = true;
@@ -142,65 +131,53 @@ export const playAudio = async (text, lang = 'en-US', speed = 0.9) => {
       resolve();
     };
 
-    // Attempt Primary Engine: Web Speech API
     if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis) {
       try {
         const utterance = new SpeechSynthesisUtterance(trimmed);
         utterance.lang = lang;
         utterance.rate = typeof speed === 'number' ? speed : 0.9;
+        utterance.pitch = typeof pitch === 'number' ? pitch : 1.0;
 
-        // Apply matching voice if available
-        const voice = getMatchingVoice(lang);
+        const voice = getVoiceByPreset(presetId);
         if (voice) {
           utterance.voice = voice;
         }
 
-        utterance.onend = () => {
-          cleanup();
-        };
-
+        utterance.onend = cleanup;
         utterance.onerror = (evt) => {
-          console.warn('Web Speech API playback error, triggering Google TTS fallback:', evt);
+          console.warn('Web Speech API error, falling back to Google TTS:', evt);
           playGoogleTtsFallback(trimmed, lang, speed, cleanup);
         };
 
         window.speechSynthesis.speak(utterance);
         return;
       } catch (err) {
-        console.warn('Failed to initialize SpeechSynthesisUtterance, falling back:', err);
+        console.warn('SpeechSynthesis error:', err);
       }
     }
 
-    // Fallback Engine if Web Speech API is missing or throws initialization error
     playGoogleTtsFallback(trimmed, lang, speed, cleanup);
   });
 };
 
 /**
- * Stops any active audio playback (both Web Speech API and HTML5 Audio element).
+ * Stops any active audio.
  */
 export const stopAudio = () => {
-  // Cancel Web Speech API
   if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis) {
     try {
       window.speechSynthesis.cancel();
-    } catch (e) {
-      console.warn('Error cancelling speechSynthesis:', e);
-    }
+    } catch (e) {}
   }
 
-  // Pause and reset HTML5 Audio Element
   if (currentAudioElement) {
     try {
       currentAudioElement.pause();
       currentAudioElement.currentTime = 0;
-    } catch (e) {
-      console.warn('Error pausing HTML5 Audio element:', e);
-    }
+    } catch (e) {}
     currentAudioElement = null;
   }
 
-  // Resolve pending Promise if one is waiting
   if (currentResolve) {
     const resolve = currentResolve;
     currentResolve = null;
@@ -210,17 +187,11 @@ export const stopAudio = () => {
   isPlaying = false;
 };
 
-/**
- * Checks whether audio is currently playing.
- * @returns {boolean} True if Web Speech API or HTML5 Audio is active
- */
 export const isAudioPlaying = () => {
   if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis) {
     if (window.speechSynthesis.speaking) return true;
   }
-  if (currentAudioElement && !currentAudioElement.paused) {
-    return true;
-  }
+  if (currentAudioElement && !currentAudioElement.paused) return true;
   return isPlaying;
 };
 
@@ -228,5 +199,7 @@ export default {
   playAudio,
   stopAudio,
   isAudioPlaying,
+  getAvailableVoices,
+  VOICE_PRESETS,
   buildGoogleTtsUrl,
 };

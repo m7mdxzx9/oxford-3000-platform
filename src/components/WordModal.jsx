@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles } from 'lucide-react';
+import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
-import { evaluateSpeech } from '../services/speechEvaluation';
+import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
 import SentenceTokenViewer from './SentenceTokenViewer';
 
 export default function WordModal({ word, onClose }) {
-  const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification } = useApp();
+  const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [speechResult, setSpeechResult] = useState(null);
   const [activeSpeed, setActiveSpeed] = useState(0.9);
@@ -18,11 +18,12 @@ export default function WordModal({ word, onClose }) {
 
   const handlePlayWord = (rate = activeSpeed) => {
     setActiveSpeed(rate);
-    playAudio(word.word, { rate });
+    playAudio(word.word, { speed: rate, presetId: voicePreset });
   };
 
   const handleRecordSpeech = () => {
     if (isRecording) {
+      stopListening();
       setIsRecording(false);
       return;
     }
@@ -30,20 +31,20 @@ export default function WordModal({ word, onClose }) {
     setIsRecording(true);
     setSpeechResult(null);
 
-    evaluateSpeech(
+    recordAndEvaluateSpeech(
       word.word,
       (res) => {
         setIsRecording(false);
         setSpeechResult(res);
         if (res.score >= 80) {
-          addNotification(`Great pronunciation! Score: ${res.score}%`, 'success');
+          addNotification(`Excellent pronunciation! Score: ${res.score}%`, 'success');
         } else {
-          addNotification(`Keep practicing! Score: ${res.score}%`, 'info');
+          addNotification(`Score: ${res.score}%. Try speaking clearly into microphone.`, 'info');
         }
       },
       (err) => {
         setIsRecording(false);
-        addNotification(`Speech recognition error: ${err}`, 'warning');
+        addNotification(`Recording issue: ${err.message || err}`, 'warning');
       }
     );
   };
@@ -69,7 +70,7 @@ export default function WordModal({ word, onClose }) {
           </span>
           {word.isCustom && (
             <span className="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> AI Generated
+              <Sparkles className="w-3 h-3" /> Gemini AI Generated
             </span>
           )}
         </div>
@@ -84,56 +85,75 @@ export default function WordModal({ word, onClose }) {
           </span>
         </div>
 
-        {/* Translation */}
-        <div className="mb-6 p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-right">
-          <span className="text-xs text-slate-400 block mb-1">الترجمة العربية</span>
+        {/* Arabic Meaning */}
+        <div className="mb-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-right">
+          <span className="text-xs text-slate-400 block mb-1">الترجمة العربية والتعريف</span>
           <p className="text-xl font-bold text-amber-300 dir-rtl">{word.arabic}</p>
         </div>
 
-        {/* Audio TTS Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 mb-6">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handlePlayWord(0.9)}
-              className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-medium transition-all shadow-lg shadow-cyan-600/20"
+        {/* Voice Selector & Audio Controls */}
+        <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 mb-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-cyan-300 font-semibold flex items-center gap-1">
+              <Volume2 className="w-4 h-4" /> Natural Voice Selector:
+            </span>
+            <select
+              value={voicePreset}
+              onChange={(e) => setVoicePreset(e.target.value)}
+              className="bg-slate-900 text-xs text-white p-1.5 rounded-xl border border-slate-800 focus:outline-none"
             >
-              <Volume2 className="w-5 h-5" /> Normal Speed (0.9x)
-            </button>
-            <button
-              onClick={() => handlePlayWord(0.6)}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-xl text-xs font-medium transition-all"
-            >
-              Slow (0.6x)
-            </button>
+              {voicePresets.map((vp) => (
+                <option key={vp.id} value={vp.id}>
+                  {vp.name}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <button
-            onClick={handleRecordSpeech}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
-              isRecording
-                ? 'bg-rose-600 text-white animate-pulse'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-            }`}
-          >
-            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-rose-400" />}
-            {isRecording ? 'Listening...' : 'Practice Voice'}
-          </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handlePlayWord(0.9)}
+                className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-600/20 transition-all"
+              >
+                <Volume2 className="w-4 h-4" /> Natural Speed (0.9x)
+              </button>
+              <button
+                onClick={() => handlePlayWord(0.6)}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-xl text-xs font-medium transition-all"
+              >
+                Slow (0.6x)
+              </button>
+            </div>
+
+            <button
+              onClick={handleRecordSpeech}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                isRecording
+                  ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+              }`}
+            >
+              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-rose-400" />}
+              {isRecording ? 'Listening...' : 'Practice Voice'}
+            </button>
+          </div>
         </div>
 
-        {/* Speech Score Visualizer */}
+        {/* Speech Score Result */}
         {speechResult && (
-          <div className="mb-6 p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-300">Pronunciation Score</span>
+          <div className="mb-6 p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-300">Speech Accuracy Score</span>
               <span
-                className={`text-lg font-bold ${
+                className={`text-base font-extrabold ${
                   speechResult.score >= 80 ? 'text-emerald-400' : 'text-amber-400'
                 }`}
               >
                 {speechResult.score}%
               </span>
             </div>
-            <p className="text-xs text-slate-400 italic mb-2">"{speechResult.transcript}"</p>
+            <p className="text-xs text-slate-400 italic">Transcribed: "{speechResult.transcript || 'None'}"</p>
             <div className="w-full bg-slate-800 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all duration-500 ${
@@ -145,11 +165,27 @@ export default function WordModal({ word, onClose }) {
           </div>
         )}
 
-        {/* Example Sentence with Interactive Tokens */}
+        {/* Collocations & Synonyms if available */}
+        {word.collocations && word.collocations.length > 0 && (
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+              Common Collocations
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {word.collocations.map((col, i) => (
+                <span key={i} className="px-2.5 py-1 bg-slate-900 text-cyan-300 border border-slate-800 rounded-lg text-xs font-mono">
+                  {col}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Context Example */}
         {word.example && (
           <div className="mb-6">
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Context Example (Click tokens to evaluate words)
+              Context Example
             </label>
             <div className="p-4 rounded-2xl bg-slate-900/80 border border-cyan-900/30">
               <SentenceTokenViewer sentence={word.example} targetWord={word.word} />
@@ -157,15 +193,15 @@ export default function WordModal({ word, onClose }) {
           </div>
         )}
 
-        {/* Actions Footer */}
+        {/* Footer */}
         <div className="mt-auto pt-4 border-t border-slate-800/80 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <button
               onClick={() => toggleFavorite(word.word)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 fav
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               <Star className={`w-4 h-4 ${fav ? 'fill-amber-400 text-amber-400' : ''}`} />
@@ -174,10 +210,10 @@ export default function WordModal({ word, onClose }) {
 
             <button
               onClick={() => toggleMastered(word.word)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 mst
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               <CheckCircle className={`w-4 h-4 ${mst ? 'text-emerald-400' : ''}`} />
@@ -187,7 +223,7 @@ export default function WordModal({ word, onClose }) {
 
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold transition-all"
+            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all"
           >
             Done
           </button>

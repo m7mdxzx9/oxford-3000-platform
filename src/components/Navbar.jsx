@@ -11,11 +11,22 @@ import {
   X,
   MessageSquare,
   UserCheck,
+  Volume2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Navbar() {
-  const { activeTab, setActiveTab, apiKey, setIsApiKeyModalOpen, toggleLanguage, t } = useApp();
+  const {
+    activeTab,
+    setActiveTab,
+    apiKey,
+    setIsApiKeyModalOpen,
+    toggleLanguage,
+    t,
+    voicePreset,
+    setVoicePreset,
+    voicePresets
+  } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -70,8 +81,24 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Action Control Buttons */}
+          {/* Controls */}
           <div className="flex items-center gap-2">
+            {/* Natural Voice Selector Dropdown */}
+            <div className="hidden sm:flex items-center gap-1 bg-slate-900/80 border border-slate-800 px-2 py-1.5 rounded-xl text-xs">
+              <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+              <select
+                value={voicePreset}
+                onChange={(e) => setVoicePreset(e.target.value)}
+                className="bg-transparent text-slate-200 font-medium focus:outline-none cursor-pointer text-xs"
+              >
+                {voicePresets.map((vp) => (
+                  <option key={vp.id} value={vp.id} className="bg-slate-950 text-white">
+                    {vp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Language Toggle Button */}
             <button
               onClick={toggleLanguage}
@@ -81,17 +108,13 @@ export default function Navbar() {
               <span>{t('langToggle')}</span>
             </button>
 
-            {/* API Key Modal Trigger */}
+            {/* API Key Status */}
             <button
               onClick={() => setIsApiKeyModalOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
-                apiKey
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                  : 'bg-amber-500/10 border-amber-500/30 text-amber-300 animate-pulse'
-              }`}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
             >
               <Key className="w-4 h-4" />
-              <span className="hidden sm:inline">{apiKey ? 'API Key Active' : t('apiKeyBtn')}</span>
+              <span className="hidden sm:inline">Gemini AI Active</span>
             </button>
 
             {/* Mobile Menu Hamburger */}
@@ -105,9 +128,24 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="lg:hidden p-4 bg-slate-950 border-b border-slate-800 space-y-2">
+          <div className="p-2 bg-slate-900 rounded-xl mb-3 flex items-center justify-between">
+            <span className="text-xs text-slate-400 font-semibold">Select AI Voice:</span>
+            <select
+              value={voicePreset}
+              onChange={(e) => setVoicePreset(e.target.value)}
+              className="bg-slate-950 text-cyan-300 p-1 rounded text-xs border border-slate-800"
+            >
+              {voicePresets.map((vp) => (
+                <option key={vp.id} value={vp.id}>
+                  {vp.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -120,9 +158,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
-                  isActive
-                    ? 'bg-cyan-500 text-slate-950'
-                    : 'text-slate-300 bg-slate-900/50 hover:bg-slate-900'
+                  isActive ? 'bg-cyan-500 text-slate-950' : 'text-slate-300 bg-slate-900/50 hover:bg-slate-900'
                 }`}
               >
                 <Icon className="w-5 h-5" />

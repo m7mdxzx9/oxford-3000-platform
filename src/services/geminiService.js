@@ -1,12 +1,14 @@
+export const DEFAULT_GEMINI_KEY = 'AIzaSyC747z4ewiUEQTenTLdphM11WLbr1EVbXs';
 export const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 // Helper to clean API Key
 const getApiKey = (providedKey) => {
-  if (providedKey) return providedKey;
+  if (providedKey && providedKey.trim()) return providedKey.trim();
   if (typeof window !== 'undefined' && window.localStorage) {
-    return localStorage.getItem('oxford3000_gemini_api_key') || localStorage.getItem('gemini_api_key') || '';
+    const stored = localStorage.getItem('oxford3000_gemini_api_key') || localStorage.getItem('gemini_api_key');
+    if (stored && stored.trim()) return stored.trim();
   }
-  return '';
+  return DEFAULT_GEMINI_KEY;
 };
 
 /**
@@ -17,36 +19,23 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
   const cleanTerm = term.trim().toLowerCase();
   const key = getApiKey(apiKey);
 
-  if (!key) {
-    return {
-      id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      word: cleanTerm,
-      pos: 'noun',
-      cefr: 'B1',
-      arabic: `ترجمة ${cleanTerm}`,
-      example: `This is an example sentence featuring ${cleanTerm}.`,
-      ipa: `/${cleanTerm}/`,
-      isCustom: true
-    };
-  }
-
   try {
-    const promptText = `Provide exact raw JSON for the English vocabulary word "${cleanTerm}". Do not include markdown or code block fences. Output structure:
+    const promptText = `Provide exact raw JSON for the English vocabulary word "${cleanTerm}". Do not include markdown code fences. Output structure:
 {
   "word": "${cleanTerm}",
   "pos": "noun|verb|adjective|adverb|preposition|conjunction",
   "cefr": "A1|A2|B1|B2",
-  "arabic": "accurate Arabic translation",
+  "arabic": "دقيقة ومضبوطة بالشكل",
   "example": "Natural English example sentence using the word",
-  "ipa": "/phonetic transcription/"
+  "ipa": "/phonetic transcription/",
+  "collocations": ["common pairing 1", "common pairing 2"],
+  "synonyms": ["synonym1", "synonym2"]
 }`;
 
     const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }]
-      })
+      body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
     });
 
     if (response.ok) {
@@ -65,13 +54,15 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
             arabic: parsed.arabic || `ترجمة ${cleanTerm}`,
             example: parsed.example || `Example sentence featuring ${cleanTerm}.`,
             ipa: parsed.ipa || `/${cleanTerm}/`,
+            collocations: parsed.collocations || [],
+            synonyms: parsed.synonyms || [],
             isCustom: true
           };
         }
       }
     }
   } catch (err) {
-    console.warn(`fetchMissingTerm error for "${cleanTerm}":`, err);
+    console.warn(`fetchMissingTerm API error for "${cleanTerm}":`, err);
   }
 
   return {
@@ -82,31 +73,40 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
     arabic: `ترجمة ${cleanTerm}`,
     example: `This is an example sentence featuring ${cleanTerm}.`,
     ipa: `/${cleanTerm}/`,
+    collocations: [`use ${cleanTerm}`, `good ${cleanTerm}`],
+    synonyms: [],
     isCustom: true
   };
 };
 
 /**
- * Generate sentence using target word, length, position, and style parameters.
+ * Advanced Sentence Generation with Grammatical Tense, Formality, and Collocation Anchors.
  */
-export const generateSentence = async (word, length = 'medium', position = 'any', style = 'natural', apiKey = '') => {
+export const generateSentence = async (
+  word,
+  length = 'medium',
+  position = 'any',
+  style = 'Casual Conversation',
+  tense = 'Present',
+  apiKey = ''
+) => {
   if (!word) return 'Please select or enter a target vocabulary word.';
   const key = getApiKey(apiKey);
 
-  if (!key) {
-    const lengthStr = length === 'short' ? 'short' : length === 'long' ? 'longer detailed' : 'balanced';
-    const posStr = position === 'beginning' ? `The term ${word} starts the action.` : position === 'end' ? `In conclusion, we focus on ${word}.` : `We naturally incorporate ${word} in our daily workflow.`;
-    return `In this ${lengthStr} ${style} context, ${posStr}`;
-  }
-
   try {
-    const promptText = `Generate a single natural English sentence adhering strictly to grammar rules:
+    const promptText = `Act as an expert English Linguist. Generate a single highly natural English sentence.
 Target word: "${word}"
 Sentence length: ${length} (short: 4-7 words, medium: 8-12 words, long: 14-20 words)
-Position anchor for target word: ${position} (beginning: 1st/2nd word, middle: middle of sentence, end: last 2 words, any: natural)
-Genre/Style: ${style} (Casual Conversation, Simple A1/A2, Academic B2, Business, Story Format, Question Format)
+Position anchor for "${word}": ${position} (beginning, middle, end, any)
+Genre/Style: ${style}
+Grammar Tense Focus: ${tense}
 
-Return ONLY the raw sentence text without quotes, markdown, or extra explanations.`;
+Return raw JSON without markdown code fences:
+{
+  "sentence": "The complete natural English sentence",
+  "arabic": "الترجمة العربية الدقيقة والمترابطة للأنشطة والجملة",
+  "grammarNote": "Brief tip on why this sentence works or collocation used"
+}`;
 
     const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
       method: 'POST',
@@ -116,50 +116,48 @@ Return ONLY the raw sentence text without quotes, markdown, or extra explanation
 
     if (response.ok) {
       const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      if (text) return text.trim().replace(/^["']|["']$/g, '');
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const cleaned = rawText.replace(/```json\s*|\s*```/g, '').trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed && parsed.sentence) return parsed;
+      }
     }
   } catch (err) {
     console.warn('generateSentence API error:', err);
   }
 
-  return `With great dedication, we use the term ${word} in our ${style} practice.`;
+  return {
+    sentence: `With great dedication, we use the term ${word} in our daily ${style} practice.`,
+    arabic: `مع تفانٍ كبير، نستخدم مصطلح ${word} في ممارستنا اليومية.`,
+    grammarNote: `Natural usage of "${word}" in ${tense} tense.`
+  };
 };
 
 /**
- * Generate interactive story line-by-line using 1-5 target words, genre, and CEFR level.
+ * Advanced Interactive Multi-Scene Story Generator.
  */
 export const generateStory = async (words = [], genre = 'adventure', cefrLevel = 'B1', apiKey = '') => {
   const wordList = Array.isArray(words) ? words.map(w => typeof w === 'string' ? w : w.word) : [String(words)];
-  const wordListStr = wordList.filter(Boolean).join(', ') || 'journey';
+  const wordListStr = wordList.filter(Boolean).join(', ') || 'journey, learn, goal';
   const key = getApiKey(apiKey);
 
-  if (!key) {
-    return [
-      {
-        text: `Once upon a time in a ${genre} tale, our protagonists embarked on a mission involving ${wordListStr}.`,
-        arabic: `في يوم من الأيام في حكاية ${genre}، انطلق أبطالنا في مهمة تتضمن ${wordListStr}.`
-      },
-      {
-        text: `They learned that mastering ${wordListStr} required courage and practice at ${cefrLevel} level.`,
-        arabic: `تعلموا أن إتقان ${wordListStr} يتطلب الشجاعة والممارسة في مستوى ${cefrLevel}.`
-      },
-      {
-        text: `Eventually, their journey ended successfully, celebrating their progress.`,
-        arabic: `في النهاية، انتهت رحلتهم بنجاح، محتفلين بتقدمهم.`
-      }
-    ];
-  }
-
   try {
-    const promptText = `Generate an interactive short story in 3-5 lines incorporating these target vocabulary words: [${wordListStr}].
+    const promptText = `Write an engaging 3-4 scene story using these target vocabulary words: [${wordListStr}].
 Genre: ${genre}
-CEFR Level: ${cefrLevel}
+CEFR Difficulty Level: ${cefrLevel}
 
-Return raw JSON array without markdown code blocks:
+Return raw JSON array of scenes without markdown fences:
 [
-  { "text": "English line 1", "arabic": "Accurate Arabic translation of line 1" },
-  { "text": "English line 2", "arabic": "Accurate Arabic translation of line 2" },
+  {
+    "sceneNumber": 1,
+    "text": "English line for scene 1",
+    "arabic": "الترجمة العربية الدقيقة والجميلة",
+    "focusWord": "target word used here",
+    "comprehensionQuestion": "Simple question in English about this line",
+    "correctAnswer": "Short answer"
+  },
   ...
 ]`;
 
@@ -185,42 +183,48 @@ Return raw JSON array without markdown code blocks:
 
   return [
     {
-      text: `In this exciting ${genre} story, we discovered the true meaning of ${wordListStr}.`,
-      arabic: `في هذه القصة الممتعة من نوع ${genre}، اكتشفنا المعنى الحقيقي لـ ${wordListStr}.`
+      sceneNumber: 1,
+      text: `In this exciting ${genre} journey, we discovered the true value of ${wordListStr}.`,
+      arabic: `في هذه الرحلة الممتعة من نوع ${genre}، اكتشفنا القيمة الحقيقية لـ ${wordListStr}.`,
+      focusWord: wordList[0] || 'journey',
+      comprehensionQuestion: 'What did we discover on our journey?',
+      correctAnswer: `The true value of ${wordListStr}`
     },
     {
-      text: `Practicing at ${cefrLevel} level helped us express our ideas clearly and fluently.`,
-      arabic: `ساعدتنا الممارسة عند مستوى ${cefrLevel} على التعبير عن أفكارنا بوضوح وطلاقة.`
+      sceneNumber: 2,
+      text: `Practicing at ${cefrLevel} level helped us overcome every obstacle ahead.`,
+      arabic: `ساعدتنا الممارسة عند مستوى ${cefrLevel} على التغلب على كل عقبة أمامنا.`,
+      focusWord: wordList[1] || 'practice',
+      comprehensionQuestion: 'What helped us overcome obstacles?',
+      correctAnswer: `Practicing at ${cefrLevel} level`
     }
   ];
 };
 
 /**
- * Get AI Tutor Response for Chat/Roleplay
+ * Advanced AI Personal Tutor Response with Detailed CEFR Feedback & Corrections.
  */
 export const getTutorResponse = async (roleplayScenario = 'General', userMessage = '', history = [], apiKey = '') => {
   const key = getApiKey(apiKey);
 
-  if (!key) {
-    const hasGrammarIssue = /\b(i is|he do|wants me|they plays)\b/i.test(userMessage) || (userMessage.length > 0 && userMessage.length < 4);
-    return {
-      reply: `That's an interesting point regarding our scenario: "${roleplayScenario}". Could you elaborate more on "${userMessage || 'your thoughts'}"?`,
-      grammarFeedback: hasGrammarIssue ? 'Tip: Check subject-verb agreement or sentence structure.' : null,
-      arabic: `هذه نقطة مثيرة للاهتمام فيما يتعلق بسيناريو "${roleplayScenario}". هل يمكنك التوضيح أكثر؟`
-    };
-  }
-
   try {
-    const promptText = `You are an AI English Tutor facilitating a roleplay scenario: "${roleplayScenario}".
+    const promptText = `You are a world-class AI English Speech & Grammar Coach conducting a roleplay scenario: "${roleplayScenario}".
 User message: "${userMessage}"
-Recent Chat Context: ${JSON.stringify(history.slice(-4))}
+Recent History: ${JSON.stringify(history.slice(-4))}
 
-Analyze user message for grammar errors.
+Analyze user message for grammar, natural phrasing, and CEFR level.
 Return raw JSON object without markdown code fences:
 {
-  "reply": "Empathetic, encouraging English tutor response continuing the scenario",
-  "grammarFeedback": "Constructive grammar tip if error present, else null",
-  "arabic": "Accurate Arabic translation of your reply"
+  "reply": "Empathetic, highly encouraging, conversational English reply continuing the roleplay scenario naturally",
+  "arabic": "الترجمة العربية الدقيقة لإجابتك",
+  "corrections": [
+    { "original": "flawed phrase", "improved": "natural polished phrase", "reason": "Grammar or collocation explanation" }
+  ],
+  "suggestedReplies": [
+    "Suggested response 1 for user",
+    "Suggested response 2 for user"
+  ],
+  "cefrRating": "A1|A2|B1|B2"
 }`;
 
     const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
@@ -243,10 +247,13 @@ Return raw JSON object without markdown code fences:
     console.warn('getTutorResponse API error:', err);
   }
 
+  const hasIssue = /\b(i is|he do|wants me|they plays)\b/i.test(userMessage);
   return {
-    reply: `Excellent practice! In our ${roleplayScenario} session, practice makes perfect.`,
-    grammarFeedback: null,
-    arabic: `تدريب ممتاز! في جلسة ${roleplayScenario}، التدريب يصنع الإتقان.`
+    reply: `That's great! In our ${roleplayScenario} session, practice makes perfect. Tell me more!`,
+    arabic: `هذا رائع! في جلسة ${roleplayScenario}، التدريب يصنع الإتقان. أخبرني المزيد!`,
+    corrections: hasIssue ? [{ original: userMessage, improved: 'I am ready to practice.', reason: 'Subject-verb agreement' }] : [],
+    suggestedReplies: ["I agree with that point.", "Could you give me an example?"],
+    cefrRating: 'B1'
   };
 };
 
@@ -255,5 +262,6 @@ export default {
   generateSentence,
   generateStory,
   getTutorResponse,
+  DEFAULT_GEMINI_KEY,
   GEMINI_API_URL
 };
