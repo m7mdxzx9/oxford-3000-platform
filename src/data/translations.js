@@ -1,0 +1,195 @@
+export const translations = {
+  en: {
+    // App Header & Nav
+    appTitle: 'Oxford 3000™ AI Platform',
+    appSubtitle: 'Master CEFR Lexicon A1-B2',
+    navCatalog: 'Lexicon Catalog',
+    navSentence: 'AI Sentence Builder',
+    navStory: 'AI Storyteller',
+    navTutor: 'AI Voice Tutor',
+    navFlashcards: '3D Flashcards',
+    navQuiz: 'Quiz Challenge',
+    navAnalytics: 'Analytics',
+    apiKeyBtn: 'Gemini API Key',
+    langToggle: 'العربية 🇸🇦',
+
+    // Lexicon Grid
+    gridTitle: 'Oxford 3000 CEFR Vocabulary Catalog',
+    gridSubtitle: 'Explore words with IPA phonetics, Arabic translations, native TTS audio, and AI pronunciation scoring.',
+    searchPlaceholder: 'Search words in English or Arabic...',
+    cefrFilter: 'CEFR Level:',
+    posFilter: 'Part of Speech:',
+    all: 'ALL',
+    mastered: 'Mastered',
+    favorites: 'Favorites Only',
+    aiFetchBtn: 'AI Fetch Term',
+    itemsPerPage: 'Items per page',
+    page: 'Page',
+    of: 'of',
+    noResults: 'No words matched your search criteria.',
+    listenAudio: 'Listen',
+    practiceVoice: 'Voice Practice',
+    markMastered: 'Mastered',
+    addFavorite: 'Favorite',
+
+    // Sentence Builder
+    sentenceTitle: 'Gemini AI Sentence Builder',
+    sentenceSubtitle: 'Construct contextual sentences with custom length, word position anchors, and genre styles.',
+    targetWordLabel: 'Target Vocabulary Word',
+    styleLabel: 'Sentence Style / Genre',
+    lengthLabel: 'Sentence Length',
+    positionLabel: 'Word Position Anchor',
+    generateBtn: 'Generate Sentence',
+    regenerateBtn: 'Regenerate Sentence',
+    listenSentence: 'Listen Sentence',
+    readSentence: 'Read Full Sentence',
+    shortLength: 'Short (4-7)',
+    medLength: 'Medium (8-12)',
+    longLength: 'Long (14-20)',
+
+    // Storyteller
+    storyTitle: 'AI Interactive Storyteller',
+    storySubtitle: 'Craft immersive stories featuring your selected Oxford 3000 words. Read line-by-line with audio and pronunciation evaluation.',
+    selectedWordsLabel: 'Selected Words for Story',
+    genreLabel: 'Story Genre',
+    difficultyLabel: 'CEFR Difficulty Level',
+    generateStoryBtn: 'Generate Interactive Story',
+    hideArabic: 'Hide Arabic',
+    showArabic: 'Show Arabic',
+    clearAll: 'Clear All',
+
+    // Personal Tutor
+    tutorTitle: 'AI Personal Voice & Chat Tutor',
+    tutorSubtitle: 'Roleplay realistic conversational scenarios with your AI tutor. Receive instant grammar suggestions and voice responses.',
+    typeMessage: 'Type your message or use microphone...',
+    roleplayScenario: 'Roleplay Scenario:',
+
+    // Flashcards
+    flashcardsTitle: '3D SRS Flip Flashcards',
+    flashcardsSubtitle: 'Master vocabulary through active recall. Tap card to flip between phonetics and Arabic contextual definitions.',
+    shuffle: 'Shuffle Deck',
+    card: 'Card',
+    previous: 'Previous',
+    next: 'Next',
+
+    // Quiz Game
+    quizTitle: 'Oxford 3000 Quiz Challenge',
+    quizSubtitle: 'Test your vocabulary mastery with instant score tracking and streak bonuses.',
+    score: 'Score',
+    streak: 'Streak',
+    selectArabic: 'Select correct Arabic translation for:',
+    nextQuestion: 'Next Question →',
+    finishQuiz: 'Finish Quiz 🎉',
+    quizCompleted: 'Quiz Completed!',
+    playAgain: 'Play Again',
+
+    // Analytics
+    analyticsTitle: 'Progress Analytics & Mastery',
+    analyticsSubtitle: 'Track your journey through the complete Oxford 3000 CEFR Lexicon dataset with real-time statistics.',
+    overallMastery: 'Overall Mastery',
+    totalLexicon: 'Total Lexicon',
+    masteredTerms: 'Mastered Terms',
+    aiCustomTerms: 'AI Custom Terms',
+    cefrBreakdown: 'CEFR Level Progress Breakdown',
+
+    // Footer
+    footerCopyright: 'Oxford 3000™ CEFR Lexicon Application © 2026. Built with React 18, Vite & Tailwind CSS.',
+  },
+
+  ar: {
+    // App Header & Nav
+    appTitle: 'منصة Oxford 3000 الذكية',
+    appSubtitle: 'إتقان قاموس أوكسفورد من A1 حتى B2',
+    navCatalog: 'كتالوج المفردات',
+    navSentence: 'مجمع الجمل بالذكاء الاصطناعي',
+    navStory: 'منشئ القصص التفاعلية',
+    navTutor: 'المدرب الصوتي الشخصي',
+    navFlashcards: 'البطاقات التفاعلية 3D',
+    navQuiz: 'تحدي الاختبارات',
+    navAnalytics: 'لوحة التحليلات',
+    apiKeyBtn: 'مفتاح Gemini API',
+    langToggle: 'English 🇺🇸',
+
+    // Lexicon Grid
+    gridTitle: 'كتالوج مفردات Oxford 3000 CEFR',
+    gridSubtitle: 'استكشف الكلمات مع الرمز الصوتي IPA والترجمة العربية والتقييم الصوتي التفاعلي للذكاء الاصطناعي.',
+    searchPlaceholder: 'ابحث عن كلمة بالإنجليزية أو العربية...',
+    cefrFilter: 'مستوى CEFR:',
+    posFilter: 'نوع الكلمة:',
+    all: 'الكل',
+    mastered: 'المتقنة',
+    favorites: 'المفضلة فقط',
+    aiFetchBtn: 'جلب كلمة جديدة',
+    itemsPerPage: 'عنصر بالصفحة',
+    page: 'صفحة',
+    of: 'من',
+    noResults: 'لم يتم العثور على كلمات تطابق معايير البحث.',
+    listenAudio: 'استمع',
+    practiceVoice: 'تدرب صوتياً',
+    markMastered: 'متقنة',
+    addFavorite: 'مفضلة',
+
+    // Sentence Builder
+    sentenceTitle: 'مجمع الجمل بالذكاء الاصطناعي',
+    sentenceSubtitle: 'بناء جمل سياقية بدقة مع اختيار طول الجملة وموقع الكلمة ونمط السياق.',
+    targetWordLabel: 'الكلمة المستهدفة',
+    styleLabel: 'نمط / نوع الجملة',
+    lengthLabel: 'طول الجملة',
+    positionLabel: 'موقع الكلمة في الجملة',
+    generateBtn: 'توليد الجملة',
+    regenerateBtn: 'إعادة توليد الجملة',
+    listenSentence: 'استمع للجملة',
+    readSentence: 'اقرأ الجملة كاملة',
+    shortLength: 'قصيرة (4-7)',
+    medLength: 'متوسطة (8-12)',
+    longLength: 'طويلة (14-20)',
+
+    // Storyteller
+    storyTitle: 'منشئ القصص التفاعلية بالذكاء الاصطناعي',
+    storySubtitle: 'صياغة قصص ممتعة تحتوي على المفردات المختارة وقراءتها سطر بسطر مع التقييم الصوتي.',
+    selectedWordsLabel: 'الكلمات المختارة للقصة',
+    genreLabel: 'نوع القصة',
+    difficultyLabel: 'مستوى الصعوبة CEFR',
+    generateStoryBtn: 'توليد قصة تفاعلية',
+    hideArabic: 'إخفاء الترجمة العربية',
+    showArabic: 'إظهار الترجمة العربية',
+    clearAll: 'مسح الكل',
+
+    // Personal Tutor
+    tutorTitle: 'المدرب الصوتي الشخصي بالذكاء الاصطناعي',
+    tutorSubtitle: 'محادثة تفاعلية في سيناريوهات واقعية مع تقديم نصائح نحوية فورية واستجابات صوتية.',
+    typeMessage: 'اكتب رسالتك أو استخدم الميكروفون...',
+    roleplayScenario: 'سيناريو المحادثة:',
+
+    // Flashcards
+    flashcardsTitle: 'بطاقات المفردات ثلاثية الأبعاد (3D SRS)',
+    flashcardsSubtitle: 'إتقان المفردات بالتذكر النشط. انقر على البطاقة لقلبها بين النطق والتعريف العربي.',
+    shuffle: 'خلط البطاقات',
+    card: 'بطاقة',
+    previous: 'السابق',
+    next: 'التالي',
+
+    // Quiz Game
+    quizTitle: 'تحدي اختبارات Oxford 3000',
+    quizSubtitle: 'اختبر حصيلتك اللغوية مع تتبع النقاط ومكافآت السلسلة.',
+    score: 'النقاط',
+    streak: 'السلسلة',
+    selectArabic: 'اختر الترجمة العربية الصحيحة للكلمة:',
+    nextQuestion: 'السؤال التالي ←',
+    finishQuiz: 'إنهاء الاختبار 🎉',
+    quizCompleted: 'اكتمل الاختبار!',
+    playAgain: 'اللعب مرة أخرى',
+
+    // Analytics
+    analyticsTitle: 'لوحة التحليلات والإتقان',
+    analyticsSubtitle: 'تتبع رحلتك عبر قاموس Oxford 3000 الكامل بالإحصائيات المباشرة.',
+    overallMastery: 'نسبة الإتقان العامة',
+    totalLexicon: 'إجمالي المفردات',
+    masteredTerms: 'المفردات المتقنة',
+    aiCustomTerms: 'كلمات الذكاء الاصطناعي',
+    cefrBreakdown: 'تفاصيل التقدم حسب مستويات CEFR',
+
+    // Footer
+    footerCopyright: 'تطبيق Oxford 3000™ CEFR Lexicon © 2026. تم البناء باستخدام React 18 و Vite و Tailwind CSS.',
+  }
+};

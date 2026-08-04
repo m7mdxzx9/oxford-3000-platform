@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Award, Volume2, CheckCircle2, XCircle, RotateCcw, Flame, Trophy } from 'lucide-react';
 import { OXFORD_3000 } from '../data/oxford3000';
 import { playAudio } from '../services/audioService';
+import { useApp } from '../context/AppContext';
 
 export default function QuizGame() {
+  const { t } = useApp();
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -11,11 +13,9 @@ export default function QuizGame() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [quizFinished, setQuizFinished] = useState(false);
 
-  // Generate 10 random quiz items
   const quizItems = useMemo(() => {
     const shuffled = [...OXFORD_3000].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 10).map((item) => {
-      // Pick 3 wrong options
       const wrongOptions = OXFORD_3000.filter((w) => w.id !== item.id)
         .sort(() => 0.5 - Math.random())
         .slice(0, 3)
@@ -67,28 +67,26 @@ export default function QuizGame() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Header Banner */}
       <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 relative overflow-hidden flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl">
               <Award className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Oxford 3000 Quiz Challenge</h2>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">{t('quizTitle')}</h2>
           </div>
-          <p className="text-slate-400 text-sm">Test your vocabulary mastery with instant score tracking and streak bonuses.</p>
+          <p className="text-slate-400 text-sm">{t('quizSubtitle')}</p>
         </div>
 
-        {/* Score & Streak Counters */}
         <div className="flex items-center gap-4">
           <div className="text-center p-3 bg-slate-900/80 rounded-2xl border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Score</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">{t('score')}</span>
             <span className="text-xl font-extrabold text-cyan-400">{score}</span>
           </div>
 
           <div className="text-center p-3 bg-slate-900/80 rounded-2xl border border-slate-800 flex flex-col items-center">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-orange-400" /> Streak
+              <Flame className="w-3.5 h-3.5 text-orange-400" /> {t('streak')}
             </span>
             <span className="text-xl font-extrabold text-orange-400">{streak}</span>
           </div>
@@ -97,7 +95,6 @@ export default function QuizGame() {
 
       {!quizFinished && currentItem ? (
         <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-900/40 space-y-6">
-          {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-slate-400 font-semibold">
               <span>Question {questionIndex + 1} of {quizItems.length}</span>
@@ -111,10 +108,9 @@ export default function QuizGame() {
             </div>
           </div>
 
-          {/* Question Card */}
           <div className="p-8 rounded-3xl bg-slate-900/90 border border-slate-800 text-center space-y-3">
             <span className="text-xs text-slate-400 uppercase tracking-widest font-semibold">
-              Select correct Arabic translation for:
+              {t('selectArabic')}
             </span>
 
             <div className="flex items-center justify-center gap-3">
@@ -134,7 +130,6 @@ export default function QuizGame() {
             </p>
           </div>
 
-          {/* Options Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {currentItem.options.map((opt, idx) => {
               const isSelected = selectedOption === opt;
@@ -167,29 +162,27 @@ export default function QuizGame() {
             })}
           </div>
 
-          {/* Footer Action */}
           {isAnswered && (
             <div className="pt-4 flex justify-end">
               <button
                 onClick={handleNextQuestion}
-                className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold rounded-2xl shadow-lg shadow-cyan-500/20 transition-all"
+                className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold rounded-2xl shadow-lg transition-all"
               >
-                {questionIndex + 1 < quizItems.length ? 'Next Question →' : 'Finish Quiz 🎉'}
+                {questionIndex + 1 < quizItems.length ? t('nextQuestion') : t('finishQuiz')}
               </button>
             </div>
           )}
         </div>
       ) : (
-        /* Quiz Summary Screen */
         <div className="glass-panel p-8 rounded-3xl border border-cyan-500/40 text-center space-y-6">
           <div className="w-20 h-20 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto">
             <Trophy className="w-10 h-10" />
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-3xl font-extrabold text-white">Quiz Completed!</h3>
+            <h3 className="text-3xl font-extrabold text-white">{t('quizCompleted')}</h3>
             <p className="text-slate-400 text-sm">
-              You scored <span className="text-cyan-400 font-bold text-lg">{score}</span> points out of 100.
+              Score: <span className="text-cyan-400 font-bold text-lg">{score}</span> / 100.
             </p>
           </div>
 
@@ -197,7 +190,7 @@ export default function QuizGame() {
             onClick={handleRestart}
             className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-extrabold rounded-2xl shadow-lg transition-all hover:scale-105"
           >
-            <RotateCcw className="w-5 h-5" /> Play Again
+            <RotateCcw className="w-5 h-5" /> {t('playAgain')}
           </button>
         </div>
       )}

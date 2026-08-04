@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check, Sliders } from 'lucide-react';
+import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateSentence } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
@@ -8,7 +8,7 @@ import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 
 export default function SentenceGenerator() {
-  const { apiKey, addNotification } = useApp();
+  const { apiKey, addNotification, t } = useApp();
   const [targetWord, setTargetWord] = useState('abandon');
   const [length, setLength] = useState('medium');
   const [position, setPosition] = useState('any');
@@ -32,7 +32,7 @@ export default function SentenceGenerator() {
     try {
       const result = await generateSentence(targetWord, length, position, style, apiKey);
       setSentence(result);
-      addNotification(`Generated new sentence for "${targetWord}"`, 'success');
+      addNotification(`Generated sentence for "${targetWord}"`, 'success');
     } catch (err) {
       addNotification('Failed to generate sentence.', 'error');
     } finally {
@@ -41,9 +41,7 @@ export default function SentenceGenerator() {
   };
 
   const handlePlaySentence = () => {
-    if (sentence) {
-      playAudio(sentence);
-    }
+    if (sentence) playAudio(sentence);
   };
 
   const handleRecordSentence = () => {
@@ -63,46 +61,42 @@ export default function SentenceGenerator() {
       },
       (err) => {
         setIsRecording(false);
-        addNotification(`Speech evaluation error: ${err}`, 'warning');
+        addNotification(`Speech error: ${err}`, 'warning');
       }
     );
   };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header Banner */}
+      {/* Banner */}
       <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl" />
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-xl">
             <Sparkles className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Gemini AI Sentence Builder</h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">{t('sentenceTitle')}</h2>
         </div>
-        <p className="text-slate-400 text-sm sm:text-base max-w-2xl">
-          Construct precise contextual sentences with custom length, word position anchors, and genre styles. Evaluate your full sentence pronunciation line-by-line.
-        </p>
+        <p className="text-slate-400 text-sm sm:text-base max-w-2xl">{t('sentenceSubtitle')}</p>
       </div>
 
-      {/* Control Panel */}
+      {/* Controls */}
       <div className="glass-panel p-6 rounded-3xl border border-cyan-900/30 space-y-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Target Vocabulary Word
+              {t('targetWordLabel')}
             </label>
             <input
               type="text"
               value={targetWord}
               onChange={(e) => setTargetWord(e.target.value)}
-              placeholder="e.g. abandon, achieve, advantage..."
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 ltr-token font-semibold"
+              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 ltr-token font-semibold"
             />
           </div>
 
           <div className="flex-1">
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Sentence Style / Genre
+              {t('styleLabel')}
             </label>
             <select
               value={style}
@@ -114,22 +108,21 @@ export default function SentenceGenerator() {
               <option value="Academic B2">Academic B2 Level</option>
               <option value="Business">Business Context</option>
               <option value="Story Format">Story Format</option>
-              <option value="Question Format">Question Format</option>
             </select>
           </div>
         </div>
 
-        {/* Options Grid */}
+        {/* Options */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Sentence Length
+              {t('lengthLabel')}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: 'short', label: 'Short (4-7)' },
-                { id: 'medium', label: 'Medium (8-12)' },
-                { id: 'long', label: 'Long (14-20)' },
+                { id: 'short', label: t('shortLength') },
+                { id: 'medium', label: t('medLength') },
+                { id: 'long', label: t('longLength') },
               ].map((opt) => (
                 <button
                   key={opt.id}
@@ -148,7 +141,7 @@ export default function SentenceGenerator() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Word Position Anchor
+              {t('positionLabel')}
             </label>
             <div className="grid grid-cols-4 gap-2">
               {[
@@ -173,22 +166,16 @@ export default function SentenceGenerator() {
           </div>
         </div>
 
-        {/* Generate Button */}
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-slate-950 font-bold rounded-2xl shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-bold rounded-2xl shadow-lg transition-all disabled:opacity-50"
         >
-          {loading ? (
-            <RefreshCw className="w-5 h-5 animate-spin" />
-          ) : (
-            <Sparkles className="w-5 h-5" />
-          )}
-          {loading ? 'Generating with Gemini AI...' : 'Generate Sentence'}
+          {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+          {t('generateBtn')}
         </button>
       </div>
 
-      {/* Generated Sentence Result */}
       {sentence && (
         <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 space-y-6">
           <div className="flex items-center justify-between">
@@ -200,7 +187,7 @@ export default function SentenceGenerator() {
               onClick={handleGenerate}
               className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-cyan-300 transition-all"
             >
-              <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+              <RefreshCw className="w-3.5 h-3.5" /> {t('regenerateBtn')}
             </button>
           </div>
 
@@ -208,29 +195,25 @@ export default function SentenceGenerator() {
             <SentenceTokenViewer sentence={sentence} targetWord={targetWord} />
           </div>
 
-          {/* Action Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
             <button
               onClick={handlePlaySentence}
-              className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-medium transition-all shadow-lg shadow-cyan-600/20"
+              className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-medium transition-all shadow-lg"
             >
-              <Volume2 className="w-5 h-5" /> Listen Sentence
+              <Volume2 className="w-5 h-5" /> {t('listenSentence')}
             </button>
 
             <button
               onClick={handleRecordSentence}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
-                isRecording
-                  ? 'bg-rose-600 text-white animate-pulse'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                isRecording ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-800 text-slate-200 border border-slate-700'
               }`}
             >
               {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-rose-400" />}
-              {isRecording ? 'Listening...' : 'Read Full Sentence'}
+              {t('readSentence')}
             </button>
           </div>
 
-          {/* Speech Visualizer */}
           {speechResult && (
             <SpeechScoreVisualizer
               targetText={sentence}
