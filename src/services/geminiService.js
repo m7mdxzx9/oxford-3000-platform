@@ -1,5 +1,6 @@
 export const DEFAULT_GEMINI_KEY = 'AIzaSyC747z4ewiUEQTenTLdphM11WLbr1EVbXs';
-export const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+export const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+export const GEMINI_FALLBACK_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Helper to clean API Key
 const getApiKey = (providedKey) => {
@@ -12,15 +13,53 @@ const getApiKey = (providedKey) => {
 };
 
 /**
+ * Universal Gemini API poster with automatic endpoint fallback.
+ */
+const callGeminiApi = async (promptText, apiKey = '') => {
+  const key = getApiKey(apiKey);
+  const body = JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] });
+
+  try {
+    const res = await fetch(`${GEMINI_API_URL}?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    }
+  } catch (e) {
+    console.warn('Primary Gemini model error, trying fallback:', e);
+  }
+
+  // Secondary fallback model
+  try {
+    const fallbackRes = await fetch(`${GEMINI_FALLBACK_URL}?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    if (fallbackRes.ok) {
+      const data = await fallbackRes.json();
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
+    }
+  } catch (e) {
+    console.error('Fallback Gemini model error:', e);
+  }
+
+  return null;
+};
+
+/**
  * Dynamically queries Gemini API endpoint for an uncatalogued vocabulary word.
  */
 export const fetchMissingTerm = async (term, apiKey = '') => {
   if (!term || typeof term !== 'string' || !term.trim()) return null;
   const cleanTerm = term.trim().toLowerCase();
-  const key = getApiKey(apiKey);
 
-  try {
-    const promptText = `Provide exact raw JSON for the English vocabulary word "${cleanTerm}". Do not include markdown code fences. Output structure:
+  const promptText = `Provide exact raw JSON for the English vocabulary word "${cleanTerm}". Do not include markdown code fences. Output structure:
 {
   "word": "${cleanTerm}",
   "pos": "noun|verb|adjective|adverb|preposition|conjunction",
@@ -32,18 +71,12 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
   "synonyms": ["synonym1", "synonym2"]
 }`;
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const cleanedText = rawText.replace(/```json\s*|\s*```/g, '').trim();
-      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
+  const rawText = await callGeminiApi(promptText, apiKey);
+  if (rawText) {
+    const cleanedText = rawText.replace(/```json\s*|\s*```/g, '').trim();
+    const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
         const parsed = JSON.parse(jsonMatch[0]);
         if (parsed && parsed.word) {
           return {
@@ -56,13 +89,11 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
             ipa: parsed.ipa || `/${cleanTerm}/`,
             collocations: parsed.collocations || [],
             synonyms: parsed.synonyms || [],
-            isCustom: true
+            isCustom: true,
           };
         }
-      }
+      } catch (e) {}
     }
-  } catch (err) {
-    console.warn(`fetchMissingTerm API error for "${cleanTerm}":`, err);
   }
 
   return {
@@ -75,7 +106,7 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
     ipa: `/${cleanTerm}/`,
     collocations: [`use ${cleanTerm}`, `good ${cleanTerm}`],
     synonyms: [],
-    isCustom: true
+    isCustom: true,
   };
 };
 
@@ -91,10 +122,8 @@ export const generateSentence = async (
   apiKey = ''
 ) => {
   if (!word) return 'Please select or enter a target vocabulary word.';
-  const key = getApiKey(apiKey);
 
-  try {
-    const promptText = `Act as an expert English Linguist. Generate a single highly natural English sentence.
+  const promptText = `Act as an expert English Linguist. Generate a single highly natural English sentence.
 Target word: "${word}"
 Sentence length: ${length} (short: 4-7 words, medium: 8-12 words, long: 14-20 words)
 Position anchor for "${word}": ${position} (beginning, middle, end, any)
@@ -104,34 +133,26 @@ Grammar Tense Focus: ${tense}
 Return raw JSON without markdown code fences:
 {
   "sentence": "The complete natural English sentence",
-  "arabic": "الترجمة العربية الدقيقة والمترابطة للأنشطة والجملة",
+  "arabic": "الترجمة العربية الدقيقة والمترابطة للجملة",
   "grammarNote": "Brief tip on why this sentence works or collocation used"
 }`;
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const cleaned = rawText.replace(/```json\s*|\s*```/g, '').trim();
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
+  const rawText = await callGeminiApi(promptText, apiKey);
+  if (rawText) {
+    const cleaned = rawText.replace(/```json\s*|\s*```/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
         const parsed = JSON.parse(jsonMatch[0]);
         if (parsed && parsed.sentence) return parsed;
-      }
+      } catch (e) {}
     }
-  } catch (err) {
-    console.warn('generateSentence API error:', err);
   }
 
   return {
     sentence: `With great dedication, we use the term ${word} in our daily ${style} practice.`,
     arabic: `مع تفانٍ كبير، نستخدم مصطلح ${word} في ممارستنا اليومية.`,
-    grammarNote: `Natural usage of "${word}" in ${tense} tense.`
+    grammarNote: `Natural usage of "${word}" in ${tense} tense.`,
   };
 };
 
@@ -139,12 +160,10 @@ Return raw JSON without markdown code fences:
  * Advanced Interactive Multi-Scene Story Generator.
  */
 export const generateStory = async (words = [], genre = 'adventure', cefrLevel = 'B1', apiKey = '') => {
-  const wordList = Array.isArray(words) ? words.map(w => typeof w === 'string' ? w : w.word) : [String(words)];
+  const wordList = Array.isArray(words) ? words.map((w) => (typeof w === 'string' ? w : w.word)) : [String(words)];
   const wordListStr = wordList.filter(Boolean).join(', ') || 'journey, learn, goal';
-  const key = getApiKey(apiKey);
 
-  try {
-    const promptText = `Write an engaging 3-4 scene story using these target vocabulary words: [${wordListStr}].
+  const promptText = `Write an engaging 3-4 scene story using these target vocabulary words: [${wordListStr}].
 Genre: ${genre}
 CEFR Difficulty Level: ${cefrLevel}
 
@@ -161,24 +180,16 @@ Return raw JSON array of scenes without markdown fences:
   ...
 ]`;
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const cleaned = rawText.replace(/```json\s*|\s*```/g, '').trim();
-      const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
+  const rawText = await callGeminiApi(promptText, apiKey);
+  if (rawText) {
+    const cleaned = rawText.replace(/```json\s*|\s*```/g, '').trim();
+    const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      try {
         const parsed = JSON.parse(jsonMatch[0]);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
+      } catch (e) {}
     }
-  } catch (err) {
-    console.warn('generateStory API error:', err);
   }
 
   return [
@@ -188,7 +199,7 @@ Return raw JSON array of scenes without markdown fences:
       arabic: `في هذه الرحلة الممتعة من نوع ${genre}، اكتشفنا القيمة الحقيقية لـ ${wordListStr}.`,
       focusWord: wordList[0] || 'journey',
       comprehensionQuestion: 'What did we discover on our journey?',
-      correctAnswer: `The true value of ${wordListStr}`
+      correctAnswer: `The true value of ${wordListStr}`,
     },
     {
       sceneNumber: 2,
@@ -196,19 +207,16 @@ Return raw JSON array of scenes without markdown fences:
       arabic: `ساعدتنا الممارسة عند مستوى ${cefrLevel} على التغلب على كل عقبة أمامنا.`,
       focusWord: wordList[1] || 'practice',
       comprehensionQuestion: 'What helped us overcome obstacles?',
-      correctAnswer: `Practicing at ${cefrLevel} level`
-    }
+      correctAnswer: `Practicing at ${cefrLevel} level`,
+    },
   ];
 };
 
 /**
- * Advanced AI Personal Tutor Response with Detailed CEFR Feedback & Corrections.
+ * Advanced AI Personal Tutor Response.
  */
 export const getTutorResponse = async (roleplayScenario = 'General', userMessage = '', history = [], apiKey = '') => {
-  const key = getApiKey(apiKey);
-
-  try {
-    const promptText = `You are a world-class AI English Speech & Grammar Coach conducting a roleplay scenario: "${roleplayScenario}".
+  const promptText = `You are a world-class AI English Speech & Grammar Coach conducting a roleplay scenario: "${roleplayScenario}".
 User message: "${userMessage}"
 Recent History: ${JSON.stringify(history.slice(-4))}
 
@@ -227,24 +235,16 @@ Return raw JSON object without markdown code fences:
   "cefrRating": "A1|A2|B1|B2"
 }`;
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const cleaned = rawText.replace(/```json\s*|\s*```/g, '').trim();
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
+  const rawText = await callGeminiApi(promptText, apiKey);
+  if (rawText) {
+    const cleaned = rawText.replace(/```json\s*|\s*```/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
         const parsed = JSON.parse(jsonMatch[0]);
         if (parsed && parsed.reply) return parsed;
-      }
+      } catch (e) {}
     }
-  } catch (err) {
-    console.warn('getTutorResponse API error:', err);
   }
 
   const hasIssue = /\b(i is|he do|wants me|they plays)\b/i.test(userMessage);
@@ -252,8 +252,8 @@ Return raw JSON object without markdown code fences:
     reply: `That's great! In our ${roleplayScenario} session, practice makes perfect. Tell me more!`,
     arabic: `هذا رائع! في جلسة ${roleplayScenario}، التدريب يصنع الإتقان. أخبرني المزيد!`,
     corrections: hasIssue ? [{ original: userMessage, improved: 'I am ready to practice.', reason: 'Subject-verb agreement' }] : [],
-    suggestedReplies: ["I agree with that point.", "Could you give me an example?"],
-    cefrRating: 'B1'
+    suggestedReplies: ['I agree with that point.', 'Could you give me an example?'],
+    cefrRating: 'B1',
   };
 };
 
@@ -263,5 +263,6 @@ export default {
   generateStory,
   getTutorResponse,
   DEFAULT_GEMINI_KEY,
-  GEMINI_API_URL
+  GEMINI_API_URL,
+  GEMINI_FALLBACK_URL,
 };
