@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, AlertCircle } from 'lucide-react';
+import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, Image, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
+import { generateVisualIllustration } from '../services/imagenService';
 import SentenceTokenViewer from './SentenceTokenViewer';
 
 export default function WordModal({ word, onClose }) {
-  const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets } = useApp();
+  const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets, apiKey } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [speechResult, setSpeechResult] = useState(null);
   const [activeSpeed, setActiveSpeed] = useState(0.9);
+
+  // Imagen 4.0 Visual Memory Illustration State
+  const [illustrationUrl, setIllustrationUrl] = useState(null);
+  const [generatingImage, setGeneratingImage] = useState(false);
 
   if (!word) return null;
 
@@ -19,6 +24,21 @@ export default function WordModal({ word, onClose }) {
   const handlePlayWord = (rate = activeSpeed) => {
     setActiveSpeed(rate);
     playAudio(word.word, { speed: rate, presetId: voicePreset });
+  };
+
+  const handleGenerateIllustration = async () => {
+    setGeneratingImage(true);
+    try {
+      const url = await generateVisualIllustration(word.word, word.example || '', apiKey);
+      if (url) {
+        setIllustrationUrl(url);
+        addNotification(`Generated 3D visual illustration for "${word.word}"`, 'success');
+      }
+    } catch (err) {
+      addNotification('Failed to generate visual illustration.', 'warning');
+    } finally {
+      setGeneratingImage(false);
+    }
   };
 
   const handleRecordSpeech = () => {
@@ -37,9 +57,9 @@ export default function WordModal({ word, onClose }) {
         setIsRecording(false);
         setSpeechResult(res);
         if (res.score >= 80) {
-          addNotification(`Excellent pronunciation! Score: ${res.score}%`, 'success');
+          addNotification(`Outstanding pronunciation! Score: ${res.score}%`, 'success');
         } else {
-          addNotification(`Score: ${res.score}%. Try speaking clearly into microphone.`, 'info');
+          addNotification(`Score: ${res.score}%. Practice stressed syllables.`, 'info');
         }
       },
       (err) => {
@@ -63,7 +83,7 @@ export default function WordModal({ word, onClose }) {
         {/* Header Badges */}
         <div className="flex items-center gap-3 mb-4">
           <span className="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-            CEFR {word.cefr || 'B1'}
+            CEFR {word.cefr || word.level || 'B1'}
           </span>
           <span className="px-3 py-1 text-xs font-medium rounded-full bg-slate-800 text-slate-300 italic">
             {word.pos}
@@ -81,14 +101,40 @@ export default function WordModal({ word, onClose }) {
             {word.word}
           </h2>
           <span className="text-lg text-cyan-400/90 font-mono ltr-token">
-            {word.ipa || `/${word.word}/`}
+            {word.ipa || word.phonetic || `/${word.word}/`}
           </span>
         </div>
 
         {/* Arabic Meaning */}
         <div className="mb-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-right">
           <span className="text-xs text-slate-400 block mb-1">الترجمة العربية والتعريف</span>
-          <p className="text-xl font-bold text-amber-300 dir-rtl">{word.arabic}</p>
+          <p className="text-xl font-bold text-amber-300 dir-rtl">{word.arabic || word.translation}</p>
+        </div>
+
+        {/* Imagen 4.0 3D Visual Memory Concept */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Image className="w-4 h-4 text-purple-400" /> Imagen 4.0 Visual Memory Illustration
+            </span>
+
+            {!illustrationUrl && (
+              <button
+                onClick={handleGenerateIllustration}
+                disabled={generatingImage}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/80 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+              >
+                {generatingImage ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {generatingImage ? 'Generating...' : 'Generate 3D Concept'}
+              </button>
+            )}
+          </div>
+
+          {illustrationUrl && (
+            <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-slate-950 flex items-center justify-center p-4">
+              <img src={illustrationUrl} alt={word.word} className="w-48 h-48 object-contain rounded-xl shadow-lg" />
+            </div>
+          )}
         </div>
 
         {/* Voice Selector & Audio Controls */}
@@ -145,39 +191,11 @@ export default function WordModal({ word, onClose }) {
           <div className="mb-6 p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-300">Speech Accuracy Score</span>
-              <span
-                className={`text-base font-extrabold ${
-                  speechResult.score >= 80 ? 'text-emerald-400' : 'text-amber-400'
-                }`}
-              >
+              <span className={`text-base font-extrabold ${speechResult.score >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
                 {speechResult.score}%
               </span>
             </div>
             <p className="text-xs text-slate-400 italic">Transcribed: "{speechResult.transcript || 'None'}"</p>
-            <div className="w-full bg-slate-800 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-500 ${
-                  speechResult.score >= 80 ? 'bg-emerald-500' : 'bg-amber-500'
-                }`}
-                style={{ width: `${speechResult.score}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Collocations & Synonyms if available */}
-        {word.collocations && word.collocations.length > 0 && (
-          <div className="mb-4">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              Common Collocations
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {word.collocations.map((col, i) => (
-                <span key={i} className="px-2.5 py-1 bg-slate-900 text-cyan-300 border border-slate-800 rounded-lg text-xs font-mono">
-                  {col}
-                </span>
-              ))}
-            </div>
           </div>
         )}
 
@@ -193,7 +211,7 @@ export default function WordModal({ word, onClose }) {
           </div>
         )}
 
-        {/* Footer */}
+        {/* Footer Actions */}
         <div className="mt-auto pt-4 border-t border-slate-800/80 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <button

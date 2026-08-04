@@ -12,6 +12,7 @@ import {
   MessageSquare,
   UserCheck,
   Volume2,
+  Activity,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -25,7 +26,7 @@ export default function Navbar() {
     t,
     voicePreset,
     setVoicePreset,
-    voicePresets
+    voicePresets,
   } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -34,6 +35,7 @@ export default function Navbar() {
     { id: 'sentence', label: t('navSentence'), icon: Sparkles },
     { id: 'story', label: t('navStory'), icon: MessageSquare },
     { id: 'tutor', label: t('navTutor'), icon: UserCheck },
+    { id: 'pronunciation', label: t('navPronunciation'), icon: Activity },
     { id: 'flashcards', label: t('navFlashcards'), icon: Layers },
     { id: 'quiz', label: t('navQuiz'), icon: Award },
     { id: 'analytics', label: t('navAnalytics'), icon: BarChart3 },
@@ -59,7 +61,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Navigation Tabs */}
-          <nav className="hidden lg:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800">
+          <nav className="hidden xl:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -68,13 +70,13 @@ export default function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-3.5 h-3.5" />
                   <span>{item.label}</span>
                 </button>
               );
@@ -120,7 +122,7 @@ export default function Navbar() {
             {/* Mobile Menu Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-400 hover:text-white rounded-xl lg:hidden"
+              className="p-2 text-slate-400 hover:text-white rounded-xl xl:hidden"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -130,7 +132,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden p-4 bg-slate-950 border-b border-slate-800 space-y-2">
+        <div className="xl:hidden p-4 bg-slate-950 border-b border-slate-800 space-y-2">
           <div className="p-2 bg-slate-900 rounded-xl mb-3 flex items-center justify-between">
             <span className="text-xs text-slate-400 font-semibold">Select AI Voice:</span>
             <select
