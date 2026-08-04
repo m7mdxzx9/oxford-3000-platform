@@ -81,7 +81,7 @@ export const SentenceTokenViewer = ({
 
     try {
       setPlayingWord(word);
-      await playAudio(word, 'en-US', 0.85);
+      await playAudio(word, { speed: 0.85 });
     } catch (err) {
       console.error('Word audio playback error:', err);
     } finally {
