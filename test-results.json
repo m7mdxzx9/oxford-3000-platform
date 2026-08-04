@@ -1,0 +1,30 @@
+{
+  "startTime": 1785877121781,
+  "total": 67,
+  "passed": 67,
+  "failed": 0,
+  "skipped": 0,
+  "tiers": {
+    "tier1": {
+      "total": 25,
+      "passed": 25,
+      "failed": 0
+    },
+    "tier2": {
+      "total": 25,
+      "passed": 25,
+      "failed": 0
+    },
+    "tier3": {
+      "total": 12,
+      "passed": 12,
+      "failed": 0
+    },
+    "tier4": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    }
+  },
+  "failures": []
+}
