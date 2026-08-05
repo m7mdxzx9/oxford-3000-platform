@@ -100,41 +100,40 @@ export default function PronunciationStudio() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Studio Header Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl" />
+      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-white/[0.08] relative overflow-hidden">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-xl">
-            <Activity className="w-6 h-6" />
+          <div className="p-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl">
+            <Activity className="w-5 h-5" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Pronunciation & Speech Studio</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Pronunciation & Speech Studio</h2>
         </div>
-        <p className="text-slate-400 text-sm sm:text-base max-w-2xl">
-          Dedicated Speech Lab evaluating Word Error Rate (WER), Levenshtein phonetic alignment, and character-level distance metrics.
+        <p className="text-zinc-400 text-xs sm:text-sm max-w-2xl">
+          Speech Laboratory evaluating Word Error Rate (WER), Levenshtein phonetic alignment, and character-level distance metrics.
         </p>
       </div>
 
       {/* Target Sentence Input & Dual TTS Engine Controls */}
-      <div className="glass-panel p-6 rounded-3xl border border-cyan-900/30 space-y-6">
+      <div className="glass-panel p-6 rounded-2xl border border-white/[0.08] space-y-6">
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
             Target Practice Sentence or Word
           </label>
           <textarea
             value={targetSentence}
             onChange={(e) => setTargetSentence(e.target.value)}
             rows={2}
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-4 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-base font-medium ltr-token"
+            className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl p-3.5 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 text-sm font-medium ltr-token"
           />
         </div>
 
         {/* TTS Customization Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-zinc-900/80 border border-white/[0.06]">
           <div>
-            <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Human Voice Preset</label>
+            <label className="block text-[11px] font-semibold text-zinc-400 uppercase mb-1">Human Voice Preset</label>
             <select
               value={voicePreset}
               onChange={(e) => setVoicePreset(e.target.value)}
-              className="w-full bg-slate-950 text-cyan-300 text-xs p-2 rounded-xl border border-slate-800 focus:outline-none"
+              className="w-full bg-zinc-950 text-zinc-200 text-xs p-2 rounded-lg border border-white/[0.08] focus:outline-none"
             >
               {voicePresets.map((vp) => (
                 <option key={vp.id} value={vp.id}>
@@ -145,7 +144,7 @@ export default function PronunciationStudio() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Speed Rate ({speed}x)</label>
+            <label className="block text-[11px] font-semibold text-zinc-400 uppercase mb-1">Speed Rate ({speed}x)</label>
             <input
               type="range"
               min="0.5"
@@ -153,12 +152,12 @@ export default function PronunciationStudio() {
               step="0.1"
               value={speed}
               onChange={(e) => setSpeed(Number(e.target.value))}
-              className="w-full accent-cyan-400 cursor-pointer"
+              className="w-full accent-indigo-500 cursor-pointer"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Pitch Level ({pitch})</label>
+            <label className="block text-[11px] font-semibold text-zinc-400 uppercase mb-1">Pitch Level ({pitch})</label>
             <input
               type="range"
               min="0.8"
@@ -166,18 +165,18 @@ export default function PronunciationStudio() {
               step="0.05"
               value={pitch}
               onChange={(e) => setPitch(Number(e.target.value))}
-              className="w-full accent-cyan-400 cursor-pointer"
+              className="w-full accent-indigo-500 cursor-pointer"
             />
           </div>
         </div>
 
         {/* Action Buttons & Waveform */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
           <button
             onClick={handlePlayTTS}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-2xl font-bold transition-all shadow-lg shadow-cyan-600/20"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
           >
-            <Volume2 className="w-5 h-5" /> Play TTS Audio
+            <Volume2 className="w-4 h-4" /> Play TTS Audio
           </button>
 
           {/* Live Waveform Canvas during recording */}

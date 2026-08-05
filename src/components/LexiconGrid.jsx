@@ -11,32 +11,32 @@ import WordModal from './WordModal';
 // CEFR Level Color Badge Mapping
 const CEFR_BADGES = {
   A1: {
-    bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10',
+    bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     label: 'A1 Beginner',
   },
   A2: {
-    bg: 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-teal-500/10',
+    bg: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
     label: 'A2 Elementary',
   },
   B1: {
-    bg: 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10',
+    bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     label: 'B1 Intermediate',
   },
   B2: {
-    bg: 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-purple-500/10',
+    bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
     label: 'B2 Upper-Int',
   },
 };
 
 // Part of Speech Badge Styling
 const POS_STYLES = {
-  noun: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
-  verb: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-  adjective: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  adverb: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  preposition: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-  conjunction: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30',
-  pronoun: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+  noun: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  verb: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  adjective: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  adverb: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  preposition: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+  conjunction: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  pronoun: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
 };
 
 // Individual Interactive Lexicon Card Component
@@ -138,7 +138,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
       onClick={() => onCardClick && onCardClick(wordObj)}
       className={`group relative flex flex-col justify-between p-5 rounded-2xl cursor-pointer transition-all duration-300 glass-card-interactive ${
         selected
-          ? 'ring-2 ring-cyan-400/80 bg-cyan-950/20 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
+          ? 'ring-2 ring-indigo-500/80 bg-indigo-950/20 border-indigo-500/40 shadow-lg shadow-indigo-500/10'
           : mastered
           ? 'border-emerald-500/30 bg-emerald-950/10'
           : ''
@@ -151,8 +151,8 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           onClick={handleSelectWord}
           className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
             selected
-              ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm'
-              : 'bg-slate-900/60 text-slate-400 border-slate-700/60 hover:border-cyan-500/50 hover:text-cyan-300'
+              ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+              : 'bg-zinc-900/80 text-zinc-400 border-white/[0.08] hover:border-indigo-500/40 hover:text-indigo-300'
           }`}
           title={selected ? 'Remove from Storyteller' : 'Select for AI Storyteller (Max 5)'}
         >
@@ -217,11 +217,11 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         {/* Word Title & Audio Play Button */}
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 dir="ltr" className="ltr-isolate text-xl font-bold text-white tracking-tight group-hover:text-cyan-300 transition-colors">
+            <h3 dir="ltr" className="ltr-isolate text-xl font-bold text-white tracking-tight group-hover:text-indigo-300 transition-colors">
               {wordObj.word}
             </h3>
             {wordObj.ipa && (
-              <p dir="ltr" className="ltr-isolate text-xs font-mono text-cyan-400/80 mt-0.5">
+              <p dir="ltr" className="ltr-isolate text-xs font-mono text-zinc-400 mt-0.5">
                 {wordObj.ipa}
               </p>
             )}
@@ -233,8 +233,8 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
             disabled={isPlayingWord}
             className={`p-2 rounded-xl border transition-all ${
               isPlayingWord
-                ? 'bg-cyan-500 text-slate-950 border-cyan-400 animate-pulse'
-                : 'bg-slate-900/80 text-cyan-400 border-cyan-800/40 hover:bg-cyan-500/20 hover:border-cyan-500/60'
+                ? 'bg-indigo-600 text-white border-indigo-400 animate-pulse'
+                : 'bg-zinc-900/80 text-zinc-300 border-white/[0.08] hover:bg-indigo-500/10 hover:border-indigo-500/40 hover:text-indigo-300'
             }`}
             title="Listen to pronunciation (TTS)"
           >
@@ -463,17 +463,17 @@ export const LexiconGrid = () => {
           <div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
               <span>Oxford 3000™ Lexicon Catalog</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono">
                 {totalFilteredItems} Words
               </span>
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-zinc-400 mt-1">
               Explore the complete Oxford 3000 CEFR vocabulary (A1-B2) with audio TTS, IPA phonetics, and Arabic translations.
             </p>
           </div>
 
           {/* Items Per Page Selector */}
-          <div className="flex items-center space-x-2 text-xs text-slate-400">
+          <div className="flex items-center space-x-2 text-xs text-zinc-400">
             <span>Show:</span>
             <select
               value={itemsPerPage}
@@ -481,7 +481,7 @@ export const LexiconGrid = () => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="glass-input px-2.5 py-1.5 rounded-lg text-slate-200 bg-slate-900/80 border border-slate-700/60 focus:border-cyan-500"
+              className="glass-input px-2.5 py-1.5 rounded-lg text-zinc-200 bg-zinc-900 border border-white/[0.08] focus:border-indigo-500"
             >
               <option value={16}>16 per page</option>
               <option value={20}>20 per page</option>
@@ -493,7 +493,7 @@ export const LexiconGrid = () => {
 
         {/* Interactive Search Bar & Clear Action */}
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -503,7 +503,7 @@ export const LexiconGrid = () => {
             value={searchQuery}
             onChange={handleSearchChange}
             placeholder="Search word in English or translation in Arabic..."
-            className="w-full pl-10 pr-24 py-3 rounded-xl glass-input text-sm text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500 transition-all"
+            className="w-full pl-10 pr-24 py-3 rounded-xl glass-input text-sm text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
           />
           {searchQuery && (
             <button
