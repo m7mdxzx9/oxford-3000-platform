@@ -13,7 +13,6 @@ import {
   UserCheck,
   Volume2,
   Activity,
-  Zap
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -45,47 +44,47 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full glass-panel border-b border-black/10 transition-all duration-300">
+    <header className="sticky top-0 z-40 w-full glass-panel border-b transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Brand Logo & Editorial Title */}
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setActiveTab('grid')}>
-            <div className="w-10 h-10 rounded-xl bg-black/5 border border-black/10 flex items-center justify-center font-bold text-lg">
+        <div className="flex items-center justify-between min-h-16 py-2 sm:py-3 gap-3 flex-wrap">
+          {/* Brand Logo & Title */}
+          <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => setActiveTab('grid')}>
+            <div className="w-9 h-9 rounded-xl border flex items-center justify-center font-bold text-base theme-btn-secondary">
               ⚡
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
+              <h1 className="text-sm sm:text-base font-extrabold tracking-tight flex items-center gap-1.5">
                 <span>Oxford 3000™</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full border border-black/20 font-bold font-mono">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full border font-bold font-mono opacity-80">
                   PRO
                 </span>
               </h1>
-              <p className="text-[11px] opacity-75 font-semibold">
-                Multi-Theme CEFR Platform
+              <p className="text-[10px] opacity-75 font-semibold">
+                Multi-Theme Platform
               </p>
             </div>
           </div>
 
-          {/* Dynamic Theme Switcher Control Bar */}
-          <div className="hidden md:flex items-center gap-1.5 p-1.5 rounded-xl border border-black/20 bg-black/5">
+          {/* Dynamic Theme Switcher Pills Bar */}
+          <div className="flex items-center gap-1 p-1 rounded-xl border bg-[var(--bg-card)]">
             {THEMES.map((th) => (
               <button
                 key={th.id}
                 onClick={() => setTheme(th.id)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all ${
                   theme === th.id
                     ? 'theme-btn-primary shadow-sm'
-                    : 'opacity-70 hover:opacity-100 hover:bg-black/5'
+                    : 'opacity-70 hover:opacity-100'
                 }`}
               >
                 <span>{th.emoji}</span>
-                <span>{th.label}</span>
+                <span className="hidden xs:inline">{th.label}</span>
               </button>
             ))}
           </div>
 
           {/* Desktop Navigation Tabs */}
-          <nav className="hidden xl:flex items-center gap-1 p-1.5 rounded-xl border border-black/10">
+          <nav className="hidden xl:flex items-center gap-1 p-1 rounded-xl border bg-[var(--bg-card)]">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -94,10 +93,10 @@ export default function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                     isActive
                       ? 'theme-btn-primary'
-                      : 'opacity-70 hover:opacity-100 hover:bg-black/5'
+                      : 'opacity-70 hover:opacity-100'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -110,7 +109,7 @@ export default function Navbar() {
           {/* Controls Bar */}
           <div className="flex items-center gap-2">
             {/* Natural Voice Selector */}
-            <div className="hidden sm:flex items-center gap-1.5 border border-black/15 px-2.5 py-1.5 rounded-xl text-xs font-bold">
+            <div className="hidden sm:flex items-center gap-1 border px-2 py-1 rounded-xl text-xs font-bold">
               <Volume2 className="w-3.5 h-3.5" />
               <select
                 value={voicePreset}
@@ -118,7 +117,7 @@ export default function Navbar() {
                 className="bg-transparent font-bold focus:outline-none cursor-pointer text-xs"
               >
                 {voicePresets.map((vp) => (
-                  <option key={vp.id} value={vp.id} className="bg-white text-black font-bold">
+                  <option key={vp.id} value={vp.id} className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">
                     {vp.name}
                   </option>
                 ))}
@@ -128,7 +127,7 @@ export default function Navbar() {
             {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center gap-1.5 px-3 py-1.5 theme-btn-secondary text-xs font-bold transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 theme-btn-secondary text-xs font-bold transition-all"
             >
               <Globe className="w-3.5 h-3.5" />
               <span>{t('langToggle')}</span>
@@ -137,7 +136,7 @@ export default function Navbar() {
             {/* API Key Modal Button */}
             <button
               onClick={() => setIsApiKeyModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 theme-btn-primary text-xs font-extrabold transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 theme-btn-primary text-xs font-extrabold transition-all"
             >
               <Key className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">AI Active</span>
@@ -146,7 +145,7 @@ export default function Navbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 border border-black/20 rounded-xl xl:hidden"
+              className="p-1.5 border rounded-xl xl:hidden text-xs font-bold"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -154,33 +153,15 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation & Theme Switcher */}
+      {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="xl:hidden p-4 border-b border-black/20 space-y-3">
-          {/* Mobile Theme Switcher Bar */}
-          <div className="p-2 bg-black/5 rounded-xl flex items-center justify-between gap-1">
-            <span className="text-xs font-extrabold">Theme:</span>
-            <div className="flex items-center gap-1">
-              {THEMES.map((th) => (
-                <button
-                  key={th.id}
-                  onClick={() => setTheme(th.id)}
-                  className={`px-2 py-1 rounded text-xs font-black ${
-                    theme === th.id ? 'theme-btn-primary' : 'opacity-70'
-                  }`}
-                >
-                  {th.emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-3 border border-black/10 rounded-xl flex items-center justify-between">
+        <div className="xl:hidden p-3 border-b space-y-2">
+          <div className="p-2 border rounded-xl flex items-center justify-between">
             <span className="text-xs font-bold">Select Voice:</span>
             <select
               value={voicePreset}
               onChange={(e) => setVoicePreset(e.target.value)}
-              className="p-1 rounded text-xs font-bold border border-black/20"
+              className="p-1 rounded text-xs font-bold border"
             >
               {voicePresets.map((vp) => (
                 <option key={vp.id} value={vp.id}>
@@ -201,7 +182,7 @@ export default function Navbar() {
                   setActiveTab(item.id);
                   setMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-extrabold transition-all ${
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-extrabold transition-all ${
                   isActive ? 'theme-btn-primary' : 'theme-btn-secondary'
                 }`}
               >

@@ -32,10 +32,14 @@ function MainContent() {
 export default function App() {
   return (
     <AppProvider>
-      <div className="min-h-screen bg-[#060d21] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+      <div
+        id="theme-app"
+        className="min-h-screen flex flex-col transition-colors duration-300 font-sans"
+        style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-main)' }}
+      >
         <Navbar />
         <MainContent />
-        <footer className="glass-panel border-t border-cyan-900/30 py-4 px-4 text-center text-xs text-slate-400 mt-auto">
+        <footer className="glass-panel border-t py-4 px-4 text-center text-xs opacity-75 mt-auto">
           <p>Oxford 3000™ CEFR Lexicon Application &copy; 2026. Built with React 18, Vite & Tailwind CSS.</p>
         </footer>
         <ApiKeyModal />

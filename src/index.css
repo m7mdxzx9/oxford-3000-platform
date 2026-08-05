@@ -10,7 +10,8 @@
 
 /* Theme 1: Neo-Brutalism (data-theme="brutalism") */
 :root,
-:root[data-theme="brutalism"] {
+:root[data-theme="brutalism"],
+[data-theme="brutalism"] {
   --bg-page: #FEF08A;
   --bg-card: #FFFFFF;
   --bg-surface: #FEE2E2;
@@ -30,7 +31,8 @@
 }
 
 /* Theme 2: Organic Terracotta (data-theme="organic") */
-:root[data-theme="organic"] {
+:root[data-theme="organic"],
+[data-theme="organic"] {
   --bg-page: #FDFBF7;
   --bg-card: #F5EFE6;
   --bg-surface: #EADBC8;
@@ -50,7 +52,8 @@
 }
 
 /* Theme 3: Swiss Minimalist (data-theme="swiss") */
-:root[data-theme="swiss"] {
+:root[data-theme="swiss"],
+[data-theme="swiss"] {
   --bg-page: #FFFFFF;
   --bg-card: #F4F4F5;
   --bg-surface: #E4E4E7;
@@ -70,19 +73,23 @@
 }
 
 /* Swiss Card Special Accent Top Border */
-:root[data-theme="swiss"] .card-theme-target,
-:root[data-theme="swiss"] .glass-panel,
-:root[data-theme="swiss"] .glass-card,
-:root[data-theme="swiss"] .glass-card-interactive {
+[data-theme="swiss"] .card-theme-target,
+[data-theme="swiss"] .glass-panel,
+[data-theme="swiss"] .glass-card,
+[data-theme="swiss"] .glass-card-interactive {
   border-top: 4px solid var(--bg-accent) !important;
 }
 
-/* Global Applied Theme Styles */
-body {
-  background-color: var(--bg-page);
-  color: var(--text-main);
+/* GLOBAL PAGE BACKGROUND SYNCHRONIZATION */
+html,
+body,
+#root,
+#theme-app {
+  background-color: var(--bg-page) !important;
+  color: var(--text-main) !important;
   font-family: var(--font-family);
   transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -116,19 +123,19 @@ h1, h2, h3, h4, h5, h6 {
   .glass-card,
   .glass-card-interactive,
   .card-theme-target {
-    background-color: var(--bg-card);
+    background-color: var(--bg-card) !important;
     border: var(--border-card);
     box-shadow: var(--shadow-card);
     border-radius: var(--radius-card);
-    color: var(--text-main);
+    color: var(--text-main) !important;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-input {
-    background-color: var(--bg-card);
+    background-color: var(--bg-card) !important;
     border: var(--border-input);
     border-radius: var(--radius-btn);
-    color: var(--text-main);
+    color: var(--text-main) !important;
     transition: all 0.2s ease;
   }
 
@@ -139,8 +146,8 @@ h1, h2, h3, h4, h5, h6 {
 
   /* Scoped Dynamic Buttons */
   .theme-btn-primary {
-    background-color: var(--bg-accent);
-    color: var(--text-accent);
+    background-color: var(--bg-accent) !important;
+    color: var(--text-accent) !important;
     border: var(--border-input);
     border-radius: var(--radius-btn);
     box-shadow: var(--shadow-btn);
@@ -149,12 +156,12 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .theme-btn-primary:hover {
-    background-color: var(--bg-accent-hover);
+    background-color: var(--bg-accent-hover) !important;
   }
 
   .theme-btn-secondary {
-    background-color: var(--bg-card);
-    color: var(--text-main);
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
     border: var(--border-input);
     border-radius: var(--radius-btn);
     box-shadow: var(--shadow-btn);
@@ -163,24 +170,24 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   /* Neo-Brutalism Tactile Press Mechanics */
-  :root[data-theme="brutalism"] .theme-btn-primary:hover,
-  :root[data-theme="brutalism"] .theme-btn-secondary:hover,
-  :root[data-theme="brutalism"] .glass-card-interactive:hover {
+  [data-theme="brutalism"] .theme-btn-primary:hover,
+  [data-theme="brutalism"] .theme-btn-secondary:hover,
+  [data-theme="brutalism"] .glass-card-interactive:hover {
     box-shadow: 8px 8px 0px #000000;
     transform: translate(-2px, -2px);
   }
 
-  :root[data-theme="brutalism"] .theme-btn-primary:active,
-  :root[data-theme="brutalism"] .theme-btn-secondary:active,
-  :root[data-theme="brutalism"] .glass-card-interactive:active {
+  [data-theme="brutalism"] .theme-btn-primary:active,
+  [data-theme="brutalism"] .theme-btn-secondary:active,
+  [data-theme="brutalism"] .glass-card-interactive:active {
     box-shadow: 2px 2px 0px #000000;
     transform: translate(2px, 2px);
   }
 
   /* Swiss Minimalist Invert Hover Mechanics */
-  :root[data-theme="swiss"] .glass-card-interactive:hover {
+  [data-theme="swiss"] .glass-card-interactive:hover {
     border-color: #000000;
-    background-color: #FFFFFF;
+    background-color: #FFFFFF !important;
   }
 }
 
