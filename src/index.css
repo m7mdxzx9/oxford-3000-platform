@@ -1,25 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --bg-dark: #060d21;
-    --glass-bg: rgba(15, 23, 42, 0.65);
-    --glass-border: rgba(255, 255, 255, 0.10);
-    --glass-border-hover: rgba(56, 189, 248, 0.35);
+    --bg-dark: #090a0f;
+    --card-bg: rgba(18, 20, 29, 0.7);
+    --border-color: rgba(255, 255, 255, 0.08);
   }
 
   body {
     background-color: var(--bg-dark);
-    color: #f8fafc;
-    font-family: 'Inter', system-ui, sans-serif;
+    color: #f3f4f6;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 @layer utilities {
-  /* LTR CSS Layout Isolation Rules for English Tokens */
+  /* Strict LTR Isolation Rules */
   .ltr-token,
   .ltr-isolate,
   [dir="ltr"] {
@@ -28,86 +30,81 @@
     text-align: left;
   }
 
-  /* RTL CSS Layout Isolation Rules for Arabic Text */
+  /* Strict RTL Isolation Rules for Arabic */
   .rtl-text,
   .rtl-isolate,
   [dir="rtl"] {
     direction: rtl !important;
     unicode-bidi: isolate !important;
     text-align: right;
-    font-family: 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif;
+    font-family: 'IBM Plex Sans Arabic', sans-serif;
   }
 
-  /* Dark Glassmorphism Utility Classes */
+  /* Ultra-Premium Glass & Card Styles */
   .glass-panel {
-    background-color: rgba(15, 23, 42, 0.65);
+    background-color: rgba(18, 20, 29, 0.75);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   }
 
   .glass-card {
-    background: rgba(30, 41, 59, 0.45);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    transition: all 0.2s ease-in-out;
+    background: rgba(24, 27, 38, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-card:hover {
-    background: rgba(30, 41, 59, 0.65);
-    border-color: rgba(99, 102, 241, 0.3);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    background: rgba(28, 32, 46, 0.75);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
   }
 
   .glass-card-interactive {
-    background-color: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: rgba(18, 20, 29, 0.7);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-card-interactive:hover {
-    border-color: rgba(56, 189, 248, 0.4);
-    background-color: rgba(30, 41, 59, 0.75);
-    box-shadow: 0 0 25px -3px rgba(56, 189, 248, 0.25);
+    border-color: rgba(99, 102, 241, 0.4);
+    background-color: rgba(26, 30, 44, 0.85);
+    box-shadow: 0 12px 32px -8px rgba(99, 102, 241, 0.15);
     transform: translateY(-2px);
   }
 
   .glass-input {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(4px);
-    color: #f8fafc;
+    background: rgba(14, 16, 24, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+    transition: all 0.2s ease;
   }
 
   .glass-input:focus {
     outline: none;
     border-color: rgba(99, 102, 241, 0.6);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-  }
-
-  .text-gradient-primary {
-    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
   }
 }
 
-/* Custom Scrollbar */
+/* Custom Refined Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(6, 13, 33, 0.5);
+  background: #090a0f;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
 }

@@ -13,6 +13,7 @@ import {
   UserCheck,
   Volume2,
   Activity,
+  Zap
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -20,7 +21,6 @@ export default function Navbar() {
   const {
     activeTab,
     setActiveTab,
-    apiKey,
     setIsApiKeyModalOpen,
     toggleLanguage,
     t,
@@ -42,26 +42,29 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#060d21]/80 border-b border-cyan-900/30">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[#090a0f]/85 border-b border-white/[0.08]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Brand Logo */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('grid')}>
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              <BookOpen className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+        <div className="flex items-center justify-between h-16 sm:h-18">
+          {/* Brand Logo & Editorial Title */}
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setActiveTab('grid')}>
+            <div className="w-9 h-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:border-indigo-400/50 transition-all">
+              <Zap className="w-4 h-4 stroke-[2.5]" />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
-                {t('appTitle')}
+              <h1 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Oxford 3000™</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono">
+                  PRO
+                </span>
               </h1>
-              <p className="text-[10px] text-cyan-400 font-semibold tracking-wider uppercase">
-                {t('appSubtitle')}
+              <p className="text-[11px] text-zinc-400 font-medium">
+                CEFR Vocabulary Suite
               </p>
             </div>
           </div>
 
           {/* Desktop Navigation Tabs */}
-          <nav className="hidden xl:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800">
+          <nav className="hidden lg:flex items-center gap-1 bg-zinc-900/80 p-1 rounded-xl border border-white/[0.06]">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -70,10 +73,10 @@ export default function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     isActive
-                      ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -83,62 +86,62 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Controls */}
+          {/* Controls Bar */}
           <div className="flex items-center gap-2">
-            {/* Natural Voice Selector Dropdown */}
-            <div className="hidden sm:flex items-center gap-1 bg-slate-900/80 border border-slate-800 px-2 py-1.5 rounded-xl text-xs">
-              <Volume2 className="w-3.5 h-3.5 text-cyan-400" />
+            {/* Natural Voice Selector */}
+            <div className="hidden sm:flex items-center gap-1.5 bg-zinc-900/80 border border-white/[0.08] px-2.5 py-1.5 rounded-xl text-xs">
+              <Volume2 className="w-3.5 h-3.5 text-zinc-400" />
               <select
                 value={voicePreset}
                 onChange={(e) => setVoicePreset(e.target.value)}
-                className="bg-transparent text-slate-200 font-medium focus:outline-none cursor-pointer text-xs"
+                className="bg-transparent text-zinc-200 font-medium focus:outline-none cursor-pointer text-xs"
               >
                 {voicePresets.map((vp) => (
-                  <option key={vp.id} value={vp.id} className="bg-slate-950 text-white">
+                  <option key={vp.id} value={vp.id} className="bg-zinc-950 text-white">
                     {vp.name}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Language Toggle Button */}
+            {/* Language Switcher */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-900/80 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 rounded-xl text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-white/[0.08] rounded-xl text-xs font-semibold transition-all"
             >
-              <Globe className="w-4 h-4" />
+              <Globe className="w-3.5 h-3.5 text-zinc-400" />
               <span>{t('langToggle')}</span>
             </button>
 
-            {/* API Key Status */}
+            {/* API Key Modal Button */}
             <button
               onClick={() => setIsApiKeyModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20"
             >
-              <Key className="w-4 h-4" />
-              <span className="hidden sm:inline">Gemini AI Active</span>
+              <Key className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">AI Active</span>
             </button>
 
-            {/* Mobile Menu Hamburger */}
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-400 hover:text-white rounded-xl xl:hidden"
+              className="p-2 text-zinc-400 hover:text-white rounded-xl lg:hidden"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="xl:hidden p-4 bg-slate-950 border-b border-slate-800 space-y-2">
-          <div className="p-2 bg-slate-900 rounded-xl mb-3 flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-semibold">Select AI Voice:</span>
+        <div className="lg:hidden p-4 bg-zinc-950 border-b border-zinc-800 space-y-2">
+          <div className="p-3 bg-zinc-900 rounded-xl mb-3 flex items-center justify-between">
+            <span className="text-xs text-zinc-400 font-medium">Select Voice:</span>
             <select
               value={voicePreset}
               onChange={(e) => setVoicePreset(e.target.value)}
-              className="bg-slate-950 text-cyan-300 p-1 rounded text-xs border border-slate-800"
+              className="bg-zinc-950 text-zinc-200 p-1.5 rounded-lg text-xs border border-zinc-800"
             >
               {voicePresets.map((vp) => (
                 <option key={vp.id} value={vp.id}>
@@ -159,11 +162,11 @@ export default function Navbar() {
                   setActiveTab(item.id);
                   setMobileMenuOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
-                  isActive ? 'bg-cyan-500 text-slate-950' : 'text-slate-300 bg-slate-900/50 hover:bg-slate-900'
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  isActive ? 'bg-indigo-600 text-white' : 'text-zinc-300 bg-zinc-900/50 hover:bg-zinc-900'
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-4 h-4" />
                 <span>{item.label}</span>
               </button>
             );
