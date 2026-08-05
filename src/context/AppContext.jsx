@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   CUSTOM_WORDS: 'oxford3000_custom_words',
   LANGUAGE: 'oxford3000_language',
   VOICE_PRESET: 'oxford3000_voice_preset',
+  THEME: 'oxford3000_theme',
 };
 
 const loadFromStorage = (key, fallback) => {
@@ -29,8 +30,19 @@ const saveToStorage = (key, value) => {
   } catch (err) {}
 };
 
+export const THEMES = [
+  { id: 'brutalism', name: 'Neo-Brutalism', emoji: '⚡', label: 'Neo-Brutalism' },
+  { id: 'organic', name: 'Organic Terracotta', emoji: '🌿', label: 'Terracotta' },
+  { id: 'swiss', name: 'Swiss Minimalist', emoji: '🇨🇭', label: 'Swiss Red' },
+];
+
 export const AppProvider = ({ children }) => {
   const [activeTab, setActiveTab] = useState('grid');
+
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.THEME);
+    return stored || 'brutalism';
+  });
 
   const [language, setLanguage] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
@@ -55,6 +67,12 @@ export const AppProvider = ({ children }) => {
 
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+
+  // Update root data-theme attribute whenever theme changes
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.LANGUAGE, language);
@@ -118,7 +136,7 @@ export const AppProvider = ({ children }) => {
       const exists = prev.includes(wordTerm);
       const updated = exists ? prev.filter((w) => w !== wordTerm) : [...prev, wordTerm];
       addNotification(
-        exists ? `Marked "${wordTerm}" as learning` : `🎉 Mastered "${wordTerm}"!`,
+        exists ? `Unmarked "${wordTerm}" as mastered` : `Marked "${wordTerm}" as mastered`,
         exists ? 'info' : 'success'
       );
       return updated;
@@ -127,81 +145,59 @@ export const AppProvider = ({ children }) => {
 
   const isMastered = useCallback((wordTerm) => mastered.includes(wordTerm), [mastered]);
 
+  const addCustomWord = useCallback((wordObj) => {
+    setCustomWords((prev) => [wordObj, ...prev]);
+    addNotification(`Added custom word: "${wordObj.word}"`, 'success');
+  }, [addNotification]);
+
   const toggleSelectWord = useCallback((wordObj) => {
     setSelectedWords((prev) => {
-      const term = typeof wordObj === 'string' ? wordObj : wordObj.word;
-      const exists = prev.some((w) => (typeof w === 'string' ? w : w.word) === term);
-
+      const exists = prev.some((w) => w.word === wordObj.word);
       if (exists) {
-        return prev.filter((w) => (typeof w === 'string' ? w : w.word) !== term);
+        return prev.filter((w) => w.word !== wordObj.word);
       } else {
-        if (prev.length >= 5) {
-          addNotification('Maximum 5 words can be selected for Storytelling.', 'warning');
-          return prev;
-        }
+        if (prev.length >= 5) return prev;
         return [...prev, wordObj];
       }
     });
-  }, [addNotification]);
-
-  const clearSelectedWords = useCallback(() => {
-    setSelectedWords([]);
   }, []);
 
-  const isSelectedWord = useCallback((wordObj) => {
-    const term = typeof wordObj === 'string' ? wordObj : wordObj.word;
-    return selectedWords.some((w) => (typeof w === 'string' ? w : w.word) === term);
-  }, [selectedWords]);
-
-  const addCustomWord = useCallback((wordObj) => {
-    setCustomWords((prev) => {
-      const exists = prev.some((w) => w.word.toLowerCase() === wordObj.word.toLowerCase());
-      if (exists) return prev;
-      addNotification(`Added missing term "${wordObj.word}" to Lexicon!`, 'success');
-      return [wordObj, ...prev];
-    });
-  }, [addNotification]);
+  const isSelectedWord = useCallback(
+    (wordObj) => selectedWords.some((w) => w.word === wordObj.word),
+    [selectedWords]
+  );
 
   const value = {
+    theme,
+    setTheme,
+    THEMES,
+    activeTab,
+    setActiveTab,
     language,
-    setLanguage,
     toggleLanguage,
-    t,
-
     voicePreset,
     setVoicePreset,
     voicePresets: VOICE_PRESETS,
-
-    activeTab,
-    setActiveTab,
-
     favorites,
     toggleFavorite,
     isFavorite,
-    favoritesCount: favorites.length,
-
     mastered,
     toggleMastered,
     isMastered,
-    masteredCount: mastered.length,
-
-    selectedWords,
-    toggleSelectWord,
-    clearSelectedWords,
-    isSelectedWord,
-    selectedWordsCount: selectedWords.length,
-
     customWords,
     addCustomWord,
-
+    selectedWords,
+    toggleSelectWord,
+    isSelectedWord,
+    selectedWordsCount: selectedWords.length,
     apiKey,
     setApiKey,
     isApiKeyModalOpen,
     setIsApiKeyModalOpen,
-
     notifications,
     addNotification,
     removeNotification,
+    t,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -209,10 +205,6 @@ export const AppProvider = ({ children }) => {
 
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within an AppProvider');
-  }
+  if (!context) throw new Error('useApp must be used within AppProvider');
   return context;
 };
-
-export default AppContext;
