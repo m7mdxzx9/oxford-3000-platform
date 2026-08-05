@@ -64,7 +64,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Navigation Tabs */}
-          <nav className="hidden lg:flex items-center gap-1 bg-zinc-900/80 p-1 rounded-xl border border-white/[0.06]">
+          <nav className="hidden xl:flex items-center gap-1 bg-zinc-900/80 p-1 rounded-xl border border-white/[0.06]">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -125,7 +125,7 @@ export default function Navbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-zinc-400 hover:text-white rounded-xl lg:hidden"
+              className="p-2 text-zinc-400 hover:text-white rounded-xl xl:hidden"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -135,7 +135,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="lg:hidden p-4 bg-zinc-950 border-b border-zinc-800 space-y-2">
+        <div className="xl:hidden p-4 bg-zinc-950 border-b border-zinc-800 space-y-2">
           <div className="p-3 bg-zinc-900 rounded-xl mb-3 flex items-center justify-between">
             <span className="text-xs text-zinc-400 font-medium">Select Voice:</span>
             <select

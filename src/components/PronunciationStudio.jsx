@@ -179,19 +179,17 @@ export default function PronunciationStudio() {
             <Volume2 className="w-4 h-4" /> Play TTS Audio
           </button>
 
-          {/* Live Waveform Canvas during recording */}
-          {isRecording && (
-            <div className="w-full sm:w-48 h-10 bg-slate-950/80 rounded-xl border border-cyan-500/40 p-1 flex items-center justify-center">
-              <canvas ref={canvasRef} width={180} height={36} />
-            </div>
-          )}
+          {/* Live Waveform Canvas (Reserved space prevents layout shift CLS) */}
+          <div className={`w-full sm:w-48 h-9 bg-zinc-950 rounded-xl border border-indigo-500/30 p-1 flex items-center justify-center transition-all duration-200 ${isRecording ? 'opacity-100' : 'opacity-0 pointer-events-none hidden sm:flex'}`}>
+            <canvas ref={canvasRef} width={180} height={32} />
+          </div>
 
           <button
             onClick={handleStartRecording}
-            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-bold transition-all ${
+            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
               isRecording
-                ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30'
-                : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg'
+                ? 'bg-rose-600 text-white animate-pulse shadow-sm'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
             }`}
           >
             {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}

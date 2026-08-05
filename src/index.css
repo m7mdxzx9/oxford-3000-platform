@@ -33,11 +33,28 @@
   /* Strict RTL Isolation Rules for Arabic */
   .rtl-text,
   .rtl-isolate,
+  .font-arabic,
   [dir="rtl"] {
     direction: rtl !important;
     unicode-bidi: isolate !important;
     text-align: right;
-    font-family: 'IBM Plex Sans Arabic', sans-serif;
+    font-family: 'IBM Plex Sans Arabic', 'Tajawal', sans-serif !important;
+  }
+
+  /* 3D Transform Utilities for Flashcards */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
   }
 
   /* Ultra-Premium Glass & Card Styles */

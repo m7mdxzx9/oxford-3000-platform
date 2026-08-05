@@ -121,13 +121,13 @@ export default function PersonalTutor() {
 
       {/* Scenario Buttons & Voice Selector */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {SCENARIOS.map((sc) => (
             <button
               key={sc.id}
               onClick={() => handleSelectScenario(sc)}
-              className={`p-2.5 rounded-2xl text-xs font-bold transition-all text-center ${
-                scenario === sc.id ? 'bg-emerald-500 text-slate-950 shadow-md' : 'bg-slate-900/80 text-slate-400 border border-slate-800'
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                scenario === sc.id ? 'bg-indigo-600 text-white shadow-sm border border-indigo-500' : 'bg-zinc-900 text-zinc-400 border border-white/[0.08] hover:text-zinc-200'
               }`}
             >
               {sc.title}
@@ -138,7 +138,7 @@ export default function PersonalTutor() {
         <select
           value={voicePreset}
           onChange={(e) => setVoicePreset(e.target.value)}
-          className="bg-slate-900 text-xs text-cyan-300 p-2.5 rounded-xl border border-slate-800 focus:outline-none w-full sm:w-auto"
+          className="bg-zinc-900 text-xs text-zinc-200 p-2.5 rounded-xl border border-white/[0.08] focus:outline-none w-full sm:w-auto"
         >
           {voicePresets.map((vp) => (
             <option key={vp.id} value={vp.id}>
@@ -149,7 +149,7 @@ export default function PersonalTutor() {
       </div>
 
       {/* Chat Container */}
-      <div className="glass-panel rounded-3xl border border-cyan-900/30 overflow-hidden flex flex-col h-[520px]">
+      <div className="glass-panel rounded-2xl border border-white/[0.08] overflow-hidden flex flex-col min-h-[380px] max-h-[520px] h-[55vh]">
         <div className="p-4 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
           <span className="text-sm font-bold text-white flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
