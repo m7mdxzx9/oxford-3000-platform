@@ -1,108 +1,94 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800;900&family=Cinzel:wght@500;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800;900&family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Tajawal:wght@400;500;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* =========================================================
-   DYNAMIC MULTI-THEME ENGINE (Brutalism, Organic, Swiss)
+   PRECISION DYNAMIC THEME ENGINE & CSS TOKENS
    ========================================================= */
 
-/* ---------------------------------------------------------
-   THEME 1: NEO-BRUTALISM (data-theme="brutalism")
-   High contrast, 3.5px solid black borders, 6px offset shadows, neon pop
-   --------------------------------------------------------- */
+/* Theme 1: Neo-Brutalism (data-theme="brutalism") */
 :root,
-[data-theme="brutalism"] {
-  --bg-main: #FEF08A;
+:root[data-theme="brutalism"] {
+  --bg-page: #FEF08A;
+  --bg-card: #FFFFFF;
+  --bg-surface: #FEE2E2;
+  --bg-accent: #FF0055;
+  --bg-accent-hover: #E6004C;
   --text-main: #000000;
-  --text-muted: #1e1e1e;
-  --card-bg: #FFFFFF;
-  --card-border: 3.5px solid #000000;
-  --card-shadow: 6px 6px 0px #000000;
-  --accent-primary: #FF0055;
-  --accent-secondary: #00F0FF;
-  --accent-text: #FFFFFF;
-  --badge-bg: #00F0FF;
-  --badge-text: #000000;
-  --font-heading: 'Cairo', 'Tajawal', sans-serif;
-  --font-body: 'Tajawal', 'Cairo', sans-serif;
-  --font-arabic: 'Cairo', sans-serif;
-  --radius-card: 0.5rem;
+  --text-muted: #333333;
+  --text-accent: #FFFFFF;
+  --border-card: 3.5px solid #000000;
+  --border-input: 2.5px solid #000000;
+  --shadow-card: 6px 6px 0px #000000;
+  --shadow-btn: 4px 4px 0px #000000;
+  --radius-card: 0.75rem;
   --radius-btn: 0.5rem;
-  --btn-shadow: 4px 4px 0px #000000;
-  --btn-active-shadow: 0px 0px 0px #000000;
-  --header-bg: #FEF08A;
-  --input-bg: #FFFFFF;
+  --font-family: 'Cairo', 'Tajawal', sans-serif;
+  --font-arabic: 'Cairo', sans-serif;
 }
 
-/* ---------------------------------------------------------
-   THEME 2: ORGANIC TERRACOTTA (data-theme="organic")
-   Warm cream, terracotta red/orange, asymmetric radii, serif luxury
-   --------------------------------------------------------- */
-[data-theme="organic"] {
-  --bg-main: #FDFBF7;
+/* Theme 2: Organic Terracotta (data-theme="organic") */
+:root[data-theme="organic"] {
+  --bg-page: #FDFBF7;
+  --bg-card: #F5EFE6;
+  --bg-surface: #EADBC8;
+  --bg-accent: #D96B43;
+  --bg-accent-hover: #C25A34;
   --text-main: #2C221E;
-  --text-muted: #6e5e56;
-  --card-bg: #F5EFE6;
-  --card-border: 1px solid #E6DCCF;
-  --card-shadow: 0 8px 24px rgba(184, 115, 51, 0.08);
-  --accent-primary: #D96B43;
-  --accent-secondary: #8C4A32;
-  --accent-text: #FFFFFF;
-  --badge-bg: #EADBC8;
-  --badge-text: #2C221E;
-  --font-heading: 'Cinzel', 'Amiri', serif;
-  --font-body: 'Tajawal', sans-serif;
-  --font-arabic: 'Amiri', serif;
+  --text-muted: #6B584C;
+  --text-accent: #FFFFFF;
+  --border-card: 1px solid #E6DCCF;
+  --border-input: 1px solid #D8C8B8;
+  --shadow-card: 0 4px 20px rgba(184, 115, 51, 0.08);
+  --shadow-btn: 0 2px 8px rgba(217, 107, 67, 0.15);
   --radius-card: 1.75rem 0.5rem 1.75rem 0.5rem;
-  --radius-btn: 1.5rem 0.5rem;
-  --btn-shadow: 0 4px 14px rgba(217, 107, 67, 0.2);
-  --btn-active-shadow: none;
-  --header-bg: rgba(253, 251, 247, 0.9);
-  --input-bg: #FFFFFF;
+  --radius-btn: 1.25rem 0.5rem;
+  --font-family: 'Tajawal', 'Amiri', sans-serif;
+  --font-arabic: 'Amiri', serif;
 }
 
-/* ---------------------------------------------------------
-   THEME 3: SWISS MINIMALIST (data-theme="swiss")
-   Pure white, top 4px Swiss red border, zero shadow, sharp precision
-   --------------------------------------------------------- */
-[data-theme="swiss"] {
-  --bg-main: #FFFFFF;
+/* Theme 3: Swiss Minimalist (data-theme="swiss") */
+:root[data-theme="swiss"] {
+  --bg-page: #FFFFFF;
+  --bg-card: #F4F4F5;
+  --bg-surface: #E4E4E7;
+  --bg-accent: #DC2626;
+  --bg-accent-hover: #B91C1C;
   --text-main: #000000;
   --text-muted: #52525B;
-  --card-bg: #F4F4F5;
-  --card-border: 1px solid #E4E4E7;
-  --card-top-border: 4px solid #DC2626;
-  --card-shadow: none;
-  --accent-primary: #DC2626;
-  --accent-secondary: #000000;
-  --accent-text: #FFFFFF;
-  --badge-bg: #E4E4E7;
-  --badge-text: #000000;
-  --font-heading: 'Cairo', 'Plus Jakarta Sans', sans-serif;
-  --font-body: 'Plus Jakarta Sans', 'Tajawal', sans-serif;
-  --font-arabic: 'Tajawal', sans-serif;
+  --text-accent: #FFFFFF;
+  --border-card: 1px solid #E4E4E7;
+  --border-input: 1px solid #D4D4D8;
+  --shadow-card: none;
+  --shadow-btn: none;
   --radius-card: 0.25rem;
   --radius-btn: 0.25rem;
-  --btn-shadow: none;
-  --btn-active-shadow: none;
-  --header-bg: #FFFFFF;
-  --input-bg: #FFFFFF;
+  --font-family: 'Cairo', 'Inter', sans-serif;
+  --font-arabic: 'Tajawal', sans-serif;
+}
+
+/* Swiss Card Special Accent Top Border */
+:root[data-theme="swiss"] .card-theme-target,
+:root[data-theme="swiss"] .glass-panel,
+:root[data-theme="swiss"] .glass-card,
+:root[data-theme="swiss"] .glass-card-interactive {
+  border-top: 4px solid var(--bg-accent) !important;
 }
 
 /* Global Applied Theme Styles */
 body {
-  background-color: var(--bg-main);
+  background-color: var(--bg-page);
   color: var(--text-main);
-  font-family: var(--font-body);
+  font-family: var(--font-family);
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
+  font-family: var(--font-family);
 }
 
 @layer utilities {
@@ -125,59 +111,22 @@ h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-arabic) !important;
   }
 
-  /* Universal Theme Responsive Component Classes */
-  .glass-panel {
-    background-color: var(--card-bg);
-    border: var(--card-border);
-    border-top: var(--card-top-border, var(--card-border));
-    box-shadow: var(--card-shadow);
-    border-radius: var(--radius-card);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
+  /* Structural Scoped CSS Variable Panels & Cards */
+  .glass-panel,
   .glass-card,
-  .glass-card-interactive {
-    background-color: var(--card-bg);
-    border: var(--card-border);
-    border-top: var(--card-top-border, var(--card-border));
-    box-shadow: var(--card-shadow);
+  .glass-card-interactive,
+  .card-theme-target {
+    background-color: var(--bg-card);
+    border: var(--border-card);
+    box-shadow: var(--shadow-card);
     border-radius: var(--radius-card);
     color: var(--text-main);
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .glass-card-interactive:hover {
-    transform: translateY(-2px);
-  }
-
-  /* Neo-Brutalism Specific Button Hover / Press Effects */
-  [data-theme="brutalism"] .glass-card-interactive:hover,
-  [data-theme="brutalism"] .theme-btn:hover {
-    box-shadow: 8px 8px 0px #000000;
-    transform: translate(-2px, -2px);
-  }
-
-  [data-theme="brutalism"] .glass-card-interactive:active,
-  [data-theme="brutalism"] .theme-btn:active {
-    box-shadow: 2px 2px 0px #000000;
-    transform: translate(2px, 2px);
-  }
-
-  /* Organic Terracotta Hover Effects */
-  [data-theme="organic"] .glass-card-interactive:hover {
-    border-color: var(--accent-primary);
-    box-shadow: 0 12px 30px rgba(217, 107, 67, 0.15);
-  }
-
-  /* Swiss Minimalist Hover Effects */
-  [data-theme="swiss"] .glass-card-interactive:hover {
-    border-color: #000000;
-    background-color: #FFFFFF;
-  }
-
   .glass-input {
-    background-color: var(--input-bg);
-    border: var(--card-border);
+    background-color: var(--bg-card);
+    border: var(--border-input);
     border-radius: var(--radius-btn);
     color: var(--text-main);
     transition: all 0.2s ease;
@@ -185,27 +134,53 @@ h1, h2, h3, h4, h5, h6 {
 
   .glass-input:focus {
     outline: none;
-    border-color: var(--accent-primary);
+    border-color: var(--bg-accent);
   }
 
+  /* Scoped Dynamic Buttons */
   .theme-btn-primary {
-    background-color: var(--accent-primary);
-    color: var(--accent-text);
-    border: var(--card-border);
+    background-color: var(--bg-accent);
+    color: var(--text-accent);
+    border: var(--border-input);
     border-radius: var(--radius-btn);
-    box-shadow: var(--btn-shadow);
+    box-shadow: var(--shadow-btn);
     font-weight: 800;
     transition: all 0.2s ease;
   }
 
+  .theme-btn-primary:hover {
+    background-color: var(--bg-accent-hover);
+  }
+
   .theme-btn-secondary {
-    background-color: var(--card-bg);
+    background-color: var(--bg-card);
     color: var(--text-main);
-    border: var(--card-border);
+    border: var(--border-input);
     border-radius: var(--radius-btn);
-    box-shadow: var(--btn-shadow);
+    box-shadow: var(--shadow-btn);
     font-weight: 700;
     transition: all 0.2s ease;
+  }
+
+  /* Neo-Brutalism Tactile Press Mechanics */
+  :root[data-theme="brutalism"] .theme-btn-primary:hover,
+  :root[data-theme="brutalism"] .theme-btn-secondary:hover,
+  :root[data-theme="brutalism"] .glass-card-interactive:hover {
+    box-shadow: 8px 8px 0px #000000;
+    transform: translate(-2px, -2px);
+  }
+
+  :root[data-theme="brutalism"] .theme-btn-primary:active,
+  :root[data-theme="brutalism"] .theme-btn-secondary:active,
+  :root[data-theme="brutalism"] .glass-card-interactive:active {
+    box-shadow: 2px 2px 0px #000000;
+    transform: translate(2px, 2px);
+  }
+
+  /* Swiss Minimalist Invert Hover Mechanics */
+  :root[data-theme="swiss"] .glass-card-interactive:hover {
+    border-color: #000000;
+    background-color: #FFFFFF;
   }
 }
 
@@ -215,7 +190,7 @@ h1, h2, h3, h4, h5, h6 {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: var(--bg-page);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--text-muted);

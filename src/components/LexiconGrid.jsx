@@ -136,11 +136,11 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
   return (
     <div
       onClick={() => onCardClick && onCardClick(wordObj)}
-      className={`group relative flex flex-col justify-between p-5 rounded-2xl cursor-pointer transition-all duration-300 glass-card-interactive ${
+      className={`card-theme-target group relative flex flex-col justify-between p-5 pb-6 rounded-2xl cursor-pointer transition-all duration-300 glass-card-interactive ${
         selected
-          ? 'ring-2 ring-indigo-500/80 bg-indigo-950/20 border-indigo-500/40 shadow-lg shadow-indigo-500/10'
+          ? 'ring-2 ring-indigo-500/80 border-indigo-500/60 shadow-lg'
           : mastered
-          ? 'border-emerald-500/30 bg-emerald-950/10'
+          ? 'border-emerald-500/50'
           : ''
       }`}
     >
@@ -151,8 +151,8 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           onClick={handleSelectWord}
           className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
             selected
-              ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
-              : 'bg-zinc-900/80 text-zinc-400 border-white/[0.08] hover:border-indigo-500/40 hover:text-indigo-300'
+              ? 'theme-btn-primary'
+              : 'theme-btn-secondary opacity-80 hover:opacity-100'
           }`}
           title={selected ? 'Remove from Storyteller' : 'Select for AI Storyteller (Max 5)'}
         >
@@ -172,8 +172,8 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
             }}
             className={`p-1.5 rounded-lg border transition-all ${
               mastered
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
-                : 'text-slate-500 hover:text-emerald-400 hover:bg-slate-800/60 border-transparent'
+                ? 'bg-emerald-500/20 text-emerald-600 border-emerald-500/40'
+                : 'opacity-60 hover:opacity-100 hover:bg-black/5 border-transparent'
             }`}
             title={mastered ? 'Marked as Mastered' : 'Mark as Mastered'}
           >
@@ -190,8 +190,8 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
             }}
             className={`p-1.5 rounded-lg border transition-all ${
               favorited
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-                : 'text-slate-500 hover:text-amber-400 hover:bg-slate-800/60 border-transparent'
+                ? 'bg-amber-500/20 text-amber-600 border-amber-500/40'
+                : 'opacity-60 hover:opacity-100 hover:bg-black/5 border-transparent'
             }`}
             title={favorited ? 'Remove from Favorites' : 'Add to Favorites'}
           >
@@ -217,11 +217,11 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         {/* Word Title & Audio Play Button */}
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 dir="ltr" className="ltr-isolate text-xl font-bold text-white tracking-tight group-hover:text-indigo-300 transition-colors">
+            <h3 dir="ltr" className="ltr-isolate text-xl font-extrabold tracking-tight transition-colors">
               {wordObj.word}
             </h3>
             {wordObj.ipa && (
-              <p dir="ltr" className="ltr-isolate text-xs font-mono text-zinc-400 mt-0.5">
+              <p dir="ltr" className="ltr-isolate text-xs font-mono opacity-70 mt-0.5">
                 {wordObj.ipa}
               </p>
             )}
@@ -233,12 +233,12 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
             disabled={isPlayingWord}
             className={`p-2 rounded-xl border transition-all ${
               isPlayingWord
-                ? 'bg-indigo-600 text-white border-indigo-400 animate-pulse'
-                : 'bg-zinc-900/80 text-zinc-300 border-white/[0.08] hover:bg-indigo-500/10 hover:border-indigo-500/40 hover:text-indigo-300'
+                ? 'theme-btn-primary animate-pulse'
+                : 'theme-btn-secondary'
             }`}
             title="Listen to pronunciation (TTS)"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -263,8 +263,8 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         </div>
 
         {/* Arabic Translation Block (RTL Isolated) */}
-        <div dir="rtl" className="rtl-text rtl-isolate bg-slate-900/50 p-2.5 rounded-xl border border-slate-800/60 mt-2">
-          <p className="text-lg font-bold text-amber-300 tracking-wide font-arabic">
+        <div dir="rtl" className="rtl-text rtl-isolate p-2.5 rounded-xl border border-black/10 mt-2 bg-black/5">
+          <p className="text-lg font-extrabold tracking-wide font-arabic">
             {wordObj.arabic}
           </p>
         </div>
