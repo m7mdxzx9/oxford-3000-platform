@@ -1,6 +1,11 @@
 export const DEFAULT_GEMINI_KEY = 'AIzaSyC747z4ewiUEQTenTLdphM11WLbr1EVbXs';
-export const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
-export const GEMINI_FALLBACK_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+export const GEMINI_MODEL_ENDPOINTS = [
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent',
+];
 
 // Helper to clean API Key
 const getApiKey = (providedKey) => {
@@ -13,40 +18,35 @@ const getApiKey = (providedKey) => {
 };
 
 /**
- * Universal Gemini API poster with automatic endpoint fallback.
+ * Robust Universal Gemini API poster with multi-model fallback chain & strict JSON config.
  */
 const callGeminiApi = async (promptText, apiKey = '') => {
   const key = getApiKey(apiKey);
-  const body = JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] });
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: promptText }] }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.2,
+    },
+  });
 
-  try {
-    const res = await fetch(`${GEMINI_API_URL}?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text;
+  for (const endpoint of GEMINI_MODEL_ENDPOINTS) {
+    try {
+      const res = await fetch(`${endpoint}?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      } else {
+        console.warn(`Gemini endpoint ${endpoint} status:`, res.status);
+      }
+    } catch (e) {
+      console.warn(`Gemini endpoint ${endpoint} error:`, e);
     }
-  } catch (e) {
-    console.warn('Primary Gemini model error, trying fallback:', e);
-  }
-
-  // Secondary fallback model
-  try {
-    const fallbackRes = await fetch(`${GEMINI_FALLBACK_URL}?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
-    if (fallbackRes.ok) {
-      const data = await fallbackRes.json();
-      return data?.candidates?.[0]?.content?.parts?.[0]?.text || null;
-    }
-  } catch (e) {
-    console.error('Fallback Gemini model error:', e);
   }
 
   return null;
@@ -59,12 +59,12 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
   if (!term || typeof term !== 'string' || !term.trim()) return null;
   const cleanTerm = term.trim().toLowerCase();
 
-  const promptText = `Provide exact raw JSON for the English vocabulary word "${cleanTerm}". Do not include markdown code fences. Output structure:
+  const promptText = `Provide exact raw JSON for the English vocabulary word "${cleanTerm}". Output structure:
 {
   "word": "${cleanTerm}",
   "pos": "noun|verb|adjective|adverb|preposition|conjunction",
   "cefr": "A1|A2|B1|B2",
-  "arabic": "ترجمة دقيقة ومضبوطة بالشكل",
+  "arabic": "دقيقة ومضبوطة بالشكل",
   "example": "Natural English example sentence using the word",
   "ipa": "/phonetic transcription/",
   "collocations": ["common pairing 1", "common pairing 2"],
@@ -130,7 +130,7 @@ Position of "${word}": ${position} (beginning, middle, end, or any)
 Genre/Style: ${style}
 Grammatical Tense Focus: ${tense}
 
-Return ONLY raw JSON object without markdown code fences:
+Return ONLY raw JSON object:
 {
   "sentence": "A natural, grammatically rich English sentence",
   "arabic": "الترجمة العربية الدقيقة والمناسبة للجملة",
@@ -176,7 +176,7 @@ For each scene, output:
 5. "comprehensionQuestion": An engaging comprehension question in English about this scene line.
 6. "correctAnswer": Short, clear answer to the comprehension question.
 
-Return ONLY a valid raw JSON array of 4 scene objects without markdown code fences:
+Return ONLY a valid raw JSON array of 4 scene objects:
 [
   {
     "sceneNumber": 1,
@@ -251,7 +251,7 @@ User message: "${userMessage}"
 Recent History: ${JSON.stringify(history.slice(-4))}
 
 Analyze user message for grammar, natural phrasing, and CEFR level.
-Return raw JSON object without markdown code fences:
+Return raw JSON object:
 {
   "reply": "Empathetic, highly encouraging, conversational English reply continuing the roleplay scenario naturally",
   "arabic": "الترجمة العربية الدقيقة لإجابتك",
@@ -293,6 +293,5 @@ export default {
   generateStory,
   getTutorResponse,
   DEFAULT_GEMINI_KEY,
-  GEMINI_API_URL,
-  GEMINI_FALLBACK_URL,
+  GEMINI_MODEL_ENDPOINTS,
 };

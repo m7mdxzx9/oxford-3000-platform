@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check, BookOpen, Dice5, Search } from 'lucide-react';
+import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check, BookOpen, Dice5, Search, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateSentence } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
@@ -43,10 +43,9 @@ export default function SentenceGenerator() {
 
   // Compute matching autocomplete words from Oxford 3000 catalog
   const wordSuggestions = useMemo(() => {
-    if (!targetWord || !targetWord.trim()) return [];
+    if (!targetWord || !targetWord.trim()) return oxford3000Data.slice(0, 12);
     const query = targetWord.trim().toLowerCase();
-    
-    // Filter words starting with query first, then containing query
+
     const startsWith = [];
     const contains = [];
 
@@ -54,19 +53,18 @@ export default function SentenceGenerator() {
       const item = oxford3000Data[i];
       if (!item || !item.word) continue;
       const lowerWord = item.word.toLowerCase();
-      
-      if (lowerWord === query) continue; // Skip exact match if already typed
+      const lowerArabic = item.arabic ? item.arabic.toLowerCase() : '';
       
       if (lowerWord.startsWith(query)) {
         startsWith.push(item);
-      } else if (lowerWord.includes(query) || (item.arabic && item.arabic.includes(query))) {
+      } else if (lowerWord.includes(query) || lowerArabic.includes(query)) {
         contains.push(item);
       }
 
-      if (startsWith.length + contains.length >= 15) break;
+      if (startsWith.length + contains.length >= 20) break;
     }
 
-    return [...startsWith, ...contains].slice(0, 12);
+    return [...startsWith, ...contains].slice(0, 15);
   }, [targetWord]);
 
   const handlePickRandomWord = () => {
@@ -81,6 +79,11 @@ export default function SentenceGenerator() {
     setTargetWord(wordObj.word);
     setIsDropdownOpen(false);
     addNotification(`Selected "${wordObj.word}" (${wordObj.arabic})`, 'info');
+  };
+
+  const handleClearTargetInput = () => {
+    setTargetWord('');
+    setIsDropdownOpen(true);
   };
 
   const handleGenerate = async () => {
@@ -178,19 +181,29 @@ export default function SentenceGenerator() {
                   setIsDropdownOpen(true);
                 }}
                 onFocus={() => setIsDropdownOpen(true)}
-                className="w-full glass-input px-4 py-3 text-sm font-extrabold ltr-token pr-10"
+                className="w-full glass-input px-4 py-3 text-sm font-extrabold ltr-token pr-16"
                 placeholder="Type letter or word (e.g. c, car, resilient)..."
               />
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-50">
-                <Search className="w-4 h-4" />
+              <div className="absolute inset-y-0 right-3 flex items-center gap-1">
+                {targetWord && (
+                  <button
+                    type="button"
+                    onClick={handleClearTargetInput}
+                    className="p-1 rounded-full hover:bg-black/10 text-xs font-bold opacity-60 hover:opacity-100"
+                    title="Clear input"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+                <Search className="w-4 h-4 opacity-50 pointer-events-none" />
               </div>
             </div>
 
             {/* Floating Autocomplete Dropdown */}
             {isDropdownOpen && wordSuggestions.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 z-50 glass-panel border rounded-2xl shadow-2xl max-h-64 overflow-y-auto p-1.5 space-y-1">
-                <div className="px-3 py-1 text-[11px] font-bold opacity-60 flex items-center justify-between border-b border-black/10">
-                  <span>Suggested Oxford 3000 Words ({wordSuggestions.length}):</span>
+              <div className="absolute left-0 right-0 top-full mt-1.5 z-50 glass-panel border rounded-2xl shadow-2xl max-h-72 overflow-y-auto p-1.5 space-y-1">
+                <div className="px-3 py-1.5 text-[11px] font-extrabold opacity-75 flex items-center justify-between border-b border-black/10">
+                  <span>Matching Words in Oxford 3000 ({wordSuggestions.length}):</span>
                   <span>Click to select</span>
                 </div>
                 {wordSuggestions.map((item) => (
@@ -200,7 +213,7 @@ export default function SentenceGenerator() {
                     className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-black/10 transition-all text-left group"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm group-hover:text-amber-500 transition-colors">
+                      <span className="font-black text-sm group-hover:text-amber-500 transition-colors">
                         {item.word}
                       </span>
                       {item.pos && (
@@ -215,7 +228,7 @@ export default function SentenceGenerator() {
                       )}
                     </div>
                     {item.arabic && (
-                      <span className="text-xs font-bold text-amber-500 font-arabic dir-rtl">
+                      <span className="text-xs font-extrabold text-amber-500 font-arabic dir-rtl">
                         {item.arabic}
                       </span>
                     )}
