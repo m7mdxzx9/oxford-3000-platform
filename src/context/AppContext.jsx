@@ -13,6 +13,7 @@ const STORAGE_KEYS = {
   LANGUAGE: 'oxford3000_language',
   VOICE_PRESET: 'oxford3000_voice_preset',
   THEME: 'oxford3000_theme',
+  MODE: 'oxford3000_mode',
 };
 
 const loadFromStorage = (key, fallback) => {
@@ -34,7 +35,6 @@ export const THEMES = [
   { id: 'brutalism', name: 'Neo-Brutalism', emoji: '⚡', label: 'Neo-Brutalism' },
   { id: 'organic', name: 'Organic Terracotta', emoji: '🌿', label: 'Terracotta' },
   { id: 'swiss', name: 'Swiss Minimalist', emoji: '🇨🇭', label: 'Swiss Red' },
-  { id: 'dark', name: 'Midnight Dark Mode', emoji: '🌙', label: 'Midnight' },
 ];
 
 export const AppProvider = ({ children }) => {
@@ -43,6 +43,11 @@ export const AppProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.THEME);
     return stored || 'brutalism';
+  });
+
+  const [mode, setMode] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEYS.MODE);
+    return stored || 'light';
   });
 
   const [language, setLanguage] = useState(() => {
@@ -69,11 +74,20 @@ export const AppProvider = ({ children }) => {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
-  // Update root data-theme attribute whenever theme changes
+  // Update root data-theme and data-mode attributes whenever theme or mode changes
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.MODE, mode);
+    document.documentElement.setAttribute('data-mode', mode);
+  }, [mode]);
+
+  const toggleMode = useCallback(() => {
+    setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.LANGUAGE, language);
@@ -171,6 +185,9 @@ export const AppProvider = ({ children }) => {
   const value = {
     theme,
     setTheme,
+    mode,
+    setMode,
+    toggleMode,
     THEMES,
     activeTab,
     setActiveTab,

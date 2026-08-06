@@ -5,13 +5,15 @@
 @tailwind utilities;
 
 /* =========================================================
-   HARMONIOUS DYNAMIC THEME ENGINE (Brutalism, Organic, Swiss, Dark)
+   BESPOKE MULTI-THEME ENGINE (Brutalism, Organic, Swiss)
+   Light & Dark Variants per Identity
    ========================================================= */
 
-/* Theme 1: Neo-Brutalism (data-theme="brutalism") */
+/* ---------------------------------------------------------
+   1. NEO-BRUTALISM LIGHT (data-theme="brutalism" data-mode="light")
+   --------------------------------------------------------- */
 :root,
-:root[data-theme="brutalism"],
-[data-theme="brutalism"] {
+[data-theme="brutalism"][data-mode="light"] {
   --bg-page: #FEF08A;
   --bg-card: #FFFFFF;
   --bg-surface: #FEE2E2;
@@ -30,9 +32,33 @@
   --font-arabic: 'Cairo', sans-serif;
 }
 
-/* Theme 2: Organic Terracotta (data-theme="organic") */
-:root[data-theme="organic"],
-[data-theme="organic"] {
+/* ---------------------------------------------------------
+   1B. NEO-BRUTALISM DARK (data-theme="brutalism" data-mode="dark")
+   Deep OLED Black, thick neon cyan borders, hard offset neon pink shadows
+   --------------------------------------------------------- */
+[data-theme="brutalism"][data-mode="dark"] {
+  --bg-page: #09090B;
+  --bg-card: #18181B;
+  --bg-surface: #27272A;
+  --bg-accent: #FF0055;
+  --bg-accent-hover: #E6004C;
+  --text-main: #FFFFFF;
+  --text-muted: #A1A1AA;
+  --text-accent: #FFFFFF;
+  --border-card: 3.5px solid #00F0FF;
+  --border-input: 2.5px solid #00F0FF;
+  --shadow-card: 6px 6px 0px #FF0055;
+  --shadow-btn: 4px 4px 0px #FF0055;
+  --radius-card: 0.75rem;
+  --radius-btn: 0.5rem;
+  --font-family: 'Cairo', 'Tajawal', sans-serif;
+  --font-arabic: 'Cairo', sans-serif;
+}
+
+/* ---------------------------------------------------------
+   2. ORGANIC TERRACOTTA LIGHT (data-theme="organic" data-mode="light")
+   --------------------------------------------------------- */
+[data-theme="organic"][data-mode="light"] {
   --bg-page: #FDFBF7;
   --bg-card: #F5EFE6;
   --bg-surface: #EADBC8;
@@ -51,9 +77,33 @@
   --font-arabic: 'Amiri', serif;
 }
 
-/* Theme 3: Swiss Minimalist (data-theme="swiss") */
-:root[data-theme="swiss"],
-[data-theme="swiss"] {
+/* ---------------------------------------------------------
+   2B. ORGANIC TERRACOTTA DARK (data-theme="organic" data-mode="dark")
+   Deep Espresso, muted coffee surface, warm terracotta text & soft amber glow
+   --------------------------------------------------------- */
+[data-theme="organic"][data-mode="dark"] {
+  --bg-page: #1A1512;
+  --bg-card: #2A221D;
+  --bg-surface: #3D322B;
+  --bg-accent: #D96B43;
+  --bg-accent-hover: #C25A34;
+  --text-main: #F2E8E1;
+  --text-muted: #B8A89C;
+  --text-accent: #FFFFFF;
+  --border-card: 1px solid #3D322B;
+  --border-input: 1px solid #4E4037;
+  --shadow-card: 0 4px 20px rgba(217, 107, 67, 0.12);
+  --shadow-btn: 0 4px 12px rgba(217, 107, 67, 0.25);
+  --radius-card: 1.75rem 0.5rem 1.75rem 0.5rem;
+  --radius-btn: 1.25rem 0.5rem;
+  --font-family: 'Tajawal', 'Amiri', sans-serif;
+  --font-arabic: 'Amiri', serif;
+}
+
+/* ---------------------------------------------------------
+   3. SWISS MINIMALIST LIGHT (data-theme="swiss" data-mode="light")
+   --------------------------------------------------------- */
+[data-theme="swiss"][data-mode="light"] {
   --bg-page: #FFFFFF;
   --bg-card: #F4F4F5;
   --bg-surface: #E4E4E7;
@@ -72,25 +122,27 @@
   --font-arabic: 'Tajawal', sans-serif;
 }
 
-/* Theme 4: Midnight OLED Dark Mode (data-theme="dark") */
-:root[data-theme="dark"],
-[data-theme="dark"] {
-  --bg-page: #0B0F19;
-  --bg-card: #131B2E;
-  --bg-surface: #1E293B;
-  --bg-accent: #3B82F6;
-  --bg-accent-hover: #2563EB;
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
+/* ---------------------------------------------------------
+   3B. SWISS MINIMALIST DARK (data-theme="swiss" data-mode="dark")
+   Absolute Pitch Black, matte dark zinc (#121212), Swiss Red top accent (4px solid #DC2626)
+   --------------------------------------------------------- */
+[data-theme="swiss"][data-mode="dark"] {
+  --bg-page: #000000;
+  --bg-card: #121212;
+  --bg-surface: #1E1E1E;
+  --bg-accent: #DC2626;
+  --bg-accent-hover: #EF4444;
+  --text-main: #FFFFFF;
+  --text-muted: #A1A1AA;
   --text-accent: #FFFFFF;
-  --border-card: 1px solid rgba(56, 189, 248, 0.15);
-  --border-input: 1px solid rgba(56, 189, 248, 0.25);
-  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
-  --shadow-btn: 0 4px 14px rgba(59, 130, 246, 0.2);
-  --radius-card: 1rem;
-  --radius-btn: 0.75rem;
-  --font-family: 'Cairo', 'Tajawal', sans-serif;
-  --font-arabic: 'Cairo', sans-serif;
+  --border-card: 1px solid #27272A;
+  --border-input: 1px solid #3F3F46;
+  --shadow-card: none;
+  --shadow-btn: none;
+  --radius-card: 0.25rem;
+  --radius-btn: 0.25rem;
+  --font-family: 'Cairo', 'Inter', sans-serif;
+  --font-arabic: 'Tajawal', sans-serif;
 }
 
 /* Swiss Card Special Accent Top Border */
@@ -194,27 +246,26 @@ h1, h2, h3, h4, h5, h6 {
   [data-theme="brutalism"] .theme-btn-primary:hover,
   [data-theme="brutalism"] .theme-btn-secondary:hover,
   [data-theme="brutalism"] .glass-card-interactive:hover {
-    box-shadow: 8px 8px 0px #000000;
+    box-shadow: 8px 8px 0px #FF0055;
     transform: translate(-2px, -2px);
   }
 
   [data-theme="brutalism"] .theme-btn-primary:active,
   [data-theme="brutalism"] .theme-btn-secondary:active,
   [data-theme="brutalism"] .glass-card-interactive:active {
-    box-shadow: 2px 2px 0px #000000;
+    box-shadow: 2px 2px 0px #FF0055;
     transform: translate(2px, 2px);
   }
 
-  /* Swiss Minimalist Invert Hover Mechanics */
-  [data-theme="swiss"] .glass-card-interactive:hover {
+  /* Swiss Minimalist Hover Mechanics */
+  [data-theme="swiss"][data-mode="light"] .glass-card-interactive:hover {
     border-color: #000000;
     background-color: #FFFFFF !important;
   }
 
-  /* Midnight Dark Mode Subtle Glow Mechanics */
-  [data-theme="dark"] .glass-card-interactive:hover {
-    border-color: rgba(56, 189, 248, 0.4);
-    box-shadow: 0 12px 30px -5px rgba(59, 130, 246, 0.25);
+  [data-theme="swiss"][data-mode="dark"] .glass-card-interactive:hover {
+    border-color: #DC2626;
+    background-color: #1A1A1A !important;
   }
 }
 

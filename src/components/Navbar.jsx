@@ -13,6 +13,8 @@ import {
   UserCheck,
   Volume2,
   Activity,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -22,6 +24,8 @@ export default function Navbar() {
     setActiveTab,
     theme,
     setTheme,
+    mode,
+    toggleMode,
     THEMES,
     setIsApiKeyModalOpen,
     toggleLanguage,
@@ -60,27 +64,40 @@ export default function Navbar() {
                 </span>
               </h1>
               <p className="text-[10px] opacity-75 font-semibold">
-                Multi-Theme Platform
+                Multi-Theme CEFR Platform
               </p>
             </div>
           </div>
 
-          {/* Dynamic Theme Switcher Pills Bar */}
-          <div className="flex items-center gap-1 p-1 rounded-xl border bg-[var(--bg-card)]">
-            {THEMES.map((th) => (
-              <button
-                key={th.id}
-                onClick={() => setTheme(th.id)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all ${
-                  theme === th.id
-                    ? 'theme-btn-primary shadow-sm'
-                    : 'opacity-70 hover:opacity-100'
-                }`}
-              >
-                <span>{th.emoji}</span>
-                <span className="hidden xs:inline">{th.label}</span>
-              </button>
-            ))}
+          {/* Dynamic Theme Switcher Pills & Sub-Toggle for Light/Dark Mode */}
+          <div className="flex items-center gap-2">
+            {/* Identity Pills */}
+            <div className="hidden md:flex items-center gap-1 p-1 rounded-xl border bg-[var(--bg-card)]">
+              {THEMES.map((th) => (
+                <button
+                  key={th.id}
+                  onClick={() => setTheme(th.id)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all ${
+                    theme === th.id
+                      ? 'theme-btn-primary shadow-sm'
+                      : 'opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <span>{th.emoji}</span>
+                  <span className="hidden xs:inline">{th.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Light / Bespoke Dark Mode Sub-Toggle */}
+            <button
+              onClick={toggleMode}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-extrabold transition-all theme-btn-secondary"
+              title={`Switch to ${mode === 'light' ? 'Bespoke Dark' : 'Light'} Mode`}
+            >
+              {mode === 'light' ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-indigo-400" />}
+              <span className="hidden sm:inline">{mode === 'light' ? 'Light' : 'Dark'}</span>
+            </button>
           </div>
 
           {/* Desktop Navigation Tabs */}
@@ -156,6 +173,29 @@ export default function Navbar() {
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
         <div className="xl:hidden p-3 border-b space-y-2">
+          <div className="p-2 border rounded-xl flex items-center justify-between gap-2">
+            <span className="text-xs font-bold">Identity & Mode:</span>
+            <div className="flex items-center gap-1">
+              {THEMES.map((th) => (
+                <button
+                  key={th.id}
+                  onClick={() => setTheme(th.id)}
+                  className={`px-2 py-1 rounded text-xs font-black ${
+                    theme === th.id ? 'theme-btn-primary' : 'opacity-70'
+                  }`}
+                >
+                  {th.emoji}
+                </button>
+              ))}
+              <button
+                onClick={toggleMode}
+                className="px-2 py-1 rounded text-xs font-black theme-btn-secondary"
+              >
+                {mode === 'light' ? '☀️' : '🌙'}
+              </button>
+            </div>
+          </div>
+
           <div className="p-2 border rounded-xl flex items-center justify-between">
             <span className="text-xs font-bold">Select Voice:</span>
             <select
