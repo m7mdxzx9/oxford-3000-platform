@@ -34,6 +34,7 @@ export const THEMES = [
   { id: 'brutalism', name: 'Neo-Brutalism', emoji: '⚡', label: 'Neo-Brutalism' },
   { id: 'organic', name: 'Organic Terracotta', emoji: '🌿', label: 'Terracotta' },
   { id: 'swiss', name: 'Swiss Minimalist', emoji: '🇨🇭', label: 'Swiss Red' },
+  { id: 'dark', name: 'Midnight Dark Mode', emoji: '🌙', label: 'Midnight' },
 ];
 
 export const AppProvider = ({ children }) => {

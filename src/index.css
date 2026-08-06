@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 /* =========================================================
-   PRECISION DYNAMIC THEME ENGINE & CSS TOKENS
+   HARMONIOUS DYNAMIC THEME ENGINE (Brutalism, Organic, Swiss, Dark)
    ========================================================= */
 
 /* Theme 1: Neo-Brutalism (data-theme="brutalism") */
@@ -70,6 +70,27 @@
   --radius-btn: 0.25rem;
   --font-family: 'Cairo', 'Inter', sans-serif;
   --font-arabic: 'Tajawal', sans-serif;
+}
+
+/* Theme 4: Midnight OLED Dark Mode (data-theme="dark") */
+:root[data-theme="dark"],
+[data-theme="dark"] {
+  --bg-page: #0B0F19;
+  --bg-card: #131B2E;
+  --bg-surface: #1E293B;
+  --bg-accent: #3B82F6;
+  --bg-accent-hover: #2563EB;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-accent: #FFFFFF;
+  --border-card: 1px solid rgba(56, 189, 248, 0.15);
+  --border-input: 1px solid rgba(56, 189, 248, 0.25);
+  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+  --shadow-btn: 0 4px 14px rgba(59, 130, 246, 0.2);
+  --radius-card: 1rem;
+  --radius-btn: 0.75rem;
+  --font-family: 'Cairo', 'Tajawal', sans-serif;
+  --font-arabic: 'Cairo', sans-serif;
 }
 
 /* Swiss Card Special Accent Top Border */
@@ -188,6 +209,12 @@ h1, h2, h3, h4, h5, h6 {
   [data-theme="swiss"] .glass-card-interactive:hover {
     border-color: #000000;
     background-color: #FFFFFF !important;
+  }
+
+  /* Midnight Dark Mode Subtle Glow Mechanics */
+  [data-theme="dark"] .glass-card-interactive:hover {
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 12px 30px -5px rgba(59, 130, 246, 0.25);
   }
 }
 
