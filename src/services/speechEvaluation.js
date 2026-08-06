@@ -1,10 +1,10 @@
 /**
- * Oxford 3000 Lexicon Application - Bulletproof Multi-Engine Speech Recognition & Evaluation Service
+ * Oxford 3000 Lexicon Application - 100% Real Speech Recognition & Evaluation Service
  * Module: src/services/speechEvaluation.js
+ * Strictly evaluates ACTUAL microphone speech transcriptions with ZERO dummy or fabricated results.
  */
 
 let activeRecognition = null;
-let activeMediaRecorder = null;
 let activeAudioStream = null;
 
 export const isSpeechRecognitionSupported = () => {
@@ -52,11 +52,22 @@ const levenshteinDistance = (a, b) => {
 };
 
 /**
- * Evaluates spoken text against expected target text.
+ * Evaluates ACTUAL spoken text against expected target text.
+ * Strictly calculates score based ONLY on real spoken words.
  */
 export const evaluateSpeech = (expectedText = '', spokenText = '') => {
   const expectedTokens = tokenizeText(expectedText);
   const spokenTokens = tokenizeText(spokenText);
+
+  // If no actual speech was detected or spoken text is empty/placeholder
+  if (spokenTokens.length === 0 || spokenText.includes('No speech detected') || spokenText.includes('لم يتم التقاط')) {
+    return {
+      score: 0,
+      transcript: spokenText || '(لم يتم التقاط نطق صوتي من الميكروفون / No speech detected)',
+      wordBreakdown: expectedTokens.map((word) => ({ word, match: false })),
+      missingWords: expectedTokens,
+    };
+  }
 
   if (expectedTokens.length === 0) {
     return {
@@ -67,15 +78,6 @@ export const evaluateSpeech = (expectedText = '', spokenText = '') => {
     };
   }
 
-  if (spokenTokens.length === 0) {
-    return {
-      score: 0,
-      transcript: spokenText || '(No speech detected)',
-      wordBreakdown: expectedTokens.map((word) => ({ word, match: false })),
-      missingWords: expectedTokens,
-    };
-  }
-
   const spokenCounts = {};
   for (const token of spokenTokens) {
     spokenCounts[token] = (spokenCounts[token] || 0) + 1;
@@ -83,14 +85,14 @@ export const evaluateSpeech = (expectedText = '', spokenText = '') => {
 
   let matchedCount = 0;
   const wordBreakdown = expectedTokens.map((expectedWord) => {
-    // 1. Direct match
+    // 1. Exact match
     if (spokenCounts[expectedWord] && spokenCounts[expectedWord] > 0) {
       spokenCounts[expectedWord]--;
       matchedCount++;
       return { word: expectedWord, match: true };
     }
 
-    // 2. Fuzzy match (allow 1 typo for words >= 4 chars)
+    // 2. Fuzzy phonetic match (allow 1 character difference for words >= 4 chars)
     const fuzzyMatch = spokenTokens.find((sp) => {
       if (Math.abs(sp.length - expectedWord.length) <= 1 && expectedWord.length >= 4) {
         return levenshteinDistance(sp, expectedWord) <= 1;
@@ -99,7 +101,7 @@ export const evaluateSpeech = (expectedText = '', spokenText = '') => {
     });
 
     if (fuzzyMatch) {
-      matchedCount += 0.9;
+      matchedCount += 0.85;
       return { word: expectedWord, match: true };
     }
 
@@ -119,129 +121,101 @@ export const evaluateSpeech = (expectedText = '', spokenText = '') => {
 };
 
 /**
- * Robust Speech Recognition with Automatic Engine Fallback & Live Transcribing.
+ * Real Speech Recognition Session with Explicit Microphone Access Request.
  */
-export const startListening = (onFinalResult, onError, onInterimResult) => {
+export const startListening = async (onFinalResult, onError, onInterimResult) => {
   stopListening();
 
-  const SpeechRecognitionClass = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
-
-  if (SpeechRecognitionClass) {
+  // First request browser microphone permission explicitly
+  if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     try {
-      activeRecognition = new SpeechRecognitionClass();
-      activeRecognition.continuous = false;
-      activeRecognition.interimResults = true;
-      activeRecognition.lang = 'en-US';
-
-      let lastLiveTranscript = '';
-
-      activeRecognition.onresult = (event) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = 0; i < event.results.length; ++i) {
-          const res = event.results[i];
-          if (res && res[0]) {
-            if (res.isFinal) {
-              finalTranscript += res[0].transcript + ' ';
-            } else {
-              interimTranscript += res[0].transcript;
-            }
-          }
-        }
-
-        const combined = (finalTranscript + interimTranscript).trim();
-        if (combined) {
-          lastLiveTranscript = combined;
-          if (typeof onInterimResult === 'function') {
-            onInterimResult(combined);
-          }
-          if (typeof onFinalResult === 'function') {
-            onFinalResult(combined);
-          }
-        }
-      };
-
-      activeRecognition.onerror = (event) => {
-        const errCode = event && (event.error || event);
-        console.warn('SpeechRecognition engine notice:', errCode);
-
-        // If we received any transcript before error, return it!
-        if (lastLiveTranscript && typeof onFinalResult === 'function') {
-          onFinalResult(lastLiveTranscript);
-          return;
-        }
-
-        if (errCode === 'not-allowed' || errCode === 'permission-denied') {
-          if (typeof onError === 'function') {
-            onError(new Error('Microphone permission denied. Please allow microphone in browser URL bar.'));
-          }
-        } else {
-          // Fallback to MediaRecorder audio capture
-          startMediaRecorderFallback(onFinalResult, onError, onInterimResult);
-        }
-      };
-
-      activeRecognition.onend = () => {
-        activeRecognition = null;
-      };
-
-      activeRecognition.start();
+      activeAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (micErr) {
+      console.warn('Microphone permission denied:', micErr);
+      if (typeof onError === 'function') {
+        onError(new Error('Microphone permission denied. Please allow microphone access in your browser bar.'));
+      }
       return;
-    } catch (e) {
-      console.warn('Web Speech API exception, attempting MediaRecorder fallback:', e);
     }
   }
 
-  // Fallback to MediaRecorder API
-  startMediaRecorderFallback(onFinalResult, onError, onInterimResult);
-};
+  const SpeechRecognitionClass = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
-/**
- * Fallback Engine: MediaRecorder Voice Capture with Volume Pulse & Audio Detection
- */
-const startMediaRecorderFallback = (onFinalResult, onError, onInterimResult) => {
-  if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  if (!SpeechRecognitionClass) {
     if (typeof onError === 'function') {
-      onError(new Error('Speech recording is not supported on this browser. You can type spoken text directly!'));
+      onError(new Error('Web Speech API is not supported on this browser version. You can type spoken text directly in the box!'));
     }
     return;
   }
 
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then((stream) => {
-      activeAudioStream = stream;
-      const chunks = [];
+  try {
+    activeRecognition = new SpeechRecognitionClass();
+    activeRecognition.continuous = true;
+    activeRecognition.interimResults = true;
+    activeRecognition.lang = 'en-US';
 
-      try {
-        activeMediaRecorder = new MediaRecorder(stream);
-        activeMediaRecorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunks.push(e.data);
-        };
+    let lastLiveTranscript = '';
 
-        if (typeof onInterimResult === 'function') {
-          onInterimResult('Recording audio... Speak into microphone...');
-        }
+    activeRecognition.onresult = (event) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
 
-        activeMediaRecorder.onstop = () => {
-          stopAudioStreamTracks();
-          // Provide simulated transcript if browser lacks speech-to-text API
-          if (typeof onFinalResult === 'function') {
-            onFinalResult('Recorded speech audio session');
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const res = event.results[i];
+        if (res && res[0]) {
+          if (res.isFinal) {
+            finalTranscript += res[0].transcript + ' ';
+          } else {
+            interimTranscript += res[0].transcript;
           }
-        };
+        }
+      }
 
-        activeMediaRecorder.start();
-      } catch (err) {
-        stopAudioStreamTracks();
-        if (typeof onError === 'function') onError(err);
+      const combined = (finalTranscript + interimTranscript).trim();
+      if (combined) {
+        lastLiveTranscript = combined;
+        if (typeof onInterimResult === 'function') {
+          onInterimResult(combined);
+        }
+        if (typeof onFinalResult === 'function') {
+          onFinalResult(combined);
+        }
       }
-    })
-    .catch((err) => {
+    };
+
+    activeRecognition.onerror = (event) => {
+      const errCode = event && (event.error || event);
+      console.warn('SpeechRecognition error:', errCode);
+
+      if (lastLiveTranscript) {
+        if (typeof onFinalResult === 'function') onFinalResult(lastLiveTranscript);
+        return;
+      }
+
+      let userMsg = 'No speech detected. Please speak clearly into your microphone.';
+      if (errCode === 'not-allowed' || errCode === 'permission-denied') {
+        userMsg = 'Microphone access denied by browser.';
+      } else if (errCode === 'audio-capture') {
+        userMsg = 'No active microphone hardware found.';
+      }
+
       if (typeof onError === 'function') {
-        onError(new Error('Microphone access denied. Click allow in your browser URL bar.'));
+        onError(new Error(userMsg));
       }
-    });
+    };
+
+    activeRecognition.onend = () => {
+      stopAudioStreamTracks();
+      activeRecognition = null;
+    };
+
+    activeRecognition.start();
+  } catch (err) {
+    stopAudioStreamTracks();
+    if (typeof onError === 'function') {
+      onError(err instanceof Error ? err : new Error(String(err)));
+    }
+  }
 };
 
 const stopAudioStreamTracks = () => {
@@ -254,33 +228,33 @@ const stopAudioStreamTracks = () => {
 };
 
 /**
- * High-level helper: Records microphone audio AND evaluates speech against target text in real-time.
+ * Records microphone audio AND evaluates REAL speech against target text with ZERO fake results.
  */
 export const recordAndEvaluateSpeech = (targetText = '', onComplete, onError, onLiveTranscript) => {
-  let lastTranscript = '';
+  let realTranscript = '';
 
   startListening(
     (transcript) => {
-      lastTranscript = transcript;
+      realTranscript = transcript;
       if (typeof onLiveTranscript === 'function') {
         onLiveTranscript(transcript);
       }
-      // If transcript is generic media recorder notice, use target text simulation
-      const textToEval = (transcript === 'Recorded speech audio session') ? targetText : transcript;
-      const evaluation = evaluateSpeech(targetText, textToEval);
+      const evaluation = evaluateSpeech(targetText, transcript);
       if (typeof onComplete === 'function') {
         onComplete(evaluation);
       }
     },
     (err) => {
-      if (lastTranscript && typeof onComplete === 'function') {
-        onComplete(evaluateSpeech(targetText, lastTranscript));
+      if (realTranscript) {
+        if (typeof onComplete === 'function') {
+          onComplete(evaluateSpeech(targetText, realTranscript));
+        }
       } else if (typeof onError === 'function') {
         onError(err);
       }
     },
     (interim) => {
-      lastTranscript = interim;
+      realTranscript = interim;
       if (typeof onLiveTranscript === 'function') {
         onLiveTranscript(interim);
       }
@@ -295,14 +269,6 @@ export const stopListening = () => {
     } catch (e) {}
     activeRecognition = null;
   }
-
-  if (activeMediaRecorder && activeMediaRecorder.state !== 'inactive') {
-    try {
-      activeMediaRecorder.stop();
-    } catch (e) {}
-    activeMediaRecorder = null;
-  }
-
   stopAudioStreamTracks();
 };
 
