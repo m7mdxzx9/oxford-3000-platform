@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check, BookOpen, Dice5 } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check, BookOpen, Dice5, Search } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateSentence } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
@@ -26,11 +26,61 @@ export default function SentenceGenerator() {
   const [isRecording, setIsRecording] = useState(false);
   const [speechResult, setSpeechResult] = useState(null);
 
+  // Autocomplete suggestions dropdown state
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Compute matching autocomplete words from Oxford 3000 catalog
+  const wordSuggestions = useMemo(() => {
+    if (!targetWord || !targetWord.trim()) return [];
+    const query = targetWord.trim().toLowerCase();
+    
+    // Filter words starting with query first, then containing query
+    const startsWith = [];
+    const contains = [];
+
+    for (let i = 0; i < oxford3000Data.length; i++) {
+      const item = oxford3000Data[i];
+      if (!item || !item.word) continue;
+      const lowerWord = item.word.toLowerCase();
+      
+      if (lowerWord === query) continue; // Skip exact match if already typed
+      
+      if (lowerWord.startsWith(query)) {
+        startsWith.push(item);
+      } else if (lowerWord.includes(query) || (item.arabic && item.arabic.includes(query))) {
+        contains.push(item);
+      }
+
+      if (startsWith.length + contains.length >= 15) break;
+    }
+
+    return [...startsWith, ...contains].slice(0, 12);
+  }, [targetWord]);
+
   const handlePickRandomWord = () => {
     const randomIndex = Math.floor(Math.random() * oxford3000Data.length);
     const randomTerm = oxford3000Data[randomIndex]?.word || 'achieve';
     setTargetWord(randomTerm);
+    setIsDropdownOpen(false);
     addNotification(`Selected random word: "${randomTerm}"`, 'info');
+  };
+
+  const handleSelectSuggestion = (wordObj) => {
+    setTargetWord(wordObj.word);
+    setIsDropdownOpen(false);
+    addNotification(`Selected "${wordObj.word}" (${wordObj.arabic})`, 'info');
   };
 
   const handleGenerate = async () => {
@@ -39,6 +89,7 @@ export default function SentenceGenerator() {
       return;
     }
 
+    setIsDropdownOpen(false);
     setLoading(true);
     setSpeechResult(null);
 
@@ -104,7 +155,8 @@ export default function SentenceGenerator() {
       {/* Advanced Control Panel */}
       <div className="glass-panel p-6 rounded-3xl border space-y-6">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 space-y-2">
+          {/* Target Word Input with Interactive Autocomplete Dropdown */}
+          <div className="flex-1 space-y-2 relative" ref={dropdownRef}>
             <div className="flex items-center justify-between">
               <label className="block text-xs font-extrabold uppercase tracking-wider opacity-75">
                 {t('targetWordLabel')}
@@ -116,13 +168,61 @@ export default function SentenceGenerator() {
                 <Dice5 className="w-3.5 h-3.5" /> Random Word
               </button>
             </div>
-            <input
-              type="text"
-              value={targetWord}
-              onChange={(e) => setTargetWord(e.target.value)}
-              className="w-full glass-input px-4 py-3 text-sm font-extrabold ltr-token"
-              placeholder="e.g. abandon, achieve, resilient..."
-            />
+
+            <div className="relative">
+              <input
+                type="text"
+                value={targetWord}
+                onChange={(e) => {
+                  setTargetWord(e.target.value);
+                  setIsDropdownOpen(true);
+                }}
+                onFocus={() => setIsDropdownOpen(true)}
+                className="w-full glass-input px-4 py-3 text-sm font-extrabold ltr-token pr-10"
+                placeholder="Type letter or word (e.g. c, car, resilient)..."
+              />
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none opacity-50">
+                <Search className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Floating Autocomplete Dropdown */}
+            {isDropdownOpen && wordSuggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 z-50 glass-panel border rounded-2xl shadow-2xl max-h-64 overflow-y-auto p-1.5 space-y-1">
+                <div className="px-3 py-1 text-[11px] font-bold opacity-60 flex items-center justify-between border-b border-black/10">
+                  <span>Suggested Oxford 3000 Words ({wordSuggestions.length}):</span>
+                  <span>Click to select</span>
+                </div>
+                {wordSuggestions.map((item) => (
+                  <button
+                    key={item.id || item.word}
+                    onClick={() => handleSelectSuggestion(item)}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-black/10 transition-all text-left group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-sm group-hover:text-amber-500 transition-colors">
+                        {item.word}
+                      </span>
+                      {item.pos && (
+                        <span className="text-[10px] opacity-75 font-mono px-1.5 py-0.5 rounded border border-black/10">
+                          {item.pos}
+                        </span>
+                      )}
+                      {item.cefr && (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded border theme-btn-primary">
+                          {item.cefr}
+                        </span>
+                      )}
+                    </div>
+                    {item.arabic && (
+                      <span className="text-xs font-bold text-amber-500 font-arabic dir-rtl">
+                        {item.arabic}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex-1">
