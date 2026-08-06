@@ -5,12 +5,13 @@
 @tailwind utilities;
 
 /* =========================================================
-   BESPOKE MULTI-THEME ENGINE (Brutalism, Organic, Swiss)
-   Light & Dark Variants per Identity
+   MOBILE-FIRST & TABLET RESPONSIVE MULTI-THEME ENGINE
+   (Brutalism, Organic, Swiss)
    ========================================================= */
 
 /* ---------------------------------------------------------
-   1. NEO-BRUTALISM LIGHT (data-theme="brutalism" data-mode="light")
+   1. NEO-BRUTALISM LIGHT & DARK (data-theme="brutalism")
+   Mobile-scaled hard offset shadows (4px mobile vs 6px desktop)
    --------------------------------------------------------- */
 :root,
 [data-theme="brutalism"][data-mode="light"] {
@@ -22,20 +23,16 @@
   --text-main: #000000;
   --text-muted: #333333;
   --text-accent: #FFFFFF;
-  --border-card: 3.5px solid #000000;
+  --border-card: 3px solid #000000;
   --border-input: 2.5px solid #000000;
-  --shadow-card: 6px 6px 0px #000000;
-  --shadow-btn: 4px 4px 0px #000000;
+  --shadow-card: 4px 4px 0px #000000;
+  --shadow-btn: 3px 3px 0px #000000;
   --radius-card: 0.75rem;
   --radius-btn: 0.5rem;
   --font-family: 'Cairo', 'Tajawal', sans-serif;
   --font-arabic: 'Cairo', sans-serif;
 }
 
-/* ---------------------------------------------------------
-   1B. NEO-BRUTALISM DARK (data-theme="brutalism" data-mode="dark")
-   Deep OLED Black, thick neon cyan borders, hard offset neon pink shadows
-   --------------------------------------------------------- */
 [data-theme="brutalism"][data-mode="dark"] {
   --bg-page: #09090B;
   --bg-card: #18181B;
@@ -45,18 +42,31 @@
   --text-main: #FFFFFF;
   --text-muted: #A1A1AA;
   --text-accent: #FFFFFF;
-  --border-card: 3.5px solid #00F0FF;
+  --border-card: 3px solid #00F0FF;
   --border-input: 2.5px solid #00F0FF;
-  --shadow-card: 6px 6px 0px #FF0055;
-  --shadow-btn: 4px 4px 0px #FF0055;
+  --shadow-card: 4px 4px 0px #FF0055;
+  --shadow-btn: 3px 3px 0px #FF0055;
   --radius-card: 0.75rem;
   --radius-btn: 0.5rem;
   --font-family: 'Cairo', 'Tajawal', sans-serif;
   --font-arabic: 'Cairo', sans-serif;
 }
 
+@media (min-width: 648px) {
+  [data-theme="brutalism"] {
+    --border-card: 3.5px solid #000000;
+    --shadow-card: 6px 6px 0px #000000;
+    --shadow-btn: 4px 4px 0px #000000;
+  }
+  [data-theme="brutalism"][data-mode="dark"] {
+    --border-card: 3.5px solid #00F0FF;
+    --shadow-card: 6px 6px 0px #FF0055;
+    --shadow-btn: 4px 4px 0px #FF0055;
+  }
+}
+
 /* ---------------------------------------------------------
-   2. ORGANIC TERRACOTTA LIGHT (data-theme="organic" data-mode="light")
+   2. ORGANIC TERRACOTTA LIGHT & DARK (data-theme="organic")
    --------------------------------------------------------- */
 [data-theme="organic"][data-mode="light"] {
   --bg-page: #FDFBF7;
@@ -69,18 +79,14 @@
   --text-accent: #FFFFFF;
   --border-card: 1px solid #E6DCCF;
   --border-input: 1px solid #D8C8B8;
-  --shadow-card: 0 4px 20px rgba(184, 115, 51, 0.08);
+  --shadow-card: 0 4px 16px rgba(184, 115, 51, 0.08);
   --shadow-btn: 0 2px 8px rgba(217, 107, 67, 0.15);
-  --radius-card: 1.75rem 0.5rem 1.75rem 0.5rem;
-  --radius-btn: 1.25rem 0.5rem;
+  --radius-card: 1.25rem 0.5rem 1.25rem 0.5rem;
+  --radius-btn: 1rem 0.35rem;
   --font-family: 'Tajawal', 'Amiri', sans-serif;
   --font-arabic: 'Amiri', serif;
 }
 
-/* ---------------------------------------------------------
-   2B. ORGANIC TERRACOTTA DARK (data-theme="organic" data-mode="dark")
-   Deep Espresso, muted coffee surface, warm terracotta text & soft amber glow
-   --------------------------------------------------------- */
 [data-theme="organic"][data-mode="dark"] {
   --bg-page: #1A1512;
   --bg-card: #2A221D;
@@ -92,16 +98,24 @@
   --text-accent: #FFFFFF;
   --border-card: 1px solid #3D322B;
   --border-input: 1px solid #4E4037;
-  --shadow-card: 0 4px 20px rgba(217, 107, 67, 0.12);
+  --shadow-card: 0 4px 16px rgba(217, 107, 67, 0.12);
   --shadow-btn: 0 4px 12px rgba(217, 107, 67, 0.25);
-  --radius-card: 1.75rem 0.5rem 1.75rem 0.5rem;
-  --radius-btn: 1.25rem 0.5rem;
+  --radius-card: 1.25rem 0.5rem 1.25rem 0.5rem;
+  --radius-btn: 1rem 0.35rem;
   --font-family: 'Tajawal', 'Amiri', sans-serif;
   --font-arabic: 'Amiri', serif;
 }
 
+@media (min-width: 648px) {
+  [data-theme="organic"] {
+    --radius-card: 1.75rem 0.5rem 1.75rem 0.5rem;
+    --radius-btn: 1.25rem 0.5rem;
+    --shadow-card: 0 4px 20px rgba(184, 115, 51, 0.08);
+  }
+}
+
 /* ---------------------------------------------------------
-   3. SWISS MINIMALIST LIGHT (data-theme="swiss" data-mode="light")
+   3. SWISS MINIMALIST LIGHT & DARK (data-theme="swiss")
    --------------------------------------------------------- */
 [data-theme="swiss"][data-mode="light"] {
   --bg-page: #FFFFFF;
@@ -122,10 +136,6 @@
   --font-arabic: 'Tajawal', sans-serif;
 }
 
-/* ---------------------------------------------------------
-   3B. SWISS MINIMALIST DARK (data-theme="swiss" data-mode="dark")
-   Absolute Pitch Black, matte dark zinc (#121212), Swiss Red top accent (4px solid #DC2626)
-   --------------------------------------------------------- */
 [data-theme="swiss"][data-mode="dark"] {
   --bg-page: #000000;
   --bg-card: #121212;
@@ -165,6 +175,7 @@ body,
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -172,6 +183,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @layer utilities {
+  /* Fluid Clamp Typography */
+  .fluid-title {
+    font-size: clamp(1.25rem, 4vw, 2.25rem);
+    line-height: 1.2;
+  }
+  .fluid-subtitle {
+    font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+    line-height: 1.4;
+  }
+
   /* Strict LTR & RTL Isolation */
   .ltr-token,
   .ltr-isolate,
@@ -209,6 +230,7 @@ h1, h2, h3, h4, h5, h6 {
     border: var(--border-input);
     border-radius: var(--radius-btn);
     color: var(--text-main) !important;
+    min-height: 44px;
     transition: all 0.2s ease;
   }
 
@@ -217,19 +239,23 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--bg-accent);
   }
 
-  /* Scoped Dynamic Buttons */
+  /* Scoped Dynamic Touch Buttons (min 44px touch target) */
   .theme-btn-primary {
     background-color: var(--bg-accent) !important;
     color: var(--text-accent) !important;
     border: var(--border-input);
     border-radius: var(--radius-btn);
     box-shadow: var(--shadow-btn);
+    min-height: 44px;
     font-weight: 800;
-    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background-color 0.2s ease;
   }
 
-  .theme-btn-primary:hover {
-    background-color: var(--bg-accent-hover) !important;
+  .theme-btn-primary:active {
+    transform: scale(0.96);
   }
 
   .theme-btn-secondary {
@@ -238,41 +264,46 @@ h1, h2, h3, h4, h5, h6 {
     border: var(--border-input);
     border-radius: var(--radius-btn);
     box-shadow: var(--shadow-btn);
+    min-height: 44px;
     font-weight: 700;
-    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.15s ease, background-color 0.2s ease;
   }
 
-  /* Neo-Brutalism Tactile Press Mechanics */
-  [data-theme="brutalism"] .theme-btn-primary:hover,
-  [data-theme="brutalism"] .theme-btn-secondary:hover,
-  [data-theme="brutalism"] .glass-card-interactive:hover {
-    box-shadow: 8px 8px 0px #FF0055;
-    transform: translate(-2px, -2px);
+  .theme-btn-secondary:active {
+    transform: scale(0.96);
   }
 
-  [data-theme="brutalism"] .theme-btn-primary:active,
-  [data-theme="brutalism"] .theme-btn-secondary:active,
-  [data-theme="brutalism"] .glass-card-interactive:active {
-    box-shadow: 2px 2px 0px #FF0055;
-    transform: translate(2px, 2px);
-  }
+  @media (hover: hover) {
+    .theme-btn-primary:hover {
+      background-color: var(--bg-accent-hover) !important;
+    }
 
-  /* Swiss Minimalist Hover Mechanics */
-  [data-theme="swiss"][data-mode="light"] .glass-card-interactive:hover {
-    border-color: #000000;
-    background-color: #FFFFFF !important;
-  }
+    [data-theme="brutalism"] .theme-btn-primary:hover,
+    [data-theme="brutalism"] .theme-btn-secondary:hover,
+    [data-theme="brutalism"] .glass-card-interactive:hover {
+      box-shadow: 6px 6px 0px #FF0055;
+      transform: translate(-2px, -2px);
+    }
 
-  [data-theme="swiss"][data-mode="dark"] .glass-card-interactive:hover {
-    border-color: #DC2626;
-    background-color: #1A1A1A !important;
+    [data-theme="swiss"][data-mode="light"] .glass-card-interactive:hover {
+      border-color: #000000;
+      background-color: #FFFFFF !important;
+    }
+
+    [data-theme="swiss"][data-mode="dark"] .glass-card-interactive:hover {
+      border-color: #DC2626;
+      background-color: #1A1A1A !important;
+    }
   }
 }
 
 /* Custom Scrollbar adapt to active theme */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-page);
