@@ -1,5 +1,5 @@
 /**
- * Oxford 3000 Lexicon Application - Speech Evaluation & Recognition Service
+ * Oxford 3000 Lexicon Application - Advanced Real-Time Speech Evaluation & Recognition Service
  * Module: src/services/speechEvaluation.js
  */
 
@@ -88,7 +88,7 @@ export const evaluateSpeech = (expectedText = '', spokenText = '') => {
       return { word: expectedWord, match: true };
     }
 
-    // 2. Fuzzy match (allow 1 typo for words > 4 chars)
+    // 2. Fuzzy match (allow 1 typo for words >= 4 chars)
     const fuzzyMatch = spokenTokens.find((sp) => {
       if (Math.abs(sp.length - expectedWord.length) <= 1 && expectedWord.length >= 4) {
         return levenshteinDistance(sp, expectedWord) <= 1;
@@ -117,14 +117,14 @@ export const evaluateSpeech = (expectedText = '', spokenText = '') => {
 };
 
 /**
- * Starts browser speech recognition session.
+ * Starts real-time browser speech recognition with live interim transcription streaming.
  */
-export const startListening = (onResult, onError) => {
+export const startListening = (onFinalResult, onError, onInterimResult) => {
   stopListening();
 
   if (!isSpeechRecognitionSupported()) {
     if (typeof onError === 'function') {
-      onError(new Error('Speech recognition not supported in this browser.'));
+      onError(new Error('Speech recognition not supported in this browser. You can type spoken text directly!'));
     }
     return;
   }
@@ -133,16 +133,30 @@ export const startListening = (onResult, onError) => {
 
   try {
     activeRecognition = new SpeechRecognitionClass();
-    activeRecognition.continuous = false;
-    activeRecognition.interimResults = false;
+    activeRecognition.continuous = true;
+    activeRecognition.interimResults = true;
     activeRecognition.lang = 'en-US';
 
+    let finalTranscript = '';
+
     activeRecognition.onresult = (event) => {
-      if (event && event.results && event.results[0] && event.results[0][0]) {
-        const transcript = event.results[0][0].transcript || '';
-        if (typeof onResult === 'function') {
-          onResult(transcript);
+      let interimTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcriptPart = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcriptPart + ' ';
+        } else {
+          interimTranscript += transcriptPart;
         }
+      }
+
+      const currentLiveTranscript = (finalTranscript + interimTranscript).trim();
+      if (typeof onInterimResult === 'function' && currentLiveTranscript) {
+        onInterimResult(currentLiveTranscript);
+      }
+
+      if (typeof onFinalResult === 'function' && currentLiveTranscript) {
+        onFinalResult(currentLiveTranscript);
       }
     };
 
@@ -152,19 +166,20 @@ export const startListening = (onResult, onError) => {
 
       switch (errCode) {
         case 'not-allowed':
-          errorMessage = 'Microphone access denied. Please allow microphone permissions.';
+        case 'permission-denied':
+          errorMessage = 'Microphone access denied. Please allow microphone permissions in your browser bar.';
           break;
         case 'audio-capture':
           errorMessage = 'No microphone detected.';
           break;
         case 'no-speech':
-          errorMessage = 'No speech detected. Please speak clearly.';
+          errorMessage = 'No speech detected. Please speak clearly into your microphone.';
           break;
         case 'network':
-          errorMessage = 'Network error occurred during speech recognition.';
+          errorMessage = 'Network error during speech recognition.';
           break;
         default:
-          if (typeof errCode === 'string') errorMessage = `Speech recognition error: ${errCode}`;
+          if (typeof errCode === 'string') errorMessage = `Speech recognition notice: ${errCode}`;
           break;
       }
 
@@ -186,19 +201,34 @@ export const startListening = (onResult, onError) => {
 };
 
 /**
- * High-level helper: Records microphone audio AND evaluates speech against target text in one call.
+ * High-level helper: Records microphone audio AND evaluates speech against target text in real-time.
  */
-export const recordAndEvaluateSpeech = (targetText = '', onComplete, onError) => {
+export const recordAndEvaluateSpeech = (targetText = '', onComplete, onError, onLiveTranscript) => {
+  let lastTranscript = '';
+
   startListening(
     (transcript) => {
+      lastTranscript = transcript;
+      if (typeof onLiveTranscript === 'function') {
+        onLiveTranscript(transcript);
+      }
       const evaluation = evaluateSpeech(targetText, transcript);
       if (typeof onComplete === 'function') {
         onComplete(evaluation);
       }
     },
     (err) => {
-      if (typeof onError === 'function') {
+      // If error occurs but we already got some speech, evaluate what we have!
+      if (lastTranscript && typeof onComplete === 'function') {
+        onComplete(evaluateSpeech(targetText, lastTranscript));
+      } else if (typeof onError === 'function') {
         onError(err);
+      }
+    },
+    (interim) => {
+      lastTranscript = interim;
+      if (typeof onLiveTranscript === 'function') {
+        onLiveTranscript(interim);
       }
     }
   );

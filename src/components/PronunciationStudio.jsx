@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, Sparkles, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Award, Activity, Sliders } from 'lucide-react';
+import { Mic, MicOff, Volume2, Sparkles, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Award, Activity, Sliders, Type } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { playAudio, stopAudio } from '../services/audioService';
+import { playAudio } from '../services/audioService';
 import { evaluateSpeech, recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
 import SentenceTokenViewer from './SentenceTokenViewer';
+import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 
 export default function PronunciationStudio() {
   const { apiKey, addNotification, voicePreset, setVoicePreset, voicePresets, t } = useApp();
   const [targetSentence, setTargetSentence] = useState('They decided not to abandon their ambitious project after receiving support.');
+  const [manualSpokenInput, setManualSpokenInput] = useState('');
+  const [liveTranscript, setLiveTranscript] = useState('');
   const [speed, setSpeed] = useState(0.9);
   const [pitch, setPitch] = useState(1.0);
   const [isRecording, setIsRecording] = useState(false);
   const [evalResult, setEvalResult] = useState(null);
-  const [activeTab, setActiveTab] = useState('analysis'); // 'analysis' | 'tokens' | 'matrix'
 
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
@@ -66,6 +68,7 @@ export default function PronunciationStudio() {
     }
 
     setIsRecording(true);
+    setLiveTranscript('');
     setEvalResult(null);
 
     recordAndEvaluateSpeech(
@@ -73,6 +76,7 @@ export default function PronunciationStudio() {
       (res) => {
         setIsRecording(false);
         setEvalResult(res);
+        if (res.transcript) setManualSpokenInput(res.transcript);
         if (res.score >= 80) {
           addNotification(`Outstanding Pronunciation! Score: ${res.score}%`, 'success');
         } else {
@@ -81,62 +85,66 @@ export default function PronunciationStudio() {
       },
       (err) => {
         setIsRecording(false);
-        addNotification(`Mic Error: ${err.message || err}`, 'warning');
+        addNotification(`Mic Note: ${err.message || err}`, 'info');
+      },
+      (liveText) => {
+        setLiveTranscript(liveText);
       }
     );
   };
 
-  // Color Coding & Feedback Category
-  const getFeedbackCategory = (score) => {
-    if (score >= 90) return { label: 'Outstanding (90-100%)', color: 'text-emerald-400 border-emerald-500/40 bg-emerald-500/10', tip: 'Perfect native-like pronunciation!' };
-    if (score >= 70) return { label: 'Good (70-89%)', color: 'text-teal-400 border-teal-500/40 bg-teal-500/10', tip: 'Clear pronunciation, slight accent deviation.' };
-    if (score >= 50) return { label: 'Needs Practice (50-69%)', color: 'text-amber-400 border-amber-500/40 bg-amber-500/10', tip: 'Understandable, practice vowel/consonant stress.' };
-    return { label: 'Try Again (<50%)', color: 'text-rose-400 border-rose-500/40 bg-rose-500/10', tip: 'Re-listen to audio and practice phonetics.' };
+  const handleEvaluateManualInput = () => {
+    if (!manualSpokenInput.trim()) {
+      addNotification('Please enter or speak a sentence first.', 'warning');
+      return;
+    }
+    const res = evaluateSpeech(targetSentence, manualSpokenInput);
+    setEvalResult(res);
+    addNotification(`Evaluated spoken text: ${res.score}% Score`, 'success');
   };
-
-  const cat = evalResult ? getFeedbackCategory(evalResult.score) : null;
-  const werScore = evalResult ? Math.max(0, 100 - evalResult.score) : 0;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Studio Header Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-white/[0.08] relative overflow-hidden">
+      <div className="glass-panel p-6 sm:p-8 rounded-3xl border relative overflow-hidden">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl">
-            <Activity className="w-5 h-5" />
+          <div className="p-2.5 theme-btn-primary rounded-xl">
+            <Activity className="w-6 h-6" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white">Pronunciation & Speech Studio</h2>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Pronunciation & Speech Studio</h2>
+            <p className="text-xs sm:text-sm opacity-80 mt-1">
+              Real-time Speech Recognition & Live Transcription Engine with Levenshtein phonetic alignment.
+            </p>
+          </div>
         </div>
-        <p className="text-zinc-400 text-xs sm:text-sm max-w-2xl">
-          Speech Laboratory evaluating Word Error Rate (WER), Levenshtein phonetic alignment, and character-level distance metrics.
-        </p>
       </div>
 
       {/* Target Sentence Input & Dual TTS Engine Controls */}
-      <div className="glass-panel p-6 rounded-2xl border border-white/[0.08] space-y-6">
+      <div className="glass-panel p-6 rounded-3xl border space-y-6">
         <div>
-          <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
             Target Practice Sentence or Word
           </label>
           <textarea
             value={targetSentence}
             onChange={(e) => setTargetSentence(e.target.value)}
             rows={2}
-            className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl p-3.5 text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 text-sm font-medium ltr-token"
+            className="w-full glass-input p-3.5 text-sm font-extrabold ltr-token"
           />
         </div>
 
         {/* TTS Customization Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-zinc-900/80 border border-white/[0.06]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl border bg-black/5">
           <div>
-            <label className="block text-[11px] font-semibold text-zinc-400 uppercase mb-1">Human Voice Preset</label>
+            <label className="block text-[11px] font-extrabold uppercase mb-1 opacity-75">Human Voice Preset</label>
             <select
               value={voicePreset}
               onChange={(e) => setVoicePreset(e.target.value)}
-              className="w-full bg-zinc-950 text-zinc-200 text-xs p-2 rounded-lg border border-white/[0.08] focus:outline-none"
+              className="w-full glass-input text-xs font-extrabold p-2"
             >
               {voicePresets.map((vp) => (
-                <option key={vp.id} value={vp.id}>
+                <option key={vp.id} value={vp.id} className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">
                   {vp.name}
                 </option>
               ))}
@@ -144,7 +152,7 @@ export default function PronunciationStudio() {
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-zinc-400 uppercase mb-1">Speed Rate ({speed}x)</label>
+            <label className="block text-[11px] font-extrabold uppercase mb-1 opacity-75">Speed Rate ({speed}x)</label>
             <input
               type="range"
               min="0.5"
@@ -152,12 +160,12 @@ export default function PronunciationStudio() {
               step="0.1"
               value={speed}
               onChange={(e) => setSpeed(Number(e.target.value))}
-              className="w-full accent-indigo-500 cursor-pointer"
+              className="w-full accent-amber-500 cursor-pointer"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-zinc-400 uppercase mb-1">Pitch Level ({pitch})</label>
+            <label className="block text-[11px] font-extrabold uppercase mb-1 opacity-75">Pitch Level ({pitch})</label>
             <input
               type="range"
               min="0.8"
@@ -165,7 +173,7 @@ export default function PronunciationStudio() {
               step="0.05"
               value={pitch}
               onChange={(e) => setPitch(Number(e.target.value))}
-              className="w-full accent-indigo-500 cursor-pointer"
+              className="w-full accent-amber-500 cursor-pointer"
             />
           </div>
         </div>
@@ -174,88 +182,82 @@ export default function PronunciationStudio() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
           <button
             onClick={handlePlayTTS}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 theme-btn-primary text-xs font-bold transition-all"
           >
             <Volume2 className="w-4 h-4" /> Play TTS Audio
           </button>
 
-          {/* Live Waveform Canvas (Reserved space prevents layout shift CLS) */}
-          <div className={`w-full sm:w-48 h-9 bg-zinc-950 rounded-xl border border-indigo-500/30 p-1 flex items-center justify-center transition-all duration-200 ${isRecording ? 'opacity-100' : 'opacity-0 pointer-events-none hidden sm:flex'}`}>
+          {/* Live Waveform Canvas */}
+          <div className={`w-full sm:w-48 h-9 rounded-xl border border-black/10 bg-black/5 p-1 flex items-center justify-center transition-all ${isRecording ? 'opacity-100' : 'opacity-0 pointer-events-none hidden sm:flex'}`}>
             <canvas ref={canvasRef} width={180} height={32} />
           </div>
 
           <button
             onClick={handleStartRecording}
-            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-              isRecording
-                ? 'bg-rose-600 text-white animate-pulse shadow-sm'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
+            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs font-black transition-all border ${
+              isRecording ? 'bg-rose-600 text-white animate-pulse' : 'theme-btn-primary'
             }`}
           >
             {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            {isRecording ? 'Stop Recording' : 'Record Voice'}
+            {isRecording ? 'Stop Recording' : '🎙️ Record Voice'}
           </button>
+        </div>
+
+        {/* Live Transcription Bar while recording */}
+        {isRecording && (
+          <div className="p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 space-y-1 animate-pulse">
+            <span className="text-xs font-black uppercase text-amber-500 flex items-center gap-1.5">
+              <Mic className="w-4 h-4 animate-spin" /> Live Transcribing Your Speech (يكتب ما تقوله الآن):
+            </span>
+            <p dir="ltr" className="ltr-isolate text-sm font-black font-mono text-amber-600">
+              "{liveTranscript || 'Listening... Speak clearly into your microphone...'}"
+            </p>
+          </div>
+        )}
+
+        {/* Manual Spoken Input & Fallback Text Evaluation */}
+        <div className="p-4 rounded-2xl border bg-black/5 space-y-2">
+          <label className="block text-xs font-extrabold uppercase tracking-wider opacity-75 flex items-center gap-1.5">
+            <Type className="w-4 h-4" /> Or Type / Edit Spoken Speech (كتابة الكلام المنطوق يدويًا):
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={manualSpokenInput}
+              onChange={(e) => setManualSpokenInput(e.target.value)}
+              className="flex-1 glass-input px-4 py-2.5 text-xs font-extrabold ltr-token"
+              placeholder="e.g. They decided not to abandon their project..."
+            />
+            <button
+              onClick={handleEvaluateManualInput}
+              className="theme-btn-primary px-4 py-2.5 text-xs font-extrabold whitespace-nowrap"
+            >
+              Evaluate Spoken Text
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Interactive Token breakdown */}
-      <div className="glass-panel p-6 rounded-3xl border border-cyan-900/30 space-y-4">
-        <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+      <div className="glass-panel p-6 rounded-3xl border space-y-4">
+        <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2">
           <Sparkles className="w-4 h-4" /> Click individual tokens to evaluate word pronunciation
         </span>
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800">
+        <div className="p-5 rounded-2xl border bg-black/5">
           <SentenceTokenViewer sentence={targetSentence} evaluationResult={evalResult} />
         </div>
       </div>
 
       {/* Speech Evaluation Results Dashboard */}
-      {evalResult && cat && (
-        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/40 space-y-6 animate-in fade-in duration-300">
-          {/* Header Badge */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-slate-950 flex items-center justify-center border border-slate-800 shrink-0">
-                <span className={`text-2xl font-extrabold ${evalResult.score >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {evalResult.score}%
-                </span>
-              </div>
-
-              <div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${cat.color}`}>
-                  {cat.label}
-                </span>
-                <p className="text-sm text-slate-300 font-medium mt-1.5">{cat.tip}</p>
-              </div>
-            </div>
-
-            <div className="text-right sm:border-l border-slate-800 sm:pl-6">
-              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Word Error Rate (WER)</span>
-              <span className="text-xl font-extrabold text-rose-400">{werScore}%</span>
-            </div>
-          </div>
-
-          {/* Transcribed Speech */}
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-            <span className="text-xs text-slate-400 uppercase font-semibold">Spoken Speech Transcribed:</span>
-            <p className="text-sm font-semibold text-cyan-300 ltr-token">"{evalResult.transcript}"</p>
-          </div>
-
-          {/* Missing / Mispronounced Words */}
-          {evalResult.missingWords && evalResult.missingWords.length > 0 && (
-            <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-2">
-              <span className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4" /> Mispronounced or Missing Words:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {evalResult.missingWords.map((word, i) => (
-                  <span key={i} className="px-3 py-1 bg-rose-950 text-rose-300 border border-rose-800 rounded-lg text-xs font-mono">
-                    {word}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {evalResult && (
+        <SpeechScoreVisualizer
+          evaluationResult={evalResult}
+          expectedText={targetSentence}
+          spokenText={evalResult.transcript || manualSpokenInput}
+          liveTranscript={liveTranscript}
+          onRetry={handleStartRecording}
+          onListenReference={handlePlayTTS}
+        />
       )}
     </div>
   );
