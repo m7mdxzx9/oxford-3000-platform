@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check, BookOpen } from 'lucide-react';
+import { Sparkles, RefreshCw, Volume2, Mic, MicOff, Check, BookOpen, Dice5 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateSentence } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
+import { oxford3000Data } from '../data/oxford3000';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 
@@ -25,6 +26,13 @@ export default function SentenceGenerator() {
   const [isRecording, setIsRecording] = useState(false);
   const [speechResult, setSpeechResult] = useState(null);
 
+  const handlePickRandomWord = () => {
+    const randomIndex = Math.floor(Math.random() * oxford3000Data.length);
+    const randomTerm = oxford3000Data[randomIndex]?.word || 'achieve';
+    setTargetWord(randomTerm);
+    addNotification(`Selected random word: "${randomTerm}"`, 'info');
+  };
+
   const handleGenerate = async () => {
     if (!targetWord.trim()) {
       addNotification('Please enter a target word.', 'warning');
@@ -43,7 +51,7 @@ export default function SentenceGenerator() {
       }
       addNotification(`AI generated new sentence for "${targetWord}"`, 'success');
     } catch (err) {
-      addNotification('Failed to generate sentence.', 'error');
+      addNotification('Failed to generate sentence with Gemini AI.', 'error');
     } finally {
       setLoading(false);
     }
@@ -81,62 +89,73 @@ export default function SentenceGenerator() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 relative overflow-hidden">
+      <div className="glass-panel p-6 sm:p-8 rounded-3xl border relative overflow-hidden">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-cyan-500/20 text-cyan-400 rounded-xl">
+          <div className="p-2.5 theme-btn-primary rounded-xl">
             <Sparkles className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">{t('sentenceTitle')}</h2>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{t('sentenceTitle')}</h2>
+            <p className="text-xs sm:text-sm opacity-80 mt-1">{t('sentenceSubtitle')}</p>
+          </div>
         </div>
-        <p className="text-slate-400 text-sm sm:text-base max-w-2xl">{t('sentenceSubtitle')}</p>
       </div>
 
       {/* Advanced Control Panel */}
-      <div className="glass-panel p-6 rounded-3xl border border-cyan-900/30 space-y-6">
+      <div className="glass-panel p-6 rounded-3xl border space-y-6">
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              {t('targetWordLabel')}
-            </label>
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-extrabold uppercase tracking-wider opacity-75">
+                {t('targetWordLabel')}
+              </label>
+              <button
+                onClick={handlePickRandomWord}
+                className="text-xs theme-btn-secondary px-2 py-0.5 flex items-center gap-1"
+              >
+                <Dice5 className="w-3.5 h-3.5" /> Random Word
+              </button>
+            </div>
             <input
               type="text"
               value={targetWord}
               onChange={(e) => setTargetWord(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 ltr-token font-semibold"
+              className="w-full glass-input px-4 py-3 text-sm font-extrabold ltr-token"
+              placeholder="e.g. abandon, achieve, resilient..."
             />
           </div>
 
           <div className="flex-1">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
               {t('styleLabel')}
             </label>
             <select
               value={style}
               onChange={(e) => setStyle(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="w-full glass-input px-4 py-3 text-xs font-extrabold"
             >
-              <option value="Casual Conversation">Casual Conversation</option>
-              <option value="Simple A1/A2">Simple A1/A2 Level</option>
-              <option value="Academic B2">Academic B2 Level</option>
-              <option value="Business">Business Context</option>
-              <option value="Story Format">Story Format</option>
+              <option value="Casual Conversation" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Casual Conversation</option>
+              <option value="Simple A1/A2" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Simple A1/A2 Level</option>
+              <option value="Academic B2" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Academic B2 Level</option>
+              <option value="Business" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Business Context</option>
+              <option value="Story Format" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Story Format</option>
             </select>
           </div>
 
           <div className="w-full sm:w-44">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
               Grammar Tense
             </label>
             <select
               value={tense}
               onChange={(e) => setTense(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500"
+              className="w-full glass-input px-4 py-3 text-xs font-extrabold"
             >
-              <option value="Present">Present Simple</option>
-              <option value="Past">Past Simple</option>
-              <option value="Future">Future Tense</option>
-              <option value="Present Perfect">Present Perfect</option>
-              <option value="Conditional">Conditional</option>
+              <option value="Present" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Present Simple</option>
+              <option value="Past" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Past Simple</option>
+              <option value="Future" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Future Tense</option>
+              <option value="Present Perfect" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Present Perfect</option>
+              <option value="Conditional" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Conditional</option>
             </select>
           </div>
         </div>
@@ -144,7 +163,7 @@ export default function SentenceGenerator() {
         {/* Options */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
               {t('lengthLabel')}
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -156,10 +175,10 @@ export default function SentenceGenerator() {
                 <button
                   key={opt.id}
                   onClick={() => setLength(opt.id)}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                  className={`py-2 px-3 rounded-xl text-xs font-extrabold transition-all border ${
                     length === opt.id
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'
+                      ? 'theme-btn-primary shadow-sm'
+                      : 'theme-btn-secondary opacity-70 hover:opacity-100'
                   }`}
                 >
                   {opt.label}
@@ -169,7 +188,7 @@ export default function SentenceGenerator() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
               {t('positionLabel')}
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -182,10 +201,10 @@ export default function SentenceGenerator() {
                 <button
                   key={opt.id}
                   onClick={() => setPosition(opt.id)}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                  className={`py-2 px-3 rounded-xl text-xs font-extrabold transition-all border ${
                     position === opt.id
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'
+                      ? 'theme-btn-primary shadow-sm'
+                      : 'theme-btn-secondary opacity-70 hover:opacity-100'
                   }`}
                 >
                   {opt.label}
@@ -198,7 +217,7 @@ export default function SentenceGenerator() {
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 font-bold rounded-2xl shadow-lg transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 py-3.5 theme-btn-primary text-sm font-black transition-all disabled:opacity-50"
         >
           {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
           {t('generateBtn')}
@@ -207,35 +226,35 @@ export default function SentenceGenerator() {
 
       {/* Result Card */}
       {aiResult && aiResult.sentence && (
-        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 space-y-6">
+        <div className="card-theme-target glass-card p-6 sm:p-8 rounded-3xl border space-y-6">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-400" /> Interactive Token Breakdown
+            <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-500" /> Interactive Token Breakdown
             </span>
 
             <button
               onClick={handleGenerate}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-cyan-300 transition-all"
+              className="flex items-center gap-1.5 text-xs font-bold opacity-80 hover:opacity-100 transition-all"
             >
               <RefreshCw className="w-3.5 h-3.5" /> {t('regenerateBtn')}
             </button>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/90 border border-cyan-900/40">
+          <div className="p-5 rounded-2xl border bg-black/5">
             <SentenceTokenViewer sentence={aiResult.sentence} targetWord={targetWord} />
           </div>
 
           {/* Arabic Translation */}
           {aiResult.arabic && (
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-right dir-rtl">
-              <p className="text-base font-bold text-amber-300">{aiResult.arabic}</p>
+            <div className="p-4 rounded-2xl border bg-black/5 text-right dir-rtl font-arabic">
+              <p className="text-base font-extrabold">{aiResult.arabic}</p>
             </div>
           )}
 
           {/* Grammar Note */}
           {aiResult.grammarNote && (
-            <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs flex items-center gap-2">
-              <BookOpen className="w-4 h-4 shrink-0" />
+            <div className="p-3 rounded-xl border bg-black/5 text-xs flex items-center gap-2 font-bold">
+              <BookOpen className="w-4 h-4 shrink-0 opacity-80" />
               <span>{aiResult.grammarNote}</span>
             </div>
           )}
@@ -246,10 +265,10 @@ export default function SentenceGenerator() {
               <select
                 value={voicePreset}
                 onChange={(e) => setVoicePreset(e.target.value)}
-                className="bg-slate-900 text-xs text-slate-300 p-2.5 rounded-xl border border-slate-800 focus:outline-none"
+                className="glass-input text-xs font-extrabold p-2.5 rounded-xl border"
               >
                 {voicePresets.map((vp) => (
-                  <option key={vp.id} value={vp.id}>
+                  <option key={vp.id} value={vp.id} className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">
                     {vp.name}
                   </option>
                 ))}
@@ -257,19 +276,19 @@ export default function SentenceGenerator() {
 
               <button
                 onClick={handlePlaySentence}
-                className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-medium transition-all shadow-lg"
+                className="flex items-center gap-2 px-5 py-2.5 theme-btn-primary rounded-xl font-bold transition-all shadow-md text-xs"
               >
-                <Volume2 className="w-5 h-5" /> {t('listenSentence')}
+                <Volume2 className="w-4 h-4" /> {t('listenSentence')}
               </button>
             </div>
 
             <button
               onClick={handleRecordSentence}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all ${
-                isRecording ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-800 text-slate-200 border border-slate-700'
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition-all border ${
+                isRecording ? 'bg-rose-600 text-white animate-pulse' : 'theme-btn-secondary'
               }`}
             >
-              {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5 text-rose-400" />}
+              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               {t('readSentence')}
             </button>
           </div>

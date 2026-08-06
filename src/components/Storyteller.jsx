@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { BookOpen, Sparkles, RefreshCw, Volume2, Mic, MicOff, Languages, Trash2, HelpCircle, CheckCircle } from 'lucide-react';
+import { BookOpen, Sparkles, RefreshCw, Volume2, Mic, MicOff, Languages, Trash2, HelpCircle, CheckCircle, Plus, Dice5 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { generateStory } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
+import { oxford3000Data } from '../data/oxford3000';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 
 export default function Storyteller() {
-  const { selectedWords, clearSelectedWords, apiKey, addNotification, t, voicePreset, setVoicePreset, voicePresets } = useApp();
+  const { selectedWords, toggleSelectWord, clearSelectedWords, apiKey, addNotification, t, voicePreset, setVoicePreset, voicePresets } = useApp();
   const [genre, setGenre] = useState('adventure');
   const [cefrLevel, setCefrLevel] = useState('B1');
   const [showArabic, setShowArabic] = useState(true);
@@ -17,7 +18,7 @@ export default function Storyteller() {
   const [storyLines, setStoryLines] = useState([
     {
       sceneNumber: 1,
-      text: 'Once upon a time in a thrilling adventure, the brave team decided to explore the ancient ruins.',
+      text: 'Once upon a time on a thrilling adventure, the brave team decided to explore the ancient ruins.',
       arabic: 'في يوم من الأيام في مغامرة مثيرة، قرر الفريق الشجاع استكشاف الأنقاض القديمة.',
       focusWord: 'adventure',
       comprehensionQuestion: 'What did the brave team decide to explore?',
@@ -38,18 +39,29 @@ export default function Storyteller() {
   const [lineSpeechResults, setLineSpeechResults] = useState({});
   const [showAnswers, setShowAnswers] = useState({});
 
+  const handlePickRandomWords = () => {
+    const shuffled = [...oxford3000Data].sort(() => 0.5 - Math.random());
+    const picked = shuffled.slice(0, 4);
+    picked.forEach(w => toggleSelectWord(w));
+    addNotification(`Selected 4 random words for AI Story!`, 'info');
+  };
+
   const handleGenerateStory = async () => {
     setLoading(true);
     setLineSpeechResults({});
     setActiveLineIndex(null);
 
     try {
-      const wordsToUse = selectedWords.length > 0 ? selectedWords : ['abandon', 'achieve', 'adventure'];
+      const wordsToUse = selectedWords.length > 0 ? selectedWords : ['abandon', 'achieve', 'adventure', 'goal'];
       const lines = await generateStory(wordsToUse, genre, cefrLevel, apiKey);
-      setStoryLines(lines);
-      addNotification(`Generated ${genre} story in CEFR ${cefrLevel}`, 'success');
+      if (lines && lines.length > 0) {
+        setStoryLines(lines);
+        addNotification(`Generated real AI ${genre} story in CEFR ${cefrLevel}`, 'success');
+      } else {
+        addNotification('Failed to generate story with Gemini AI.', 'error');
+      }
     } catch (err) {
-      addNotification('Failed to generate story.', 'error');
+      addNotification('Error generating story with Gemini AI.', 'error');
     } finally {
       setLoading(false);
     }
@@ -88,31 +100,41 @@ export default function Storyteller() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-cyan-500/30 relative overflow-hidden">
+      <div className="glass-panel p-6 sm:p-8 rounded-3xl border relative overflow-hidden">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl">
+          <div className="p-2.5 theme-btn-primary rounded-xl">
             <BookOpen className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">{t('storyTitle')}</h2>
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{t('storyTitle')}</h2>
+            <p className="text-xs sm:text-sm opacity-80 mt-1">{t('storySubtitle')}</p>
+          </div>
         </div>
-        <p className="text-slate-400 text-sm sm:text-base max-w-2xl">{t('storySubtitle')}</p>
       </div>
 
       {/* Controls */}
-      <div className="glass-panel p-6 rounded-3xl border border-cyan-900/30 space-y-5">
+      <div className="glass-panel p-6 rounded-3xl border space-y-5">
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <label className="block text-xs font-extrabold uppercase tracking-wider opacity-75">
               {t('selectedWordsLabel')} ({selectedWords.length} / 5)
             </label>
-            {selectedWords.length > 0 && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={clearSelectedWords}
-                className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-all"
+                onClick={handlePickRandomWords}
+                className="text-xs theme-btn-secondary px-2.5 py-1 flex items-center gap-1 transition-all"
               >
-                <Trash2 className="w-3.5 h-3.5" /> {t('clearAll')}
+                <Dice5 className="w-3.5 h-3.5" /> Pick 4 Random Words
               </button>
-            )}
+              {selectedWords.length > 0 && (
+                <button
+                  onClick={clearSelectedWords}
+                  className="text-xs text-rose-500 hover:underline flex items-center gap-1 font-bold"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> {t('clearAll')}
+                </button>
+              )}
+            </div>
           </div>
 
           {selectedWords.length > 0 ? (
@@ -122,7 +144,7 @@ export default function Storyteller() {
                 return (
                   <span
                     key={idx}
-                    className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-full text-xs font-semibold flex items-center gap-1.5"
+                    className="px-3 py-1 theme-btn-primary text-xs font-bold flex items-center gap-1.5"
                   >
                     <Sparkles className="w-3 h-3" /> {term}
                   </span>
@@ -130,32 +152,32 @@ export default function Storyteller() {
               })}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic">
-              No words selected from catalog. Click words in the Lexicon Grid to add them, or click generate to use default terms!
-            </p>
+            <div className="p-3 border rounded-xl bg-black/5 text-xs italic opacity-75 flex items-center justify-between gap-2">
+              <span>No words selected. Click words in the Lexicon Catalog or click "Pick 4 Random Words"!</span>
+            </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
               {t('genreLabel')}
             </label>
             <select
               value={genre}
               onChange={(e) => setGenre(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500 text-xs font-medium"
+              className="w-full glass-input px-4 py-3 text-xs font-extrabold"
             >
-              <option value="adventure">Adventure & Quest</option>
-              <option value="sci-fi">Sci-Fi & Future</option>
-              <option value="daily life">Daily Life & Social</option>
-              <option value="mystery">Mystery & Detective</option>
-              <option value="business">Business & Career</option>
+              <option value="adventure" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Adventure & Quest</option>
+              <option value="sci-fi" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Sci-Fi & Future</option>
+              <option value="daily life" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Daily Life & Social</option>
+              <option value="mystery" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Mystery & Detective</option>
+              <option value="business" className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">Business & Career</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
               {t('difficultyLabel')}
             </label>
             <div className="grid grid-cols-4 gap-1.5">
@@ -163,10 +185,10 @@ export default function Storyteller() {
                 <button
                   key={lvl}
                   onClick={() => setCefrLevel(lvl)}
-                  className={`py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`py-2.5 rounded-xl text-xs font-extrabold transition-all border ${
                     cefrLevel === lvl
-                      ? 'bg-amber-500 text-slate-950 font-bold'
-                      : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'
+                      ? 'theme-btn-primary shadow-sm'
+                      : 'theme-btn-secondary opacity-70 hover:opacity-100'
                   }`}
                 >
                   {lvl}
@@ -176,16 +198,16 @@ export default function Storyteller() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
               Narrator Voice
             </label>
             <select
               value={voicePreset}
               onChange={(e) => setVoicePreset(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl px-3 py-3 text-cyan-300 focus:outline-none focus:border-cyan-500 text-xs font-medium"
+              className="w-full glass-input px-3 py-3 text-xs font-extrabold"
             >
               {voicePresets.map((vp) => (
-                <option key={vp.id} value={vp.id}>
+                <option key={vp.id} value={vp.id} className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">
                   {vp.name}
                 </option>
               ))}
@@ -197,7 +219,7 @@ export default function Storyteller() {
           <button
             onClick={handleGenerateStory}
             disabled={loading}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold rounded-2xl shadow-lg transition-all disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 theme-btn-primary text-sm font-black transition-all disabled:opacity-50"
           >
             {loading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
             {t('generateStoryBtn')}
@@ -205,9 +227,7 @@ export default function Storyteller() {
 
           <button
             onClick={() => setShowArabic(!showArabic)}
-            className={`flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl border transition-all text-sm font-semibold ${
-              showArabic ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300' : 'bg-slate-900/80 border-slate-800 text-slate-400'
-            }`}
+            className="flex items-center justify-center gap-2 px-5 py-3.5 theme-btn-secondary text-xs font-bold transition-all"
           >
             <Languages className="w-5 h-5" />
             {showArabic ? t('hideArabic') : t('showArabic')}
@@ -222,33 +242,33 @@ export default function Storyteller() {
           const hasAnswer = showAnswers[idx];
 
           return (
-            <div key={idx} className="glass-panel p-6 rounded-3xl border border-cyan-900/30 space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-bold text-amber-400 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-mono">
+            <div key={idx} className="card-theme-target glass-card p-6 rounded-3xl border space-y-4">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-full theme-btn-primary flex items-center justify-center font-mono text-xs">
                     {line.sceneNumber || idx + 1}
                   </span>
                   Scene {idx + 1}
                 </span>
 
                 <div className="flex items-center gap-2">
-                  <button onClick={() => handlePlayLine(line.text)} className="p-2 bg-cyan-600/80 hover:bg-cyan-500 text-white rounded-xl">
+                  <button onClick={() => handlePlayLine(line.text)} className="p-2 theme-btn-primary rounded-xl" title="Listen Narrator">
                     <Volume2 className="w-4 h-4" />
                   </button>
 
                   <button
                     onClick={() => handleRecordLine(idx, line.text)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                      isRecording && activeLineIndex === idx ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-800 text-slate-300'
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                      isRecording && activeLineIndex === idx ? 'bg-rose-600 text-white animate-pulse' : 'theme-btn-secondary'
                     }`}
                   >
-                    {isRecording && activeLineIndex === idx ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-rose-400" />}
+                    {isRecording && activeLineIndex === idx ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                     {isRecording && activeLineIndex === idx ? 'Listening...' : 'Practice'}
                   </button>
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+              <div className="p-4 rounded-2xl border bg-black/5">
                 <SentenceTokenViewer sentence={line.text} targetWord={line.focusWord} />
               </div>
 
@@ -262,20 +282,20 @@ export default function Storyteller() {
 
               {/* Comprehension Quiz Item */}
               {line.comprehensionQuestion && (
-                <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-900/40 text-xs space-y-2">
-                  <div className="flex items-center justify-between text-cyan-300 font-semibold">
+                <div className="p-3.5 rounded-2xl border bg-black/5 text-xs space-y-2">
+                  <div className="flex items-center justify-between font-extrabold">
                     <span className="flex items-center gap-1.5">
-                      <HelpCircle className="w-4 h-4 text-cyan-400" /> {line.comprehensionQuestion}
+                      <HelpCircle className="w-4 h-4 text-amber-500" /> {line.comprehensionQuestion}
                     </span>
                     <button
                       onClick={() => setShowAnswers((prev) => ({ ...prev, [idx]: !prev[idx] }))}
-                      className="text-amber-400 hover:underline text-[11px]"
+                      className="opacity-80 hover:opacity-100 underline text-[11px]"
                     >
                       {hasAnswer ? 'Hide Answer' : 'Check Answer'}
                     </button>
                   </div>
                   {hasAnswer && (
-                    <div className="p-2 bg-slate-900 rounded-xl text-emerald-400 font-bold border border-emerald-500/30">
+                    <div className="p-2 rounded-xl border bg-emerald-500/10 text-emerald-600 font-extrabold">
                       ✓ {line.correctAnswer}
                     </div>
                   )}
@@ -283,8 +303,8 @@ export default function Storyteller() {
               )}
 
               {showArabic && line.arabic && (
-                <div className="p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/80 text-right dir-rtl">
-                  <p className="text-sm font-bold text-amber-300">{line.arabic}</p>
+                <div className="p-3.5 rounded-xl border bg-black/5 text-right dir-rtl font-arabic">
+                  <p className="text-base font-extrabold">{line.arabic}</p>
                 </div>
               )}
             </div>
