@@ -41,12 +41,12 @@ export const AppProvider = ({ children }) => {
   const [activeTab, setActiveTab] = useState('grid');
 
   const [theme, setTheme] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.THEME);
+    const stored = localStorage.getItem('uqu_theme') || localStorage.getItem(STORAGE_KEYS.THEME);
     return stored || 'brutalism';
   });
 
   const [mode, setMode] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.MODE);
+    const stored = localStorage.getItem('uqu_mode') || localStorage.getItem(STORAGE_KEYS.MODE);
     return stored || 'light';
   });
 
@@ -76,11 +76,13 @@ export const AppProvider = ({ children }) => {
 
   // Update root data-theme and data-mode attributes whenever theme or mode changes
   useEffect(() => {
+    localStorage.setItem('uqu_theme', theme);
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   useEffect(() => {
+    localStorage.setItem('uqu_mode', mode);
     localStorage.setItem(STORAGE_KEYS.MODE, mode);
     document.documentElement.setAttribute('data-mode', mode);
   }, [mode]);
