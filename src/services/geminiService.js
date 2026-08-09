@@ -1,10 +1,9 @@
-export const DEFAULT_GEMINI_KEY = 'AIzaSyC747z4ewiUEQTenTLdphM11WLbr1EVbXs';
+export const DEFAULT_GEMINI_KEY = 'AIzaSyAJJYxSvml0VsoaC-rhseLPfI0APtAFnr4';
 
 export const GEMINI_MODEL_ENDPOINTS = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent',
 ];
 
 // Helper to clean API Key
