@@ -110,8 +110,43 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
   };
 };
 
+const DYNAMIC_FALLBACK_PATTERNS = [
+  {
+    sentence: (w) => `The specialist inspected the modern ${w} to ensure it was operating safely.`,
+    arabic: (w, ar) => `قام المتخصص بفحص ${ar || w} لضمان عمله بآمان.`,
+    translations: (w, ar) => ({ "specialist": "المتخصص", "inspected": "فحص", "modern": "الحديث", [w]: ar || w, "ensure": "لضمان", "operating": "عمله", "safely": "بآمان" })
+  },
+  {
+    sentence: (w) => `She demonstrated an exceptional ability to handle ${w} effectively.`,
+    arabic: (w, ar) => `أظهرت قدرة استثنائية في التعامل مع ${ar || w} بفاعلية.`,
+    translations: (w, ar) => ({ "demonstrated": "أظهرت", "exceptional": "استثنائية", "ability": "قدرة", "handle": "التعامل", [w]: ar || w, "effectively": "بفاعلية" })
+  },
+  {
+    sentence: (w) => `Recent research highlights the significant impact of ${w} on daily progress.`,
+    arabic: (w, ar) => `يسلط البحث الحديث الضوء على التأثير الكبير لـ ${ar || w} على التقدم اليومي.`,
+    translations: (w, ar) => ({ "research": "البحث", "highlights": "يسلط الضوء", "impact": "التأثير", [w]: ar || w, "progress": "التقدم" })
+  },
+  {
+    sentence: (w) => `They developed a comprehensive plan to integrate ${w} into their workflow.`,
+    arabic: (w, ar) => `طوروا خطة شاملة لدمج ${ar || w} في بيئة عملهم.`,
+    translations: (w, ar) => ({ "developed": "طوروا", "plan": "خطة", "integrate": "دمج", [w]: ar || w, "workflow": "بيئة عملهم" })
+  },
+  {
+    sentence: (w) => `Mastering the proper usage of ${w} will boost your overall language fluency.`,
+    arabic: (w, ar) => `إتقان الاستخدام المناسب لـ ${ar || w} سيعزز طلاقتك اللغوية الإجمالية.`,
+    translations: (w, ar) => ({ "Mastering": "إتقان", "usage": "الاستخدام", [w]: ar || w, "boost": "سيعزز", "fluency": "طلاقتك" })
+  },
+  {
+    sentence: (w) => `The team discussed how ${w} could improve the overall efficiency of the system.`,
+    arabic: (w, ar) => `ناقش الفريق كيف يمكن لـ ${ar || w} تحسين الكفاءة الإجمالية للنظام.`,
+    translations: (w, ar) => ({ "team": "الفريق", "discussed": "ناقش", [w]: ar || w, "improve": "تحسين", "efficiency": "الكفاءة", "system": "النظام" })
+  }
+];
+
+let fallbackPatternCounter = 0;
+
 /**
- * Advanced AI Sentence Generation with Real Gemini AI Logic
+ * Advanced AI Sentence Generation with Real Gemini AI Logic & Dynamic Fallback Engine
  */
 export const generateSentence = async (
   word,
@@ -153,18 +188,16 @@ Return ONLY raw JSON object:
     }
   }
 
-  // Fallback sentence builder if offline
+  // Smart Dynamic Fallback sentence builder if offline or API key is unavailable
+  fallbackPatternCounter = (fallbackPatternCounter + 1) % DYNAMIC_FALLBACK_PATTERNS.length;
+  const pattern = DYNAMIC_FALLBACK_PATTERNS[fallbackPatternCounter];
+  const cleanWord = String(word).trim().toLowerCase();
+
   return {
-    sentence: `To achieve our goal, we need to understand how to use "${word}" correctly in daily ${style.toLowerCase()}.`,
-    arabic: `لتحقيق هدفنا، نحتاج إلى فهم كيفية استخدام مصطلح "${word}" بشكل صحيح في المحادثات اليومية.`,
-    grammarNote: `Natural usage of "${word}" in ${tense} tense context.`,
-    wordTranslations: {
-      "achieve": "تحقيق",
-      "goal": "هدفنا",
-      "understand": "فهم",
-      "correctly": "بشكل صحيح",
-      "daily": "اليومية"
-    }
+    sentence: pattern.sentence(cleanWord),
+    arabic: pattern.arabic(cleanWord, null),
+    grammarNote: `Educational context for "${cleanWord}". (Note: Add your free Gemini API key in settings for unlimited custom AI generation).`,
+    wordTranslations: pattern.translations(cleanWord, null),
   };
 };
 

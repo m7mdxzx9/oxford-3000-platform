@@ -83,7 +83,15 @@ export const ApiKeyModal = () => {
               </button>
             </div>
             <p className="mt-2 text-xs text-slate-400">
-              Leave blank to use system environment default key (`VITE_GEMINI_API_KEY`).
+              احصل على مفتاح Gemini المجاني 100% بنقرة واحدة من جوجل:{' '}
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noreferrer"
+                className="text-cyan-400 font-bold underline hover:text-cyan-300"
+              >
+                Google AI Studio Key ➔
+              </a>
             </p>
           </div>
 

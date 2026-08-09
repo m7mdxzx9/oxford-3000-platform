@@ -196,7 +196,7 @@ export const SentenceTokenViewer = ({
           }
 
           return (
-            <div key={index} className="relative inline-flex flex-col items-center group">
+            <span key={index} className="relative inline-block mx-0.5 my-0.5">
               <button
                 type="button"
                 dir="ltr"
@@ -215,16 +215,16 @@ export const SentenceTokenViewer = ({
                 )}
               </button>
 
-              {/* Permanent or Click Tooltip Badge for Word Translation */}
-              {(isTooltipActive || (showInlineTranslationBadges && arabicTranslation)) && (
+              {/* Click-Activated Tooltip Badge for Selected Word */}
+              {isTooltipActive && arabicTranslation && (
                 <span
                   dir="rtl"
-                  className="font-arabic text-[10px] text-amber-300 font-extrabold bg-black/80 border border-amber-500/40 px-1.5 py-0.2 rounded mt-0.5 shadow-md animate-in fade-in"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap font-arabic text-[11px] text-amber-300 font-extrabold bg-slate-900 border border-amber-500/60 px-2 py-0.5 rounded-lg shadow-xl z-30 animate-in fade-in"
                 >
                   {arabicTranslation}
                 </span>
               )}
-            </div>
+            </span>
           );
         })}
       </div>
