@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { Plus, Check, Star, Volume2, Sparkles, RefreshCw, Mic, BookOpen } from 'lucide-react';
 import { oxford3000Data } from '../data/oxford3000';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
@@ -19,24 +20,31 @@ const CEFR_BADGES = {
     label: 'A2 Elementary',
   },
   B1: {
-    bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    bg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
     label: 'B1 Intermediate',
   },
   B2: {
     bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
     label: 'B2 Upper-Int',
   },
+  C1: {
+    bg: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    label: 'C1 Advanced',
+  },
 };
 
 // Part of Speech Badge Styling
 const POS_STYLES = {
+  n: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   noun: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  v: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
   verb: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  adj: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   adjective: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  adverb: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  preposition: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-  conjunction: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  pronoun: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  adv: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  adverb: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  prep: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  preposition: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
 };
 
 // Individual Interactive Lexicon Card Component
@@ -105,14 +113,6 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
     }
   };
 
-  const handleGenerateAiSentence = async (e) => {
-    if (e) e.stopPropagation();
-    setIsGeneratingAiSentence(true);
-    try {
-      const res = await fetchMissingTerm ? null : null; // check import
-    } catch (err) {}
-  };
-
   const handleStartPractice = (e) => {
     if (e) e.stopPropagation();
     if (!activeSentence) return;
@@ -155,7 +155,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
     if (e) e.stopPropagation();
     setIsGeneratingAiSentence(true);
     try {
-      const res = await generateSentence(wordObj.word, 'medium', 'any', 'Casual Conversation', 'Present', apiKey);
+      const res = await generateSentence(wordObj.word, 'medium', 'any', 'Casual Conversation', 'Present', apiKey, wordObj.cefr || 'B1');
       if (res && res.sentence) {
         setCustomAiSentence(res);
         addNotification(`Generated new AI sentence for "${wordObj.word}"`, 'success');
@@ -190,9 +190,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           }`}
           title={selected ? 'Remove from Storyteller' : 'Select for AI Storyteller (Max 5)'}
         >
-          <span className="w-3.5 h-3.5 flex items-center justify-center rounded-full border border-current text-[10px] font-black">
-            {selected ? '✓' : '+'}
-          </span>
+          <Plus className="w-3.5 h-3.5" />
           <span>Story</span>
         </button>
 
@@ -204,16 +202,14 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
               e.stopPropagation();
               toggleMastered(wordObj.word);
             }}
-            className={`p-2 rounded-xl border transition-all active:scale-90 ${
+            className={`p-2 rounded-xl border transition-all active:scale-90 flex items-center justify-center ${
               mastered
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
-                : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
+                : 'theme-btn-secondary opacity-70 hover:opacity-100'
             }`}
             title={mastered ? 'Marked as Mastered' : 'Mark as Mastered'}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-            </svg>
+            <Check className={`w-4 h-4 ${mastered ? 'text-emerald-400' : ''}`} />
           </button>
 
           {/* Favorite Toggle */}
@@ -222,26 +218,14 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
               e.stopPropagation();
               toggleFavorite(wordObj.word);
             }}
-            className={`p-2 rounded-xl border transition-all active:scale-90 ${
+            className={`p-2 rounded-xl border transition-all active:scale-90 flex items-center justify-center ${
               favorited
                 ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
-                : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
+                : 'theme-btn-secondary opacity-70 hover:opacity-100'
             }`}
             title={favorited ? 'Remove from Favorites' : 'Add to Favorites'}
           >
-            <svg
-              className="w-4 h-4"
-              fill={favorited ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-              />
-            </svg>
+            <Star className={`w-4 h-4 ${favorited ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
         </div>
       </div>
@@ -265,21 +249,14 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           <button
             onClick={handlePlayWord}
             disabled={isPlayingWord}
-            className={`p-2.5 rounded-xl border transition-all active:scale-90 ${
+            className={`p-2.5 rounded-xl border transition-all active:scale-90 flex items-center justify-center ${
               isPlayingWord
                 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md animate-pulse'
-                : 'bg-slate-900/60 text-cyan-400 border-slate-800 hover:bg-slate-800 hover:border-cyan-500/40'
+                : 'theme-btn-secondary opacity-90 hover:opacity-100'
             }`}
             title="Listen to pronunciation (TTS)"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-              />
-            </svg>
+            <Volume2 className="w-4 h-4 text-cyan-400" />
           </button>
         </div>
 

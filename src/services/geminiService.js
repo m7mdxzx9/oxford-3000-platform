@@ -90,8 +90,8 @@ const DYNAMIC_FALLBACK_PATTERNS = [
     translations: (w, ar) => ({ "specialist": "المتخصص", "inspected": "فحص", "modern": "الحديث", [w]: ar || w, "ensure": "لضمان", "operating": "عمله", "safely": "بآمان" })
   },
   {
-    sentence: (w) => `She demonstrated an exceptional ability to handle ${w} effectively.`,
-    arabic: (w, ar) => `أظهرت قدرة استثنائية في التعامل مع ${ar || w} بفاعلية.`,
+    sentence: (w) => `She demonstrated an exceptional ability to handle ${w} effectively in practice.`,
+    arabic: (w, ar) => `أظهرت قدرة استثنائية في التعامل مع ${ar || w} بفاعلية في الممارسة.`,
     translations: (w, ar) => ({ "demonstrated": "أظهرت", "exceptional": "استثنائية", "ability": "قدرة", "handle": "التعامل", [w]: ar || w, "effectively": "بفاعلية" })
   },
   {
@@ -113,10 +113,18 @@ const DYNAMIC_FALLBACK_PATTERNS = [
     sentence: (w) => `The team discussed how ${w} could improve the overall efficiency of the system.`,
     arabic: (w, ar) => `ناقش الفريق كيف يمكن لـ ${ar || w} تحسين الكفاءة الإجمالية للنظام.`,
     translations: (w, ar) => ({ "team": "الفريق", "discussed": "ناقش", [w]: ar || w, "improve": "تحسين", "efficiency": "الكفاءة", "system": "النظام" })
+  },
+  {
+    sentence: (w) => `Understanding the core concept of ${w} is essential for solving complex problems.`,
+    arabic: (w, ar) => `فهم المفهوم الأساسي لـ ${ar || w} أمر أساسي لحل المشكلات المعقدة.`,
+    translations: (w, ar) => ({ "Understanding": "فهم", "concept": "المفهوم", [w]: ar || w, "essential": "أساسي", "solving": "لحال" })
+  },
+  {
+    sentence: (w) => `He shared a helpful example showing how to apply ${w} in daily conversation.`,
+    arabic: (w, ar) => `شارك مثالاً مفيداً يوضح كيفية تطبيق ${ar || w} في المحادثة اليومية.`,
+    translations: (w, ar) => ({ "shared": "شارك", "example": "مثالاً", "showing": "يوضح", "apply": "تطبيق", [w]: ar || w })
   }
 ];
-
-let fallbackPatternCounter = 0;
 
 /**
  * Advanced AI Sentence Generation with Real Gemini AI Logic & Dynamic Fallback Engine
@@ -132,13 +140,15 @@ export const generateSentence = async (
 ) => {
   if (!word) return { sentence: 'Please select or enter a target vocabulary word.', arabic: '', grammarNote: '', wordTranslations: {} };
 
-  const promptText = `Act as an expert English Linguist. Generate a single highly natural, educational English sentence using the Oxford 3000 vocabulary word: "${word}".
+  const randomSeed = Math.floor(Math.random() * 10000);
+  const promptText = `Act as an expert English Linguist. Generate a unique, creative, educational English sentence using the Oxford 3000 vocabulary word: "${word}".
 Target word: "${word}"
 Target CEFR Difficulty Level: ${cefrLevel} (A1: simple beginner, A2: elementary, B1: intermediate, B2: upper-intermediate, C1: advanced sophisticated)
 Length: ${length} (short: 5-8 words, medium: 9-13 words, long: 14-22 words)
 Position of "${word}": ${position} (beginning, middle, end, or any)
 Genre/Style: ${style}
 Grammatical Tense Focus: ${tense}
+Random Seed: ${randomSeed}
 
 Return ONLY raw JSON object:
 {
@@ -163,9 +173,9 @@ Return ONLY raw JSON object:
     }
   }
 
-  // Smart Dynamic Fallback sentence builder if offline or API key is unavailable
-  fallbackPatternCounter = (fallbackPatternCounter + 1) % DYNAMIC_FALLBACK_PATTERNS.length;
-  const pattern = DYNAMIC_FALLBACK_PATTERNS[fallbackPatternCounter];
+  // Truly random fallback pattern selector if offline
+  const randIdx = Math.floor(Math.random() * DYNAMIC_FALLBACK_PATTERNS.length);
+  const pattern = DYNAMIC_FALLBACK_PATTERNS[randIdx];
   const cleanWord = String(word).trim().toLowerCase();
 
   return {
