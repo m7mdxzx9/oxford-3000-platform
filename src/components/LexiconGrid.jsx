@@ -183,31 +183,31 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         {/* Storyteller Select Checkbox */}
         <button
           onClick={handleSelectWord}
-          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all active:scale-95 shadow-sm ${
             selected
               ? 'theme-btn-primary'
-              : 'theme-btn-secondary opacity-80 hover:opacity-100'
+              : 'theme-btn-secondary opacity-90 hover:opacity-100'
           }`}
           title={selected ? 'Remove from Storyteller' : 'Select for AI Storyteller (Max 5)'}
         >
-          <span className="w-3.5 h-3.5 flex items-center justify-center rounded border border-current text-[10px]">
+          <span className="w-3.5 h-3.5 flex items-center justify-center rounded-full border border-current text-[10px] font-black">
             {selected ? '✓' : '+'}
           </span>
           <span>Story</span>
         </button>
 
         {/* Action Icons (Mastered & Favorite) */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1.5">
           {/* Mastered Toggle */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleMastered(wordObj.word);
             }}
-            className={`p-1.5 rounded-lg border transition-all ${
+            className={`p-2 rounded-xl border transition-all active:scale-90 ${
               mastered
-                ? 'bg-emerald-500/20 text-emerald-600 border-emerald-500/40'
-                : 'opacity-60 hover:opacity-100 hover:bg-black/5 border-transparent'
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
+                : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
             }`}
             title={mastered ? 'Marked as Mastered' : 'Mark as Mastered'}
           >
@@ -222,10 +222,10 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
               e.stopPropagation();
               toggleFavorite(wordObj.word);
             }}
-            className={`p-1.5 rounded-lg border transition-all ${
+            className={`p-2 rounded-xl border transition-all active:scale-90 ${
               favorited
-                ? 'bg-amber-500/20 text-amber-600 border-amber-500/40'
-                : 'opacity-60 hover:opacity-100 hover:bg-black/5 border-transparent'
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
+                : 'bg-slate-900/40 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
             }`}
             title={favorited ? 'Remove from Favorites' : 'Add to Favorites'}
           >
@@ -265,10 +265,10 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           <button
             onClick={handlePlayWord}
             disabled={isPlayingWord}
-            className={`p-2 rounded-xl border transition-all ${
+            className={`p-2.5 rounded-xl border transition-all active:scale-90 ${
               isPlayingWord
-                ? 'theme-btn-primary animate-pulse'
-                : 'theme-btn-secondary'
+                ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md animate-pulse'
+                : 'bg-slate-900/60 text-cyan-400 border-slate-800 hover:bg-slate-800 hover:border-cyan-500/40'
             }`}
             title="Listen to pronunciation (TTS)"
           >
@@ -286,36 +286,36 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         {/* Badges Row (POS & CEFR) */}
         <div className="flex items-center flex-wrap gap-2">
           {/* POS Tag */}
-          <span dir="ltr" className={`ltr-isolate text-xs font-semibold px-2.5 py-0.5 rounded-md border capitalize ${posStyle}`}>
+          <span dir="ltr" className={`ltr-isolate text-xs font-semibold px-2.5 py-0.5 rounded-lg border capitalize ${posStyle}`}>
             {wordObj.pos || 'word'}
           </span>
 
           {/* CEFR Level Tag */}
-          <span dir="ltr" className={`ltr-isolate text-xs font-bold px-2.5 py-0.5 rounded-md border shadow-sm ${cefrStyle.bg}`}>
+          <span dir="ltr" className={`ltr-isolate text-xs font-bold px-2.5 py-0.5 rounded-lg border shadow-sm ${cefrStyle.bg}`}>
             {wordObj.cefr || 'A1'}
           </span>
         </div>
 
         {/* Arabic Translation Block (RTL Isolated) */}
-        <div dir="rtl" className="rtl-text rtl-isolate p-2.5 rounded-xl border border-black/10 mt-2 bg-black/5">
-          <p className="text-lg font-extrabold tracking-wide font-arabic">
+        <div dir="rtl" className="rtl-text rtl-isolate p-3 rounded-2xl border border-white/[0.08] mt-2 bg-slate-950/40">
+          <p className="text-lg font-extrabold tracking-wide font-arabic text-amber-300">
             {wordObj.arabic}
           </p>
         </div>
 
         {/* AI Sentence Generator & Interactive Tokens Block */}
-        <div dir="ltr" className="ltr-isolate bg-slate-950/40 p-3 rounded-xl border border-slate-800/40 text-xs text-slate-300 space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium flex-wrap gap-1">
-            <span className="font-bold flex items-center gap-1 text-cyan-400">
+        <div dir="ltr" className="ltr-isolate bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800/60 text-xs text-slate-300 space-y-2.5">
+          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium flex-wrap gap-1.5">
+            <span className="font-extrabold flex items-center gap-1.5 text-cyan-400">
               {customAiSentence ? '✨ AI Sentence' : 'Example Sentence'}
             </span>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleCreateNewAiSentence}
                 disabled={isGeneratingAiSentence}
-                className="text-purple-400 hover:text-purple-300 flex items-center space-x-1 font-bold bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20"
+                className="px-2.5 py-1 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1 bg-purple-500/15 text-purple-300 border-purple-500/30 hover:bg-purple-500/25 active:scale-95 shadow-sm"
                 title="Generate new custom AI sentence for this word"
               >
                 <span>{isGeneratingAiSentence ? 'Generating...' : customAiSentence ? '🔄 Change' : '✨ AI Sentence'}</span>
@@ -327,7 +327,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
                     type="button"
                     onClick={handlePlayExample}
                     disabled={isPlayingExample}
-                    className="text-cyan-400 hover:text-cyan-300 flex items-center space-x-1"
+                    className="px-2 py-1 rounded-lg text-[11px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/20 transition-all flex items-center gap-1 active:scale-95"
                     title="Listen to full example sentence"
                   >
                     <span>{isPlayingExample ? 'Playing...' : 'Play'}</span>
@@ -335,7 +335,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
                   <button
                     type="button"
                     onClick={handleStartPractice}
-                    className="text-amber-400 hover:text-amber-300 flex items-center space-x-1 font-semibold"
+                    className="px-2 py-1 rounded-lg text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-all flex items-center gap-1 active:scale-95"
                     title="Practice speaking sentence with mic"
                   >
                     <span>Mic</span>
@@ -344,6 +344,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
               )}
             </div>
           </div>
+
 
           {/* Interactive Word Tokens */}
           {activeSentence && (
