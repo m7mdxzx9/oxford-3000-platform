@@ -20,31 +20,40 @@ const getApiKey = (providedKey) => {
  * Robust Universal Gemini API poster with multi-model fallback chain & strict JSON config.
  */
 const callGeminiApi = async (promptText, apiKey = '') => {
-  const key = getApiKey(apiKey);
+  const keysToTry = Array.from(
+    new Set([
+      apiKey ? apiKey.trim() : '',
+      typeof window !== 'undefined' && window.localStorage ? (localStorage.getItem('oxford3000_gemini_api_key') || '').trim() : '',
+      DEFAULT_GEMINI_KEY,
+    ])
+  ).filter(Boolean);
+
   const body = JSON.stringify({
     contents: [{ parts: [{ text: promptText }] }],
     generationConfig: {
       responseMimeType: 'application/json',
-      temperature: 0.2,
+      temperature: 0.7,
     },
   });
 
-  for (const endpoint of GEMINI_MODEL_ENDPOINTS) {
-    try {
-      const res = await fetch(`${endpoint}?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text;
-      } else {
-        console.warn(`Gemini endpoint ${endpoint} status:`, res.status);
+  for (const currentKey of keysToTry) {
+    for (const endpoint of GEMINI_MODEL_ENDPOINTS) {
+      try {
+        const res = await fetch(`${endpoint}?key=${currentKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return text;
+        } else {
+          console.warn(`Gemini endpoint ${endpoint} status ${res.status} for key:`, currentKey.substring(0, 10));
+        }
+      } catch (e) {
+        console.warn(`Gemini endpoint ${endpoint} fetch error:`, e);
       }
-    } catch (e) {
-      console.warn(`Gemini endpoint ${endpoint} error:`, e);
     }
   }
 
@@ -58,18 +67,7 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
   if (!term || typeof term !== 'string' || !term.trim()) return null;
   const cleanTerm = term.trim().toLowerCase();
 
-  const promptText = `Provide exact raw JSON for the English vocabulary word "${cleanTerm}". Output structure:
-{
-  "word": "${cleanTerm}",
-  "pos": "noun|verb|adjective|adverb|preposition|conjunction",
-  "cefr": "A1|A2|B1|B2",
-  "arabic": "دقيقة ومضبوطة بالشكل",
-  "example": "Natural English example sentence using the word",
-  "ipa": "/phonetic transcription/",
-  "collocations": ["common pairing 1", "common pairing 2"],
-  "synonyms": ["synonym1", "synonym2"]
-}`;
-
+  const promptText = `Define the English vocabulary word: "${cleanTerm}". Return raw JSON object with keys: "word", "pos", "cefr" (A1, A2, B1, B2, or C1), "ipa", "arabic", "example" (a natural English example sentence).`;
   const rawText = await callGeminiApi(promptText, apiKey);
   if (rawText) {
     const cleanedText = rawText.replace(/```json\s*|\s*```/g, '').replace(/```/g, '').trim();
@@ -77,36 +75,12 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed && parsed.word) {
-          return {
-            id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-            word: (parsed.word || cleanTerm).toLowerCase(),
-            pos: parsed.pos || 'noun',
-            cefr: parsed.cefr || 'B1',
-            arabic: parsed.arabic || `ترجمة ${cleanTerm}`,
-            example: parsed.example || `Example sentence featuring ${cleanTerm}.`,
-            ipa: parsed.ipa || `/${cleanTerm}/`,
-            collocations: parsed.collocations || [],
-            synonyms: parsed.synonyms || [],
-            isCustom: true,
-          };
-        }
+        if (parsed && parsed.word) return { ...parsed, isCustom: true };
       } catch (e) {}
     }
   }
 
-  return {
-    id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    word: cleanTerm,
-    pos: 'noun',
-    cefr: 'B1',
-    arabic: `ترجمة ${cleanTerm}`,
-    example: `This is an example sentence featuring ${cleanTerm}.`,
-    ipa: `/${cleanTerm}/`,
-    collocations: [`use ${cleanTerm}`, `good ${cleanTerm}`],
-    synonyms: [],
-    isCustom: true,
-  };
+  return null;
 };
 
 const DYNAMIC_FALLBACK_PATTERNS = [
@@ -184,7 +158,7 @@ Return ONLY raw JSON object:
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed && parsed.sentence) return parsed;
+        if (parsed && parsed.sentence) return { ...parsed, isRealAi: true, aiModel: 'Gemini 2.5 Flash' };
       } catch (e) {}
     }
   }
@@ -197,8 +171,9 @@ Return ONLY raw JSON object:
   return {
     sentence: pattern.sentence(cleanWord),
     arabic: pattern.arabic(cleanWord, null),
-    grammarNote: `Educational context for "${cleanWord}". (Note: Add your free Gemini API key in settings for unlimited custom AI generation).`,
+    grammarNote: `Educational context for "${cleanWord}". (Note: Connected with offline template. Check your internet connection for live AI).`,
     wordTranslations: pattern.translations(cleanWord, null),
+    isRealAi: false,
   };
 };
 

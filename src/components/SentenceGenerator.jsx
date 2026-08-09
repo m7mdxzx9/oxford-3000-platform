@@ -373,9 +373,20 @@ export default function SentenceGenerator() {
       {aiResult && aiResult.sentence && (
         <div className="card-theme-target glass-card p-6 sm:p-8 rounded-3xl border space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-500" /> Interactive Sentence & Word Tokens
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-500" /> Interactive Sentence & Word Tokens
+              </span>
+              {aiResult?.isRealAi !== false ? (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 shadow-sm">
+                  <Sparkles className="w-3 h-3 text-purple-400" /> Live Gemini 2.5 Flash AI
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                  Offline Context Mode
+                </span>
+              )}
+            </div>
 
             <div className="flex items-center gap-2">
               <button
