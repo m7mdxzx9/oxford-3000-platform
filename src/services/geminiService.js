@@ -1,4 +1,5 @@
 export const DEFAULT_GEMINI_KEY = 'AIzaSyAJJYxSvml0VsoaC-rhseLPfI0APtAFnr4';
+export const DEFAULT_NVIDIA_KEY = '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';
 
 export const GEMINI_MODEL_ENDPOINTS = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
@@ -13,17 +14,18 @@ const getApiKey = (providedKey) => {
     const stored = localStorage.getItem('oxford3000_gemini_api_key') || localStorage.getItem('gemini_api_key');
     if (stored && stored.trim()) return stored.trim();
   }
-  return DEFAULT_GEMINI_KEY;
+  return DEFAULT_NVIDIA_KEY;
 };
 
 /**
- * Robust Universal Gemini API poster with multi-model fallback chain & strict JSON config.
+ * Robust Universal Gemini & NVIDIA AI poster with multi-model fallback chain & strict JSON config.
  */
 const callGeminiApi = async (promptText, apiKey = '') => {
   const keysToTry = Array.from(
     new Set([
       apiKey ? apiKey.trim() : '',
       typeof window !== 'undefined' && window.localStorage ? (localStorage.getItem('oxford3000_gemini_api_key') || '').trim() : '',
+      DEFAULT_NVIDIA_KEY,
       DEFAULT_GEMINI_KEY,
     ])
   ).filter(Boolean);
@@ -154,7 +156,7 @@ Return ONLY raw JSON object:
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed && parsed.sentence) return { ...parsed, isRealAi: true, aiModel: 'Gemini 2.5 Flash' };
+        if (parsed && parsed.sentence) return { ...parsed, isRealAi: true, aiModel: 'Live AI Engine' };
       } catch (e) {}
     }
   }
