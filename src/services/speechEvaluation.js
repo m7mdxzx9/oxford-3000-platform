@@ -133,8 +133,31 @@ const stopAudioStreamTracks = () => {
   }
 };
 
+let silenceTimer = null;
+let maxSessionTimer = null;
+
+const resetSilenceTimer = () => {
+  if (silenceTimer) clearTimeout(silenceTimer);
+  // Auto stop if user is silent for 6 seconds
+  silenceTimer = setTimeout(() => {
+    console.log('Auto-stopping mic due to 6s silence timeout.');
+    stopListening();
+  }, 6000);
+};
+
+const clearAllTimers = () => {
+  if (silenceTimer) {
+    clearTimeout(silenceTimer);
+    silenceTimer = null;
+  }
+  if (maxSessionTimer) {
+    clearTimeout(maxSessionTimer);
+    maxSessionTimer = null;
+  }
+};
+
 /**
- * Bulletproof Real Speech Recognition Session with Continuous Listening.
+ * Bulletproof Real Speech Recognition Session with Continuous Listening and 6s Silence Auto-Stop.
  */
 export const startListening = async (onFinalResult, onError, onInterimResult) => {
   stopListening();
@@ -165,6 +188,14 @@ export const startListening = async (onFinalResult, onError, onInterimResult) =>
     return;
   }
 
+  // Set maximum session safety timeout (20 seconds max)
+  maxSessionTimer = setTimeout(() => {
+    console.log('Max 20s recording session limit reached.');
+    stopListening();
+  }, 20000);
+
+  resetSilenceTimer();
+
   const createRecognition = () => {
     try {
       const recognition = new SpeechRecognitionClass();
@@ -173,10 +204,10 @@ export const startListening = async (onFinalResult, onError, onInterimResult) =>
       recognition.lang = 'en-US';
 
       recognition.onresult = (event) => {
+        resetSilenceTimer(); // Reset silence countdown whenever speech is heard
         let finalChunk = '';
         let interimChunk = '';
 
-        // Crucial Fix: Always iterate from 0 to accumlative results length to NEVER drop earlier words!
         for (let i = 0; i < event.results.length; ++i) {
           const res = event.results[i];
           if (res && res[0]) {
@@ -206,12 +237,12 @@ export const startListening = async (onFinalResult, onError, onInterimResult) =>
         console.warn('SpeechRecognition error:', errCode);
 
         if (errCode === 'no-speech' && !isExplicitlyStopped) {
-          // Ignore transient silence timeouts in continuous mode
           return;
         }
 
         if (errCode === 'not-allowed' || errCode === 'permission-denied') {
           isExplicitlyStopped = true;
+          clearAllTimers();
           if (typeof currentOnError === 'function') {
             currentOnError(new Error('Microphone access denied by browser.'));
           }
@@ -219,16 +250,17 @@ export const startListening = async (onFinalResult, onError, onInterimResult) =>
       };
 
       recognition.onend = () => {
-        // Auto-restart if browser stopped recognition due to momentary pause, unless user explicitly clicked stop
         if (!isExplicitlyStopped) {
           try {
             activeRecognition = createRecognition();
             activeRecognition.start();
           } catch (e) {
+            clearAllTimers();
             stopAudioStreamTracks();
             activeRecognition = null;
           }
         } else {
+          clearAllTimers();
           stopAudioStreamTracks();
           activeRecognition = null;
         }
@@ -236,6 +268,7 @@ export const startListening = async (onFinalResult, onError, onInterimResult) =>
 
       return recognition;
     } catch (err) {
+      clearAllTimers();
       if (typeof currentOnError === 'function') {
         currentOnError(err instanceof Error ? err : new Error(String(err)));
       }
@@ -291,6 +324,7 @@ export const recordAndEvaluateSpeech = (targetText = '', onComplete, onError, on
 
 export const stopListening = () => {
   isExplicitlyStopped = true;
+  clearAllTimers();
   if (activeRecognition) {
     try {
       activeRecognition.stop();

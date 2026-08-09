@@ -20,6 +20,7 @@ export default function WordModal({ word, onClose }) {
   // Custom AI Sentence State
   const [customAiSentence, setCustomAiSentence] = useState(null);
   const [generatingSentence, setGeneratingSentence] = useState(false);
+  const [sentenceLevel, setSentenceLevel] = useState(word.cefr || 'B1');
 
   if (!word) return null;
 
@@ -50,13 +51,13 @@ export default function WordModal({ word, onClose }) {
     }
   };
 
-  const handleGenerateAiSentence = async () => {
+  const handleGenerateAiSentence = async (overrideLevel = sentenceLevel) => {
     setGeneratingSentence(true);
     try {
-      const res = await generateSentence(word.word, 'medium', 'any', 'Casual Conversation', 'Present', apiKey);
+      const res = await generateSentence(word.word, 'medium', 'any', 'Casual Conversation', 'Present', apiKey, overrideLevel);
       if (res && res.sentence) {
         setCustomAiSentence(res);
-        addNotification(`Generated new AI sentence for "${word.word}"`, 'success');
+        addNotification(`Generated new ${overrideLevel} AI sentence for "${word.word}"`, 'success');
       }
     } catch (err) {
       addNotification('Failed to generate AI sentence.', 'warning');
@@ -69,6 +70,7 @@ export default function WordModal({ word, onClose }) {
     if (isRecording) {
       stopListening();
       setIsRecording(false);
+      addNotification('Microphone recording stopped.', 'info');
       return;
     }
 
@@ -200,12 +202,12 @@ export default function WordModal({ word, onClose }) {
               onClick={handleRecordSpeech}
               className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 isRecording
-                  ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30'
+                  ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30 font-bold'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
               }`}
             >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-rose-400" />}
-              {isRecording ? 'Listening...' : 'Practice Voice'}
+              {isRecording ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-rose-400" />}
+              {isRecording ? '🛑 إلغاء / توقف المايك' : 'Practice Voice'}
             </button>
           </div>
         </div>
@@ -224,20 +226,42 @@ export default function WordModal({ word, onClose }) {
         )}
 
         {/* AI Sentence Generator & Interactive Tokens Block */}
-        <div className="mb-5 space-y-2">
+        <div className="mb-5 space-y-2.5">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              {customAiSentence ? '✨ AI Example Sentence' : 'Context Example'}
+              {customAiSentence ? `✨ AI Sentence (${sentenceLevel})` : 'Context Example'}
             </label>
 
-            <button
-              onClick={handleGenerateAiSentence}
-              disabled={generatingSentence}
-              className="flex items-center gap-1.5 px-3 py-1 bg-purple-600/80 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
-            >
-              {generatingSentence ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {generatingSentence ? 'Generating...' : customAiSentence ? '🔄 Change Sentence' : '✨ AI Sentence'}
-            </button>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* CEFR Level Quick Selector */}
+              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                {['A1', 'A2', 'B1', 'B2', 'C1'].map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => {
+                      setSentenceLevel(lvl);
+                      handleGenerateAiSentence(lvl);
+                    }}
+                    className={`px-2 py-0.5 text-[10px] font-extrabold rounded-lg transition-all ${
+                      sentenceLevel === lvl
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {lvl}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => handleGenerateAiSentence(sentenceLevel)}
+                disabled={generatingSentence}
+                className="flex items-center gap-1.5 px-3 py-1 bg-purple-600/80 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+              >
+                {generatingSentence ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                {generatingSentence ? 'Generating...' : customAiSentence ? '🔄 Change' : '✨ AI Sentence'}
+              </button>
+            </div>
           </div>
 
           {activeSentence && (

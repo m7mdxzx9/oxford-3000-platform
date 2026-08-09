@@ -153,12 +153,14 @@ export const generateSentence = async (
   position = 'any',
   style = 'Casual Conversation',
   tense = 'Present',
-  apiKey = ''
+  apiKey = '',
+  cefrLevel = 'B1'
 ) => {
   if (!word) return { sentence: 'Please select or enter a target vocabulary word.', arabic: '', grammarNote: '', wordTranslations: {} };
 
   const promptText = `Act as an expert English Linguist. Generate a single highly natural, educational English sentence using the Oxford 3000 vocabulary word: "${word}".
 Target word: "${word}"
+Target CEFR Difficulty Level: ${cefrLevel} (A1: simple beginner, A2: elementary, B1: intermediate, B2: upper-intermediate, C1: advanced sophisticated)
 Length: ${length} (short: 5-8 words, medium: 9-13 words, long: 14-22 words)
 Position of "${word}": ${position} (beginning, middle, end, or any)
 Genre/Style: ${style}
@@ -166,7 +168,7 @@ Grammatical Tense Focus: ${tense}
 
 Return ONLY raw JSON object:
 {
-  "sentence": "A natural, grammatically rich English sentence",
+  "sentence": "A natural, grammatically rich English sentence tailored strictly to ${cefrLevel} difficulty",
   "arabic": "الترجمة العربية الدقيقة والمناسبة للجملة الكاملة",
   "grammarNote": "Brief educational tip explaining why this sentence works or highlighting a collocation",
   "wordTranslations": {

@@ -16,6 +16,8 @@ export default function SentenceGenerator() {
   const [style, setStyle] = useState('Casual Conversation');
   const [tense, setTense] = useState('Present');
 
+  const [cefrLevel, setCefrLevel] = useState('B1');
+
   const [aiResult, setAiResult] = useState({
     sentence: 'They decided not to abandon their ambitious project after receiving support.',
     arabic: 'قرروا عدم التخلي عن مشروعهم الطموح بعد تلقي الدعم.',
@@ -97,13 +99,13 @@ export default function SentenceGenerator() {
     setSpeechResult(null);
 
     try {
-      const res = await generateSentence(targetWord, length, position, style, tense, apiKey);
+      const res = await generateSentence(targetWord, length, position, style, tense, apiKey, cefrLevel);
       if (typeof res === 'object') {
         setAiResult(res);
       } else {
         setAiResult({ sentence: res, arabic: '', grammarNote: '' });
       }
-      addNotification(`AI generated new sentence for "${targetWord}"`, 'success');
+      addNotification(`AI generated new ${cefrLevel} sentence for "${targetWord}"`, 'success');
     } catch (err) {
       addNotification('Failed to generate sentence with Gemini AI.', 'error');
     } finally {
@@ -121,6 +123,7 @@ export default function SentenceGenerator() {
     if (isRecording) {
       stopListening();
       setIsRecording(false);
+      addNotification('Microphone recording stopped.', 'info');
       return;
     }
 
@@ -157,6 +160,35 @@ export default function SentenceGenerator() {
 
       {/* Advanced Control Panel */}
       <div className="glass-panel p-6 rounded-3xl border space-y-6">
+        {/* CEFR Difficulty Level Selector Bar */}
+        <div className="space-y-2">
+          <label className="block text-xs font-extrabold uppercase tracking-wider opacity-75 flex items-center justify-between">
+            <span>🎯 AI Sentence Difficulty Level (مستوى صعوبة الجملة):</span>
+            <span className="text-amber-500 font-bold">{cefrLevel} Level</span>
+          </label>
+          <div className="grid grid-cols-5 gap-2">
+            {[
+              { id: 'A1', label: 'A1 Easy' },
+              { id: 'A2', label: 'A2 Elem' },
+              { id: 'B1', label: 'B1 Inter' },
+              { id: 'B2', label: 'B2 Upper' },
+              { id: 'C1', label: 'C1 Adv' },
+            ].map((lvl) => (
+              <button
+                key={lvl.id}
+                onClick={() => setCefrLevel(lvl.id)}
+                className={`py-2 px-2 rounded-xl text-xs font-extrabold transition-all border text-center ${
+                  cefrLevel === lvl.id
+                    ? 'theme-btn-primary shadow-md scale-105'
+                    : 'theme-btn-secondary opacity-70 hover:opacity-100'
+                }`}
+              >
+                {lvl.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Target Word Input with Interactive Autocomplete Dropdown */}
           <div className="flex-1 space-y-2 relative" ref={dropdownRef}>
@@ -425,11 +457,11 @@ export default function SentenceGenerator() {
             <button
               onClick={handleRecordSentence}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition-all border ${
-                isRecording ? 'bg-rose-600 text-white animate-pulse' : 'theme-btn-secondary'
+                isRecording ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30' : 'theme-btn-secondary'
               }`}
             >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              {t('readSentence')}
+              {isRecording ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-rose-400" />}
+              {isRecording ? '🛑 إلغاء / توقف المايك' : t('readSentence')}
             </button>
           </div>
 
