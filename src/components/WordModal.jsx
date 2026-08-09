@@ -70,52 +70,52 @@ export default function WordModal({ word, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="glass-panel w-full max-w-2xl bg-[#0a1636]/90 border border-cyan-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="glass-panel w-full max-w-2xl bg-[#0a1636]/90 border border-cyan-500/30 rounded-3xl p-4 sm:p-8 shadow-2xl relative flex flex-col max-h-[92vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-full transition-all"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-full transition-all"
         >
           <X className="w-6 h-6" />
         </button>
 
         {/* Header Badges */}
-        <div className="flex items-center gap-3 mb-4">
-          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+        <div className="flex items-center gap-2 flex-wrap mb-3 pr-8">
+          <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
             CEFR {word.cefr || word.level || 'B1'}
           </span>
-          <span className="px-3 py-1 text-xs font-medium rounded-full bg-slate-800 text-slate-300 italic">
+          <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-slate-800 text-slate-300 italic">
             {word.pos}
           </span>
           {word.isCustom && (
-            <span className="px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
               <Sparkles className="w-3 h-3" /> Gemini AI Generated
             </span>
           )}
         </div>
 
         {/* Word & Phonetic */}
-        <div className="flex items-baseline justify-between gap-4 mb-2">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight ltr-token">
+        <div className="flex items-baseline justify-between gap-2 mb-2 flex-wrap">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight ltr-token">
             {word.word}
           </h2>
-          <span className="text-lg text-cyan-400/90 font-mono ltr-token">
+          <span className="text-sm sm:text-lg text-cyan-400/90 font-mono ltr-token">
             {word.ipa || word.phonetic || `/${word.word}/`}
           </span>
         </div>
 
         {/* Arabic Meaning */}
-        <div className="mb-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-right">
-          <span className="text-xs text-slate-400 block mb-1">الترجمة العربية والتعريف</span>
-          <p className="text-xl font-bold text-amber-300 dir-rtl">{word.arabic || word.translation}</p>
+        <div className="mb-4 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-right">
+          <span className="text-[11px] text-slate-400 block mb-0.5">الترجمة العربية والتعريف</span>
+          <p className="text-lg sm:text-xl font-bold text-amber-300 dir-rtl">{word.arabic || word.translation}</p>
         </div>
 
         {/* Imagen 4.0 3D Visual Memory Concept */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Image className="w-4 h-4 text-purple-400" /> Imagen 4.0 Visual Memory Illustration
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <Image className="w-3.5 h-3.5 text-purple-400" /> Imagen 4.0 Visual Memory
             </span>
 
             {!illustrationUrl && (
@@ -131,22 +131,22 @@ export default function WordModal({ word, onClose }) {
           </div>
 
           {illustrationUrl && (
-            <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-slate-950 flex items-center justify-center p-4">
-              <img src={illustrationUrl} alt={word.word} className="w-48 h-48 object-contain rounded-xl shadow-lg" />
+            <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-slate-950 flex items-center justify-center p-3">
+              <img src={illustrationUrl} alt={word.word} className="w-36 h-36 sm:w-48 sm:h-48 object-contain rounded-xl shadow-lg" />
             </div>
           )}
         </div>
 
         {/* Voice Selector & Audio Controls */}
-        <div className="p-4 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 mb-6 space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 mb-5 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs text-cyan-300 font-semibold flex items-center gap-1">
-              <Volume2 className="w-4 h-4" /> Natural Voice Selector:
+              <Volume2 className="w-4 h-4" /> Voice:
             </span>
             <select
               value={voicePreset}
               onChange={(e) => setVoicePreset(e.target.value)}
-              className="bg-slate-900 text-xs text-white p-1.5 rounded-xl border border-slate-800 focus:outline-none"
+              className="bg-slate-900 text-xs text-white p-1.5 rounded-xl border border-slate-800 focus:outline-none max-w-[200px] truncate"
             >
               {voicePresets.map((vp) => (
                 <option key={vp.id} value={vp.id}>
@@ -156,13 +156,13 @@ export default function WordModal({ word, onClose }) {
             </select>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handlePlayWord(0.9)}
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-600/20 transition-all"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-600/20 transition-all"
               >
-                <Volume2 className="w-4 h-4" /> Natural Speed (0.9x)
+                <Volume2 className="w-4 h-4" /> Natural (0.9x)
               </button>
               <button
                 onClick={() => handlePlayWord(0.6)}
@@ -174,7 +174,7 @@ export default function WordModal({ word, onClose }) {
 
             <button
               onClick={handleRecordSpeech}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 isRecording
                   ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
@@ -188,7 +188,7 @@ export default function WordModal({ word, onClose }) {
 
         {/* Speech Score Result */}
         {speechResult && (
-          <div className="mb-6 p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+          <div className="mb-5 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-300">Speech Accuracy Score</span>
               <span className={`text-base font-extrabold ${speechResult.score >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
@@ -201,22 +201,22 @@ export default function WordModal({ word, onClose }) {
 
         {/* Context Example */}
         {word.example && (
-          <div className="mb-6">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          <div className="mb-5">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
               Context Example
             </label>
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-cyan-900/30">
+            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-cyan-900/30">
               <SentenceTokenViewer sentence={word.example} targetWord={word.word} />
             </div>
           </div>
         )}
 
         {/* Footer Actions */}
-        <div className="mt-auto pt-4 border-t border-slate-800/80 flex items-center justify-between gap-4">
+        <div className="mt-auto pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <button
               onClick={() => toggleFavorite(word.word)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                 fav
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -228,7 +228,7 @@ export default function WordModal({ word, onClose }) {
 
             <button
               onClick={() => toggleMastered(word.word)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
                 mst
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -241,7 +241,7 @@ export default function WordModal({ word, onClose }) {
 
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all"
+            className="w-full sm:w-auto px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all"
           >
             Done
           </button>

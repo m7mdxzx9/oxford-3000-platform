@@ -7,6 +7,7 @@ let currentAudioElement = null;
 let isPlaying = false;
 let currentResolve = null;
 let cachedVoices = [];
+let speechHeartbeatTimer = null;
 
 export const VOICE_PRESETS = [
   { id: 'us-female', name: 'US English - Natural Female (Samantha / Zira)', lang: 'en-US', gender: 'female', type: 2 },
@@ -91,7 +92,39 @@ export const buildYoudaoTtsUrl = (text, type = 2) => {
 };
 
 /**
- * Secondary Engine: Multi-Stream Audio Fallback (Youdao & Google TTS)
+ * Helper to chunk text into short sentences/phrases under 150 chars for clean stream playback
+ */
+const chunkTextForAudio = (text) => {
+  if (!text) return [];
+  const rawSentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const chunks = [];
+
+  for (const s of rawSentences) {
+    const trimmed = s.trim();
+    if (!trimmed) continue;
+    if (trimmed.length <= 150) {
+      chunks.push(trimmed);
+    } else {
+      // Split long sentence by commas or spaces into ~120 char chunks
+      const parts = trimmed.split(/,\s*/);
+      let current = '';
+      for (const part of parts) {
+        if ((current + ' ' + part).length <= 150) {
+          current = (current + ' ' + part).trim();
+        } else {
+          if (current) chunks.push(current);
+          current = part.trim();
+        }
+      }
+      if (current) chunks.push(current);
+    }
+  }
+
+  return chunks.length > 0 ? chunks : [text.trim()];
+};
+
+/**
+ * Secondary Engine: Multi-Stream Audio Fallback (Youdao & Google TTS) with Chaining
  */
 const playAudioStreamFallback = (text, presetId, speed, onComplete) => {
   if (typeof Audio === 'undefined') {
@@ -100,58 +133,63 @@ const playAudioStreamFallback = (text, presetId, speed, onComplete) => {
   }
 
   const preset = VOICE_PRESETS.find(p => p.id === presetId) || VOICE_PRESETS[0];
-  const wordCount = text.trim().split(/\s+/).length;
-  
-  // Use Youdao for short terms (< 6 words) or Google TTS for sentences
-  const url = wordCount < 6 
-    ? buildYoudaoTtsUrl(text, preset.type) 
-    : buildGoogleTtsUrl(text, preset.lang);
+  const chunks = chunkTextForAudio(text);
 
-  try {
-    currentAudioElement = new Audio(url);
-    if (typeof speed === 'number' && speed > 0) {
-      currentAudioElement.playbackRate = speed;
+  let currentChunkIndex = 0;
+
+  const playNextChunk = () => {
+    if (currentChunkIndex >= chunks.length) {
+      currentAudioElement = null;
+      if (onComplete) onComplete();
+      return;
     }
 
-    let completed = false;
-    const finish = () => {
-      if (!completed) {
-        completed = true;
-        currentAudioElement = null;
-        if (onComplete) onComplete();
-      }
-    };
+    const chunkText = chunks[currentChunkIndex];
+    currentChunkIndex++;
 
-    currentAudioElement.onended = finish;
-    currentAudioElement.onerror = () => {
-      // If primary fallback fails, try secondary Google TTS stream
-      if (wordCount < 6) {
-        try {
-          const secondaryUrl = buildGoogleTtsUrl(text, preset.lang);
-          currentAudioElement = new Audio(secondaryUrl);
-          currentAudioElement.onended = finish;
-          currentAudioElement.onerror = finish;
-          currentAudioElement.play().catch(finish);
-          return;
-        } catch (e) {}
-      }
-      finish();
-    };
+    const wordCount = chunkText.trim().split(/\s+/).length;
+    const url = wordCount < 6 
+      ? buildYoudaoTtsUrl(chunkText, preset.type) 
+      : buildGoogleTtsUrl(chunkText, preset.lang);
 
-    const playPromise = currentAudioElement.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => {}).catch(() => finish());
-    } else {
-      finish();
+    try {
+      currentAudioElement = new Audio(url);
+      if (typeof speed === 'number' && speed > 0) {
+        currentAudioElement.playbackRate = speed;
+      }
+
+      currentAudioElement.onended = playNextChunk;
+      currentAudioElement.onerror = () => {
+        // Fallback to Google TTS if Youdao fails
+        if (wordCount < 6) {
+          try {
+            const secondaryUrl = buildGoogleTtsUrl(chunkText, preset.lang);
+            currentAudioElement = new Audio(secondaryUrl);
+            currentAudioElement.onended = playNextChunk;
+            currentAudioElement.onerror = playNextChunk;
+            currentAudioElement.play().catch(playNextChunk);
+            return;
+          } catch (e) {}
+        }
+        playNextChunk();
+      };
+
+      const playPromise = currentAudioElement.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {}).catch(playNextChunk);
+      } else {
+        playNextChunk();
+      }
+    } catch (e) {
+      playNextChunk();
     }
-  } catch (e) {
-    currentAudioElement = null;
-    if (onComplete) onComplete();
-  }
+  };
+
+  playNextChunk();
 };
 
 /**
- * Bulletproof Audio Player using Web Speech API with automatic Chrome unlock & multi-stream audio fallback.
+ * Bulletproof Audio Player using Web Speech API with Chrome Keep-Alive Heartbeat & multi-stream fallback.
  */
 export const playAudio = async (text, options = {}) => {
   stopAudio();
@@ -171,12 +209,16 @@ export const playAudio = async (text, options = {}) => {
   isPlaying = true;
 
   // Short delay after cancellation to prevent Chrome SpeechSynthesis lockup
-  await new Promise(r => setTimeout(r, 60));
+  await new Promise(r => setTimeout(r, 80));
 
   return new Promise((resolve) => {
     currentResolve = resolve;
 
     const cleanup = () => {
+      if (speechHeartbeatTimer) {
+        clearInterval(speechHeartbeatTimer);
+        speechHeartbeatTimer = null;
+      }
       isPlaying = false;
       if (currentResolve === resolve) {
         currentResolve = null;
@@ -186,7 +228,7 @@ export const playAudio = async (text, options = {}) => {
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis) {
       try {
-        // Ensure SpeechSynthesis is resumed if browser put it in paused state
+        window.speechSynthesis.cancel();
         window.speechSynthesis.resume();
 
         const utterance = new SpeechSynthesisUtterance(trimmed);
@@ -200,6 +242,23 @@ export const playAudio = async (text, options = {}) => {
         }
 
         let isEnded = false;
+
+        utterance.onstart = () => {
+          // Chrome SpeechSynthesis Keep-Alive Heartbeat (prevents browser from stopping speech midway)
+          if (speechHeartbeatTimer) clearInterval(speechHeartbeatTimer);
+          speechHeartbeatTimer = setInterval(() => {
+            if (typeof window !== 'undefined' && window.speechSynthesis) {
+              if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.pause();
+                window.speechSynthesis.resume();
+              } else {
+                clearInterval(speechHeartbeatTimer);
+                speechHeartbeatTimer = null;
+              }
+            }
+          }, 3500);
+        };
+
         utterance.onend = () => {
           if (!isEnded) {
             isEnded = true;
@@ -211,6 +270,10 @@ export const playAudio = async (text, options = {}) => {
           console.warn('Web Speech API error, switching to Audio Stream Fallback:', evt);
           if (!isEnded) {
             isEnded = true;
+            if (speechHeartbeatTimer) {
+              clearInterval(speechHeartbeatTimer);
+              speechHeartbeatTimer = null;
+            }
             playAudioStreamFallback(trimmed, presetId, speed, cleanup);
           }
         };
@@ -219,13 +282,13 @@ export const playAudio = async (text, options = {}) => {
         window.speechSynthesis.resume();
 
         // Safety timeout if browser SpeechSynthesis hangs without firing onend
-        const estimatedDuration = Math.max(2000, (trimmed.length / 10) * 1000);
+        const estimatedDuration = Math.max(3000, (trimmed.length / 8) * 1000);
         setTimeout(() => {
           if (!isEnded && isPlaying) {
             isEnded = true;
             cleanup();
           }
-        }, estimatedDuration + 1500);
+        }, estimatedDuration + 2000);
 
         return;
       } catch (err) {
@@ -241,6 +304,11 @@ export const playAudio = async (text, options = {}) => {
  * Stops any active audio immediately.
  */
 export const stopAudio = () => {
+  if (speechHeartbeatTimer) {
+    clearInterval(speechHeartbeatTimer);
+    speechHeartbeatTimer = null;
+  }
+
   if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis) {
     try {
       window.speechSynthesis.cancel();
@@ -281,3 +349,4 @@ export default {
   buildGoogleTtsUrl,
   buildYoudaoTtsUrl,
 };
+
