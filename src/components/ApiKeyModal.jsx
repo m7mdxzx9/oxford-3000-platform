@@ -82,15 +82,18 @@ export const ApiKeyModal = () => {
                 )}
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-400">
-              احصل على مفتاح Gemini المجاني 100% بنقرة واحدة من جوجل:{' '}
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed font-arabic">
+              💡 <b>توضيح مهام الحصة المجانية من Google AI Studio:</b><br />
+              • تمنح جوجل <b>20 طلباً مجانياً يومياً</b> لكل مفتاح مجاني بدون فيزا.<br />
+              • عند استهلاك الـ 20 طلباً، تفرض جوجل توقفاً مؤقتاً لمدة 24 ساعة (HTTP 429).<br />
+              • يمكنك إنشاء مفتاح جديد مجاناً في 5 ثوانٍ ولصقه هنا بنقرة واحدة:<br />
               <a
                 href="https://aistudio.google.com/app/apikey"
                 target="_blank"
                 rel="noreferrer"
-                className="text-cyan-400 font-bold underline hover:text-cyan-300"
+                className="inline-block mt-1 text-cyan-400 font-extrabold underline hover:text-cyan-300 bg-cyan-950/40 px-2 py-1 rounded-lg border border-cyan-800/60"
               >
-                Google AI Studio Key ➔
+                🔗 إنشاء مفتاح مجاني جديد من Google AI Studio ➔
               </a>
             </p>
           </div>
