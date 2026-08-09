@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { getTutorResponse } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
 import { startListening, stopListening } from '../services/speechEvaluation';
+import SentenceTokenViewer from './SentenceTokenViewer';
 
 const SCENARIOS = [
   { id: 'Job Interview', title: 'Job Interview' },
@@ -71,6 +72,7 @@ export default function PersonalTutor() {
         sender: 'tutor',
         text: res.reply,
         arabic: res.arabic,
+        wordTranslations: res.wordTranslations || {},
         corrections: res.corrections || [],
         suggestedReplies: res.suggestedReplies || [],
         cefrRating: res.cefrRating || 'B1'
@@ -187,7 +189,13 @@ export default function PersonalTutor() {
                   )}
                 </div>
 
-                <p className="font-medium ltr-token">{msg.text}</p>
+                <div className="space-y-2">
+                  <SentenceTokenViewer
+                    sentence={msg.text}
+                    wordTranslations={msg.wordTranslations}
+                    showInlineTranslationBadges={showArabic}
+                  />
+                </div>
 
                 {/* Phrase Corrections */}
                 {msg.corrections && msg.corrections.length > 0 && (
@@ -206,7 +214,8 @@ export default function PersonalTutor() {
                 )}
 
                 {showArabic && msg.arabic && (
-                  <div className="mt-2 pt-2 border-t border-slate-800/80 text-right dir-rtl">
+                  <div className="mt-2 pt-2 border-t border-slate-800/80 text-right dir-rtl font-arabic">
+                    <span className="text-[10px] text-slate-400 block mb-0.5">ترجمة الرد الكامل:</span>
                     <p className="text-xs font-semibold text-amber-300/90">{msg.arabic}</p>
                   </div>
                 )}

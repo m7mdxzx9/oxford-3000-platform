@@ -121,7 +121,7 @@ export const generateSentence = async (
   tense = 'Present',
   apiKey = ''
 ) => {
-  if (!word) return { sentence: 'Please select or enter a target vocabulary word.', arabic: '', grammarNote: '' };
+  if (!word) return { sentence: 'Please select or enter a target vocabulary word.', arabic: '', grammarNote: '', wordTranslations: {} };
 
   const promptText = `Act as an expert English Linguist. Generate a single highly natural, educational English sentence using the Oxford 3000 vocabulary word: "${word}".
 Target word: "${word}"
@@ -133,8 +133,12 @@ Grammatical Tense Focus: ${tense}
 Return ONLY raw JSON object:
 {
   "sentence": "A natural, grammatically rich English sentence",
-  "arabic": "الترجمة العربية الدقيقة والمناسبة للجملة",
-  "grammarNote": "Brief educational tip explaining why this sentence works or highlighting a collocation"
+  "arabic": "الترجمة العربية الدقيقة والمناسبة للجملة الكاملة",
+  "grammarNote": "Brief educational tip explaining why this sentence works or highlighting a collocation",
+  "wordTranslations": {
+    "word1": "ترجمة الكلمة 1 بالعربية",
+    "word2": "ترجمة الكلمة 2 بالعربية"
+  }
 }`;
 
   const rawText = await callGeminiApi(promptText, apiKey);
@@ -154,6 +158,13 @@ Return ONLY raw JSON object:
     sentence: `To achieve our goal, we need to understand how to use "${word}" correctly in daily ${style.toLowerCase()}.`,
     arabic: `لتحقيق هدفنا، نحتاج إلى فهم كيفية استخدام مصطلح "${word}" بشكل صحيح في المحادثات اليومية.`,
     grammarNote: `Natural usage of "${word}" in ${tense} tense context.`,
+    wordTranslations: {
+      "achieve": "تحقيق",
+      "goal": "هدفنا",
+      "understand": "فهم",
+      "correctly": "بشكل صحيح",
+      "daily": "اليومية"
+    }
   };
 };
 
@@ -175,6 +186,7 @@ For each scene, output:
 4. "focusWord": The target vocabulary word used in this scene line.
 5. "comprehensionQuestion": An engaging comprehension question in English about this scene line.
 6. "correctAnswer": Short, clear answer to the comprehension question.
+7. "wordTranslations": Key-value dictionary mapping EACH English word in "text" to its Arabic translation.
 
 Return ONLY a valid raw JSON array of 4 scene objects:
 [
@@ -184,7 +196,8 @@ Return ONLY a valid raw JSON array of 4 scene objects:
     "arabic": "...",
     "focusWord": "...",
     "comprehensionQuestion": "...",
-    "correctAnswer": "..."
+    "correctAnswer": "...",
+    "wordTranslations": { "word1": "ترجمة1", "word2": "ترجمة2" }
   }
 ]`;
 
@@ -214,6 +227,7 @@ Return ONLY a valid raw JSON array of 4 scene objects:
       focusWord: w1,
       comprehensionQuestion: 'How does every great adventure begin?',
       correctAnswer: 'With a single bold step',
+      wordTranslations: { "Every": "كل", "great": "عظيمة", "begins": "تبدأ", "single": "واحدة", "bold": "شجاعة", "step": "خطوة", "unknown": "المجهول", [w1]: w1 }
     },
     {
       sceneNumber: 2,
@@ -222,6 +236,7 @@ Return ONLY a valid raw JSON array of 4 scene objects:
       focusWord: w2,
       comprehensionQuestion: 'What did the team work hard to do?',
       correctAnswer: `Achieve their primary objectives`,
+      wordTranslations: { "Despite": "على الرغم", "difficulties": "الصعوبات", "team": "الفريق", "worked": "عمل", "hard": "بجد", [w2]: "تحقيق", "objectives": "أهدافهم" }
     },
     {
       sceneNumber: 3,
@@ -230,6 +245,7 @@ Return ONLY a valid raw JSON array of 4 scene objects:
       focusWord: w3,
       comprehensionQuestion: 'What did they share along the way?',
       correctAnswer: 'Valuable insights',
+      wordTranslations: { "embraced": "خاضوا", "exciting": "المثيرة", [w3]: "المغامرة", "shared": "تشاركوا", "valuable": "قيمة", "insights": "أفكارًا" }
     },
     {
       sceneNumber: 4,
@@ -238,6 +254,7 @@ Return ONLY a valid raw JSON array of 4 scene objects:
       focusWord: w4,
       comprehensionQuestion: 'What did they reach in the end?',
       correctAnswer: `Their ultimate ${w4}`,
+      wordTranslations: { "Finally": "أخيرًا", "celebrated": "احتفلوا", "success": "نجاحهم", "together": "معًا", "reached": "وصلوا", "ultimate": "النهائي", [w4]: "هدفهم" }
     },
   ];
 };
@@ -255,6 +272,7 @@ Return raw JSON object:
 {
   "reply": "Empathetic, highly encouraging, conversational English reply continuing the roleplay scenario naturally",
   "arabic": "الترجمة العربية الدقيقة لإجابتك",
+  "wordTranslations": { "key_word1": "ترجمة_1", "key_word2": "ترجمة_2" },
   "corrections": [
     { "original": "flawed phrase", "improved": "natural polished phrase", "reason": "Grammar or collocation explanation" }
   ],
@@ -281,6 +299,7 @@ Return raw JSON object:
   return {
     reply: `That's great! In our ${roleplayScenario} session, practice makes perfect. Tell me more!`,
     arabic: `هذا رائع! في جلسة ${roleplayScenario}، التدريب يصنع الإتقان. أخبرني المزيد!`,
+    wordTranslations: { "practice": "التدريب", "perfect": "الإتقان" },
     corrections: hasIssue ? [{ original: userMessage, improved: 'I am ready to practice.', reason: 'Subject-verb agreement' }] : [],
     suggestedReplies: ['I agree with that point.', 'Could you give me an example?'],
     cefrRating: 'B1',

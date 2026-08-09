@@ -340,27 +340,54 @@ export default function SentenceGenerator() {
       {/* Result Card */}
       {aiResult && aiResult.sentence && (
         <div className="card-theme-target glass-card p-6 sm:p-8 rounded-3xl border space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-500" /> Interactive Token Breakdown
+              <Check className="w-4 h-4 text-emerald-500" /> Interactive Sentence & Word Tokens
             </span>
 
-            <button
-              onClick={handleGenerate}
-              className="flex items-center gap-1.5 text-xs font-bold opacity-80 hover:opacity-100 transition-all"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> {t('regenerateBtn')}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleGenerate}
+                className="flex items-center gap-1.5 text-xs font-bold opacity-80 hover:opacity-100 transition-all"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> {t('regenerateBtn')}
+              </button>
+            </div>
           </div>
 
-          <div className="p-5 rounded-2xl border bg-black/5">
-            <SentenceTokenViewer sentence={aiResult.sentence} targetWord={targetWord} />
+          <div className="p-5 rounded-2xl border bg-black/5 space-y-2">
+            <SentenceTokenViewer
+              sentence={aiResult.sentence}
+              targetWord={targetWord}
+              wordTranslations={aiResult.wordTranslations}
+              showInlineTranslationBadges={true}
+            />
           </div>
+
+          {/* Word-by-word Arabic Translations Chips */}
+          {aiResult.wordTranslations && Object.keys(aiResult.wordTranslations).length > 0 && (
+            <div className="p-4 rounded-2xl border bg-black/5 space-y-2">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-amber-500 flex items-center gap-1.5 dir-rtl font-arabic">
+                🔤 ترجمة كلمات الجملة (كلمة بكلمة):
+              </span>
+              <div className="flex flex-wrap gap-2 dir-rtl">
+                {Object.entries(aiResult.wordTranslations).map(([enWord, arTrans], idx) => (
+                  <span
+                    key={idx}
+                    className="px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-extrabold text-amber-300 font-arabic flex items-center gap-1"
+                  >
+                    <span dir="ltr" className="font-sans text-white ltr-isolate">{enWord}</span>: {arTrans}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Arabic Translation */}
           {aiResult.arabic && (
             <div className="p-4 rounded-2xl border bg-black/5 text-right dir-rtl font-arabic">
-              <p className="text-base font-extrabold">{aiResult.arabic}</p>
+              <span className="text-xs opacity-75 font-semibold block mb-1">الترجمة العربية الكاملة للجملة:</span>
+              <p className="text-base font-extrabold text-amber-300">{aiResult.arabic}</p>
             </div>
           )}
 

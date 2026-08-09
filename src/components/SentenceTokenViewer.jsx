@@ -1,32 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { playAudio } from '../services/audioService';
+import { oxford3000Data } from '../data/oxford3000';
+
+// Fast lookup map for local Oxford 3000 word translations
+const localTranslationMap = new Map();
+if (Array.isArray(oxford3000Data)) {
+  oxford3000Data.forEach((item) => {
+    if (item && item.word && item.arabic) {
+      const cleanKey = item.word.toLowerCase().trim();
+      if (!localTranslationMap.has(cleanKey)) {
+        localTranslationMap.set(cleanKey, item.arabic);
+      }
+    }
+  });
+}
 
 /**
  * SentenceTokenViewer Component
- * Splits a sentence into interactive clickable word tokens with strict LTR CSS isolation.
- * Props:
- *  - sentence: string
- *  - targetWords: Array<string | { word: string }>
- *  - evaluationResult: { score: number, wordBreakdown: Array<{ word: string, match: boolean }> } | Array<{ word: string, match: boolean }>
- *  - activeWordIndex: number | null
- *  - onWordClick: function(wordToken, event, index)
- *  - onWordPractice: function(wordToken, event, index)
- *  - className: string
+ * Splits a sentence into interactive clickable word tokens with strict LTR CSS isolation
+ * and interactive word-by-word Arabic translation tooltips.
  */
 export const SentenceTokenViewer = ({
   sentence = '',
   targetWords = [],
+  wordTranslations = {}, // AI-generated or custom word-to-arabic map
   evaluationResult = null,
-  wordBreakdown = null, // backward compatibility alias
+  wordBreakdown = null,
   activeWordIndex = null,
   onWordClick = null,
   onWordPractice = null,
-  onPracticeWord = null, // backward compatibility alias
+  onPracticeWord = null,
   size = 'md',
   interactive = true,
+  showInlineTranslationBadges = false,
   className = '',
 }) => {
   const [playingWord, setPlayingWord] = useState(null);
+  const [activeTooltipWord, setActiveTooltipWord] = useState(null);
 
   if (!sentence) return null;
 
@@ -42,7 +52,7 @@ export const SentenceTokenViewer = ({
   );
 
   // Extract effective word breakdown list
-  const effectiveBreakdown = React.useMemo(() => {
+  const effectiveBreakdown = useMemo(() => {
     if (evaluationResult && Array.isArray(evaluationResult.wordBreakdown)) {
       return evaluationResult.wordBreakdown;
     }
@@ -56,7 +66,7 @@ export const SentenceTokenViewer = ({
   }, [evaluationResult, wordBreakdown]);
 
   // Map word breakdown array to lookup map if provided
-  const breakdownMap = React.useMemo(() => {
+  const breakdownMap = useMemo(() => {
     if (!effectiveBreakdown) return null;
     const map = new Map();
     effectiveBreakdown.forEach((item) => {
@@ -67,12 +77,41 @@ export const SentenceTokenViewer = ({
     return map;
   }, [effectiveBreakdown]);
 
+  // Normalize AI wordTranslations prop keys to lowercase
+  const normalizedAiTranslations = useMemo(() => {
+    if (!wordTranslations || typeof wordTranslations !== 'object') return {};
+    const result = {};
+    Object.entries(wordTranslations).forEach(([k, v]) => {
+      if (k && v) result[k.toLowerCase().trim()] = v;
+    });
+    return result;
+  }, [wordTranslations]);
+
+  // Function to resolve Arabic translation for any English word
+  const getWordTranslation = (token) => {
+    if (!token) return '';
+    const cleanToken = token.toLowerCase().trim();
+    if (normalizedAiTranslations[cleanToken]) {
+      return normalizedAiTranslations[cleanToken];
+    }
+    if (localTranslationMap.has(cleanToken)) {
+      return localTranslationMap.get(cleanToken);
+    }
+    return '';
+  };
+
   // Split sentence into words, punctuation, and whitespace tokens
   const tokens = sentence.match(/(\b[A-Za-z0-9'-]+\b|[^\w\s]+|\s+)/g) || [sentence];
 
   const handleWordClick = async (e, word, tokenIndex) => {
     e.stopPropagation();
     if (!interactive) return;
+
+    // Toggle active word tooltip for translation
+    const translation = getWordTranslation(word);
+    if (translation) {
+      setActiveTooltipWord((prev) => (prev && prev.index === tokenIndex ? null : { word, translation, index: tokenIndex }));
+    }
 
     if (onWordClick) {
       onWordClick(word, e, tokenIndex);
@@ -98,7 +137,6 @@ export const SentenceTokenViewer = ({
     }
   };
 
-  // Font sizing styles
   const sizeClasses =
     {
       sm: 'text-xs leading-relaxed',
@@ -109,76 +147,105 @@ export const SentenceTokenViewer = ({
   let wordCounter = -1;
 
   return (
-    <div
-      dir="ltr"
-      style={{ direction: 'ltr', unicodeBidi: 'isolate', textAlign: 'left' }}
-      className={`ltr-isolate ltr-token inline-flex flex-wrap items-center gap-y-1 font-sans ${sizeClasses} ${className}`}
-    >
-      {tokens.map((token, index) => {
-        const isWord = /^\b[A-Za-z0-9'-]+\b$/.test(token);
+    <div className="space-y-2">
+      <div
+        dir="ltr"
+        style={{ direction: 'ltr', unicodeBidi: 'isolate', textAlign: 'left' }}
+        className={`ltr-isolate ltr-token flex flex-wrap items-center gap-y-1.5 gap-x-0.5 font-sans ${sizeClasses} ${className}`}
+      >
+        {tokens.map((token, index) => {
+          const isWord = /^\b[A-Za-z0-9'-]+\b$/.test(token);
 
-        if (!isWord) {
-          // Render punctuation or whitespace as static span
-          return (
-            <span key={index} className="text-slate-400 select-none">
-              {token}
-            </span>
-          );
-        }
-
-        wordCounter++;
-        const currentWordIndex = wordCounter;
-        const lowerToken = token.toLowerCase();
-        const isTarget = normalizedTargets.has(lowerToken);
-        const matchStatus = breakdownMap ? breakdownMap.get(lowerToken) : undefined;
-        const isPlaying =
-          (activeWordIndex !== null && activeWordIndex === currentWordIndex) ||
-          playingWord === token;
-
-        // Dynamic token styling based on target (cyan), evaluation match (emerald green ✓), mismatch (rose red ✗)
-        let tokenStyle =
-          'text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 rounded px-1 transition-all duration-150 border border-transparent';
-
-        if (breakdownMap && matchStatus !== undefined) {
-          if (matchStatus === true) {
-            tokenStyle =
-              'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded px-1.5 font-medium shadow-sm';
-          } else {
-            tokenStyle =
-              'bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded px-1.5 font-medium line-through decoration-rose-400/60 shadow-sm';
-          }
-        } else if (isTarget) {
-          tokenStyle =
-            'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 rounded px-1.5 font-semibold shadow-sm hover:bg-cyan-500/30 ring-1 ring-cyan-400/30';
-        }
-
-        if (isPlaying) {
-          tokenStyle += ' ring-2 ring-cyan-400 animate-pulse bg-cyan-500/30 text-white font-bold';
-        }
-
-        return (
-          <button
-            key={index}
-            type="button"
-            dir="ltr"
-            style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
-            onClick={(e) => handleWordClick(e, token, currentWordIndex)}
-            onContextMenu={(e) => handleContextMenu(e, token, currentWordIndex)}
-            disabled={!interactive}
-            className={`ltr-isolate inline-flex items-center gap-0.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${tokenStyle}`}
-            title={interactive ? `Click to listen: "${token}"` : undefined}
-          >
-            <span>{token}</span>
-            {breakdownMap && matchStatus !== undefined && (
-              <span className={`text-[10px] ml-0.5 font-bold ${matchStatus ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {matchStatus ? '✓' : '✗'}
+          if (!isWord) {
+            return (
+              <span key={index} className="text-slate-400 select-none">
+                {token}
               </span>
-            )}
+            );
+          }
+
+          wordCounter++;
+          const currentWordIndex = wordCounter;
+          const lowerToken = token.toLowerCase();
+          const isTarget = normalizedTargets.has(lowerToken);
+          const matchStatus = breakdownMap ? breakdownMap.get(lowerToken) : undefined;
+          const isPlaying =
+            (activeWordIndex !== null && activeWordIndex === currentWordIndex) ||
+            playingWord === token;
+          const arabicTranslation = getWordTranslation(token);
+          const isTooltipActive = activeTooltipWord && activeTooltipWord.index === currentWordIndex;
+
+          let tokenStyle =
+            'text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 rounded px-1 transition-all duration-150 border border-transparent';
+
+          if (breakdownMap && matchStatus !== undefined) {
+            if (matchStatus === true) {
+              tokenStyle =
+                'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded px-1.5 font-medium shadow-sm';
+            } else {
+              tokenStyle =
+                'bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded px-1.5 font-medium line-through decoration-rose-400/60 shadow-sm';
+            }
+          } else if (isTarget) {
+            tokenStyle =
+              'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 rounded px-1.5 font-semibold shadow-sm hover:bg-cyan-500/30 ring-1 ring-cyan-400/30';
+          }
+
+          if (isPlaying) {
+            tokenStyle += ' ring-2 ring-cyan-400 animate-pulse bg-cyan-500/30 text-white font-bold';
+          }
+
+          return (
+            <div key={index} className="relative inline-flex flex-col items-center group">
+              <button
+                type="button"
+                dir="ltr"
+                style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
+                onClick={(e) => handleWordClick(e, token, currentWordIndex)}
+                onContextMenu={(e) => handleContextMenu(e, token, currentWordIndex)}
+                disabled={!interactive}
+                className={`ltr-isolate inline-flex items-center gap-0.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${tokenStyle}`}
+                title={arabicTranslation ? `"${token}" ➔ ${arabicTranslation}` : `Click to listen: "${token}"`}
+              >
+                <span>{token}</span>
+                {breakdownMap && matchStatus !== undefined && (
+                  <span className={`text-[10px] ml-0.5 font-bold ${matchStatus ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {matchStatus ? '✓' : '✗'}
+                  </span>
+                )}
+              </button>
+
+              {/* Permanent or Click Tooltip Badge for Word Translation */}
+              {(isTooltipActive || (showInlineTranslationBadges && arabicTranslation)) && (
+                <span
+                  dir="rtl"
+                  className="font-arabic text-[10px] text-amber-300 font-extrabold bg-black/80 border border-amber-500/40 px-1.5 py-0.2 rounded mt-0.5 shadow-md animate-in fade-in"
+                >
+                  {arabicTranslation}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Active Selected Word Translation Popover Card */}
+      {activeTooltipWord && (
+        <div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-center justify-between gap-2 text-xs font-bold text-amber-300 font-arabic dir-rtl">
+          <span>
+            ترجمة الكلمة: <strong dir="ltr" className="ltr-isolate text-white font-sans mx-1">({activeTooltipWord.word})</strong> = {activeTooltipWord.translation}
+          </span>
+          <button
+            onClick={() => setActiveTooltipWord(null)}
+            className="text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-black/20"
+          >
+            ✕ إغلاق
           </button>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 };
 
 export default SentenceTokenViewer;
+

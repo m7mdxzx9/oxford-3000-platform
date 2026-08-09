@@ -268,9 +268,33 @@ export default function Storyteller() {
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl border bg-black/5">
-                <SentenceTokenViewer sentence={line.text} targetWord={line.focusWord} />
+              <div className="p-4 rounded-2xl border bg-black/5 space-y-2">
+                <SentenceTokenViewer
+                  sentence={line.text}
+                  targetWord={line.focusWord}
+                  wordTranslations={line.wordTranslations}
+                  showInlineTranslationBadges={true}
+                />
               </div>
+
+              {/* Word-by-Word Arabic Translation Breakdown */}
+              {showArabic && line.wordTranslations && Object.keys(line.wordTranslations).length > 0 && (
+                <div className="p-3 rounded-xl border bg-black/5 space-y-1.5 dir-rtl">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-500 flex items-center gap-1 font-arabic">
+                    🔤 ترجمة كلمات المشهد (انقر على الكلمة لسماعها وترجمتها):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(line.wordTranslations).map(([enWord, arTrans], wIdx) => (
+                      <span
+                        key={wIdx}
+                        className="px-2 py-0.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs font-extrabold text-amber-300 font-arabic flex items-center gap-1"
+                      >
+                        <span dir="ltr" className="font-sans text-white ltr-isolate">{enWord}</span>: {arTrans}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {res && (
                 <SpeechScoreVisualizer
@@ -304,7 +328,8 @@ export default function Storyteller() {
 
               {showArabic && line.arabic && (
                 <div className="p-3.5 rounded-xl border bg-black/5 text-right dir-rtl font-arabic">
-                  <p className="text-base font-extrabold">{line.arabic}</p>
+                  <span className="text-[11px] opacity-75 font-semibold block mb-0.5">ترجمة النص الكامل للمشهد:</span>
+                  <p className="text-base font-extrabold text-amber-300">{line.arabic}</p>
                 </div>
               )}
             </div>
