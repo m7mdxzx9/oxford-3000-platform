@@ -60,6 +60,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
     addNotification,
     voicePreset,
     apiKey,
+    setIsApiKeyModalOpen,
   } = useApp();
 
   const [isPlayingWord, setIsPlayingWord] = useState(false);
@@ -340,6 +341,19 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
             <div dir="rtl" className="mt-2 pt-2 border-t border-slate-800/60 text-right font-arabic">
               <span className="text-[10px] opacity-75 font-semibold block mb-0.5 text-amber-500">الترجمة العربية للجملة:</span>
               <p className="text-xs font-extrabold text-amber-300">{activeArabic}</p>
+            </div>
+          )}
+
+          {customAiSentence?.needsApiKey && (
+            <div className="mt-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[11px] space-y-1.5 dir-rtl font-arabic">
+              <p className="font-bold">⚠️ انتهت حصة المفتاح الافتراضي لليوم (HTTP 429). أضف مفتاحك المجاني لتوليد الجمل حية 100%:</p>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setIsApiKeyModalOpen(true); }}
+                className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-black text-[10px] hover:bg-amber-400 transition-all flex items-center gap-1 active:scale-95 shadow-sm"
+              >
+                🔑 إضافة مفتاح Gemini API جديد
+              </button>
             </div>
           )}
 

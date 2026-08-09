@@ -83,51 +83,8 @@ export const fetchMissingTerm = async (term, apiKey = '') => {
   return null;
 };
 
-const DYNAMIC_FALLBACK_PATTERNS = [
-  {
-    sentence: (w) => `The specialist inspected the modern ${w} to ensure it was operating safely.`,
-    arabic: (w, ar) => `قام المتخصص بفحص ${ar || w} لضمان عمله بآمان.`,
-    translations: (w, ar) => ({ "specialist": "المتخصص", "inspected": "فحص", "modern": "الحديث", [w]: ar || w, "ensure": "لضمان", "operating": "عمله", "safely": "بآمان" })
-  },
-  {
-    sentence: (w) => `She demonstrated an exceptional ability to handle ${w} effectively in practice.`,
-    arabic: (w, ar) => `أظهرت قدرة استثنائية في التعامل مع ${ar || w} بفاعلية في الممارسة.`,
-    translations: (w, ar) => ({ "demonstrated": "أظهرت", "exceptional": "استثنائية", "ability": "قدرة", "handle": "التعامل", [w]: ar || w, "effectively": "بفاعلية" })
-  },
-  {
-    sentence: (w) => `Recent research highlights the significant impact of ${w} on daily progress.`,
-    arabic: (w, ar) => `يسلط البحث الحديث الضوء على التأثير الكبير لـ ${ar || w} على التقدم اليومي.`,
-    translations: (w, ar) => ({ "research": "البحث", "highlights": "يسلط الضوء", "impact": "التأثير", [w]: ar || w, "progress": "التقدم" })
-  },
-  {
-    sentence: (w) => `They developed a comprehensive plan to integrate ${w} into their workflow.`,
-    arabic: (w, ar) => `طوروا خطة شاملة لدمج ${ar || w} في بيئة عملهم.`,
-    translations: (w, ar) => ({ "developed": "طوروا", "plan": "خطة", "integrate": "دمج", [w]: ar || w, "workflow": "بيئة عملهم" })
-  },
-  {
-    sentence: (w) => `Mastering the proper usage of ${w} will boost your overall language fluency.`,
-    arabic: (w, ar) => `إتقان الاستخدام المناسب لـ ${ar || w} سيعزز طلاقتك اللغوية الإجمالية.`,
-    translations: (w, ar) => ({ "Mastering": "إتقان", "usage": "الاستخدام", [w]: ar || w, "boost": "سيعزز", "fluency": "طلاقتك" })
-  },
-  {
-    sentence: (w) => `The team discussed how ${w} could improve the overall efficiency of the system.`,
-    arabic: (w, ar) => `ناقش الفريق كيف يمكن لـ ${ar || w} تحسين الكفاءة الإجمالية للنظام.`,
-    translations: (w, ar) => ({ "team": "الفريق", "discussed": "ناقش", [w]: ar || w, "improve": "تحسين", "efficiency": "الكفاءة", "system": "النظام" })
-  },
-  {
-    sentence: (w) => `Understanding the core concept of ${w} is essential for solving complex problems.`,
-    arabic: (w, ar) => `فهم المفهوم الأساسي لـ ${ar || w} أمر أساسي لحل المشكلات المعقدة.`,
-    translations: (w, ar) => ({ "Understanding": "فهم", "concept": "المفهوم", [w]: ar || w, "essential": "أساسي", "solving": "لحال" })
-  },
-  {
-    sentence: (w) => `He shared a helpful example showing how to apply ${w} in daily conversation.`,
-    arabic: (w, ar) => `شارك مثالاً مفيداً يوضح كيفية تطبيق ${ar || w} في المحادثة اليومية.`,
-    translations: (w, ar) => ({ "shared": "شارك", "example": "مثالاً", "showing": "يوضح", "apply": "تطبيق", [w]: ar || w })
-  }
-];
-
 /**
- * Advanced AI Sentence Generation with Real Gemini AI Logic & Dynamic Fallback Engine
+ * Advanced AI Sentence Generation with Real Gemini AI Logic
  */
 export const generateSentence = async (
   word,
@@ -173,17 +130,14 @@ Return ONLY raw JSON object:
     }
   }
 
-  // Truly random fallback pattern selector if offline
-  const randIdx = Math.floor(Math.random() * DYNAMIC_FALLBACK_PATTERNS.length);
-  const pattern = DYNAMIC_FALLBACK_PATTERNS[randIdx];
-  const cleanWord = String(word).trim().toLowerCase();
-
+  // Pure AI Notice (No local fallback templates)
   return {
-    sentence: pattern.sentence(cleanWord),
-    arabic: pattern.arabic(cleanWord, null),
-    grammarNote: `Educational context for "${cleanWord}". (Note: Connected with offline template. Check your internet connection for live AI).`,
-    wordTranslations: pattern.translations(cleanWord, null),
+    sentence: `To generate live AI sentences for "${word}", please enter your free Gemini API key from Google AI Studio.`,
+    arabic: `لتوليد جمل حية ومباشرة بالذكاء الاصطناعي لكلمة "${word}"، يرجى إضافة مفتاح Gemini API المجاني الخاص بك.`,
+    grammarNote: `Requires active Gemini API Key (HTTP 429 Quota Exceeded on default key).`,
+    wordTranslations: {},
     isRealAi: false,
+    needsApiKey: true,
   };
 };
 

@@ -9,7 +9,7 @@ import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 
 export default function SentenceGenerator() {
-  const { apiKey, addNotification, t, voicePreset, setVoicePreset, voicePresets } = useApp();
+  const { apiKey, addNotification, t, voicePreset, setVoicePreset, voicePresets, setIsApiKeyModalOpen } = useApp();
   const [targetWord, setTargetWord] = useState('abandon');
   const [length, setLength] = useState('medium');
   const [position, setPosition] = useState('any');
@@ -397,6 +397,31 @@ export default function SentenceGenerator() {
               </button>
             </div>
           </div>
+
+          {aiResult?.needsApiKey && (
+            <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-300 space-y-3">
+              <p className="text-xs font-extrabold dir-rtl font-arabic leading-relaxed">
+                ⚠️ انتهت حصة اليوم لمفتاح Gemini API الافتراضي (Google HTTP 429 Quota Exceeded). للحصول على إنشاء حي ومباشر 100% بالذكاء الاصطناعي دون قوالب، يرجى إضافة مفتاحك المجاني بنقرة واحدة من Google AI Studio:
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsApiKeyModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs hover:bg-amber-400 transition-all flex items-center gap-1.5 shadow-md active:scale-95"
+                >
+                  🔑 إضافة مفتاح Gemini API مجاني الآن
+                </button>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-amber-400 underline font-bold hover:text-amber-300"
+                >
+                  احصل على مفتاح مجاني في 5 ثوانٍ ➔
+                </a>
+              </div>
+            </div>
+          )}
 
           <div className="p-5 rounded-2xl border bg-black/5 space-y-2">
             <SentenceTokenViewer
