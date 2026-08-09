@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
 import { generateVisualIllustration } from '../services/imagenService';
+import { generateSentence } from '../services/geminiService';
 import SentenceTokenViewer from './SentenceTokenViewer';
 
 export default function WordModal({ word, onClose }) {
@@ -16,10 +17,18 @@ export default function WordModal({ word, onClose }) {
   const [illustrationUrl, setIllustrationUrl] = useState(null);
   const [generatingImage, setGeneratingImage] = useState(false);
 
+  // Custom AI Sentence State
+  const [customAiSentence, setCustomAiSentence] = useState(null);
+  const [generatingSentence, setGeneratingSentence] = useState(false);
+
   if (!word) return null;
 
   const fav = isFavorite(word.word);
   const mst = isMastered(word.word);
+
+  const activeSentence = customAiSentence?.sentence || word.example;
+  const activeArabicSentence = customAiSentence?.arabic;
+  const activeWordTranslations = customAiSentence?.wordTranslations;
 
   const handlePlayWord = (rate = activeSpeed) => {
     setActiveSpeed(rate);
@@ -41,6 +50,21 @@ export default function WordModal({ word, onClose }) {
     }
   };
 
+  const handleGenerateAiSentence = async () => {
+    setGeneratingSentence(true);
+    try {
+      const res = await generateSentence(word.word, 'medium', 'any', 'Casual Conversation', 'Present', apiKey);
+      if (res && res.sentence) {
+        setCustomAiSentence(res);
+        addNotification(`Generated new AI sentence for "${word.word}"`, 'success');
+      }
+    } catch (err) {
+      addNotification('Failed to generate AI sentence.', 'warning');
+    } finally {
+      setGeneratingSentence(false);
+    }
+  };
+
   const handleRecordSpeech = () => {
     if (isRecording) {
       stopListening();
@@ -52,7 +76,7 @@ export default function WordModal({ word, onClose }) {
     setSpeechResult(null);
 
     recordAndEvaluateSpeech(
-      word.word,
+      activeSentence || word.word,
       (res) => {
         setIsRecording(false);
         setSpeechResult(res);
@@ -199,17 +223,41 @@ export default function WordModal({ word, onClose }) {
           </div>
         )}
 
-        {/* Context Example */}
-        {word.example && (
-          <div className="mb-5">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              Context Example
+        {/* AI Sentence Generator & Interactive Tokens Block */}
+        <div className="mb-5 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              {customAiSentence ? '✨ AI Example Sentence' : 'Context Example'}
             </label>
-            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-cyan-900/30">
-              <SentenceTokenViewer sentence={word.example} targetWord={word.word} />
-            </div>
+
+            <button
+              onClick={handleGenerateAiSentence}
+              disabled={generatingSentence}
+              className="flex items-center gap-1.5 px-3 py-1 bg-purple-600/80 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+            >
+              {generatingSentence ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {generatingSentence ? 'Generating...' : customAiSentence ? '🔄 Change Sentence' : '✨ AI Sentence'}
+            </button>
           </div>
-        )}
+
+          {activeSentence && (
+            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-cyan-900/30 space-y-2">
+              <SentenceTokenViewer
+                sentence={activeSentence}
+                targetWord={word.word}
+                wordTranslations={activeWordTranslations}
+                showInlineTranslationBadges={true}
+              />
+
+              {activeArabicSentence && (
+                <div dir="rtl" className="mt-2 pt-2 border-t border-slate-800/80 text-right font-arabic">
+                  <span className="text-[10px] text-slate-400 block mb-0.5">الترجمة العربية للجملة:</span>
+                  <p className="text-xs font-bold text-amber-300">{activeArabicSentence}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Footer Actions */}
         <div className="mt-auto pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">

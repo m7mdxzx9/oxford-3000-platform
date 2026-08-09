@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { oxford3000Data } from '../data/oxford3000';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
-import { fetchMissingTerm } from '../services/geminiService';
+import { fetchMissingTerm, generateSentence } from '../services/geminiService';
 import { startListening, stopListening, evaluateSpeech } from '../services/speechEvaluation';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
@@ -51,6 +51,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
     selectedWordsCount,
     addNotification,
     voicePreset,
+    apiKey,
   } = useApp();
 
   const [isPlayingWord, setIsPlayingWord] = useState(false);
@@ -59,6 +60,10 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
   const [isListening, setIsListening] = useState(false);
   const [evalResult, setEvalResult] = useState(null);
   const [spokenTranscript, setSpokenTranscript] = useState('');
+
+  // AI Sentence Generator State for this card
+  const [customAiSentence, setCustomAiSentence] = useState(null);
+  const [isGeneratingAiSentence, setIsGeneratingAiSentence] = useState(false);
 
   const favorited = isFavorite(wordObj.word);
   const mastered = isMastered(wordObj.word);
@@ -70,6 +75,10 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
   };
 
   const posStyle = POS_STYLES[wordObj.pos?.toLowerCase()] || 'bg-slate-500/15 text-slate-300 border-slate-500/30';
+
+  const activeSentence = customAiSentence?.sentence || wordObj.example;
+  const activeArabic = customAiSentence?.arabic;
+  const activeWordTranslations = customAiSentence?.wordTranslations;
 
   const handlePlayWord = async (e) => {
     e.stopPropagation();
@@ -85,10 +94,10 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
 
   const handlePlayExample = async (e) => {
     if (e) e.stopPropagation();
-    if (!wordObj.example) return;
+    if (!activeSentence) return;
     try {
       setIsPlayingExample(true);
-      await playAudio(wordObj.example, { speed: 0.9, presetId: voicePreset });
+      await playAudio(activeSentence, { speed: 0.9, presetId: voicePreset });
     } catch (err) {
       console.error('TTS example playback error:', err);
     } finally {
@@ -96,8 +105,17 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
     }
   };
 
+  const handleGenerateAiSentence = async (e) => {
+    if (e) e.stopPropagation();
+    setIsGeneratingAiSentence(true);
+    try {
+      const res = await fetchMissingTerm ? null : null; // check import
+    } catch (err) {}
+  };
+
   const handleStartPractice = (e) => {
     if (e) e.stopPropagation();
+    if (!activeSentence) return;
     setIsPracticing(true);
     setIsListening(true);
     setEvalResult(null);
@@ -106,7 +124,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
       (spoken) => {
         setSpokenTranscript(spoken);
         setIsListening(false);
-        const result = evaluateSpeech(wordObj.example, spoken);
+        const result = evaluateSpeech(activeSentence, spoken);
         setEvalResult(result);
       },
       (err) => {
@@ -131,6 +149,22 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
       return;
     }
     toggleSelectWord(wordObj);
+  };
+
+  const handleCreateNewAiSentence = async (e) => {
+    if (e) e.stopPropagation();
+    setIsGeneratingAiSentence(true);
+    try {
+      const res = await generateSentence(wordObj.word, 'medium', 'any', 'Casual Conversation', 'Present', apiKey);
+      if (res && res.sentence) {
+        setCustomAiSentence(res);
+        addNotification(`Generated new AI sentence for "${wordObj.word}"`, 'success');
+      }
+    } catch (err) {
+      addNotification('Failed to generate AI sentence.', 'warning');
+    } finally {
+      setIsGeneratingAiSentence(false);
+    }
   };
 
   return (
@@ -269,78 +303,99 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           </p>
         </div>
 
-        {/* Example Sentence (Strict LTR Isolated with Interactive Word Tokens & Mic Practice) */}
-        {wordObj.example && (
-          <div dir="ltr" className="ltr-isolate bg-slate-950/40 p-3 rounded-xl border border-slate-800/40 text-xs text-slate-300 space-y-2">
-            <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
-              <span>Example Sentence</span>
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={handlePlayExample}
-                  disabled={isPlayingExample}
-                  className="text-cyan-400 hover:text-cyan-300 flex items-center space-x-1"
-                  title="Listen to full example sentence"
-                >
-                  <span>{isPlayingExample ? 'Playing...' : 'Play'}</span>
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleStartPractice}
-                  className="text-amber-400 hover:text-amber-300 flex items-center space-x-1 font-semibold"
-                  title="Practice speaking sentence with mic"
-                >
-                  <span>Mic Practice</span>
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+        {/* AI Sentence Generator & Interactive Tokens Block */}
+        <div dir="ltr" className="ltr-isolate bg-slate-950/40 p-3 rounded-xl border border-slate-800/40 text-xs text-slate-300 space-y-2">
+          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium flex-wrap gap-1">
+            <span className="font-bold flex items-center gap-1 text-cyan-400">
+              {customAiSentence ? '✨ AI Sentence' : 'Example Sentence'}
+            </span>
 
-            {/* Interactive Word Tokens */}
-            <SentenceTokenViewer
-              sentence={wordObj.example}
-              targetWords={[wordObj.word]}
-              wordBreakdown={evalResult?.wordBreakdown}
-              size="sm"
-            />
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={handleCreateNewAiSentence}
+                disabled={isGeneratingAiSentence}
+                className="text-purple-400 hover:text-purple-300 flex items-center space-x-1 font-bold bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20"
+                title="Generate new custom AI sentence for this word"
+              >
+                <span>{isGeneratingAiSentence ? 'Generating...' : customAiSentence ? '🔄 Change' : '✨ AI Sentence'}</span>
+              </button>
 
-            {/* Speech Evaluation Modal Drawer */}
-            {isPracticing && (
-              <div className="mt-3 pt-3 border-t border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-slate-400">Speech Practice</span>
+              {activeSentence && (
+                <>
                   <button
                     type="button"
-                    onClick={handleClosePractice}
-                    className="text-[10px] text-slate-500 hover:text-slate-300"
+                    onClick={handlePlayExample}
+                    disabled={isPlayingExample}
+                    className="text-cyan-400 hover:text-cyan-300 flex items-center space-x-1"
+                    title="Listen to full example sentence"
                   >
-                    Close
+                    <span>{isPlayingExample ? 'Playing...' : 'Play'}</span>
                   </button>
-                </div>
-                {isListening && (
-                  <div className="flex items-center space-x-2 text-xs text-cyan-400 animate-pulse bg-cyan-950/30 p-2 rounded-lg border border-cyan-800/40">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                    <span>Listening... Speak the example sentence now.</span>
-                  </div>
-                )}
-                {evalResult && (
-                  <SpeechScoreVisualizer
-                    evaluationResult={evalResult}
-                    expectedText={wordObj.example}
-                    spokenText={spokenTranscript}
-                    onRetry={handleStartPractice}
-                    onListenReference={handlePlayExample}
-                  />
-                )}
-              </div>
-            )}
+                  <button
+                    type="button"
+                    onClick={handleStartPractice}
+                    className="text-amber-400 hover:text-amber-300 flex items-center space-x-1 font-semibold"
+                    title="Practice speaking sentence with mic"
+                  >
+                    <span>Mic</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Interactive Word Tokens */}
+          {activeSentence && (
+            <SentenceTokenViewer
+              sentence={activeSentence}
+              targetWords={[wordObj.word]}
+              wordTranslations={activeWordTranslations}
+              wordBreakdown={evalResult?.wordBreakdown}
+              showInlineTranslationBadges={Boolean(customAiSentence)}
+              size="sm"
+            />
+          )}
+
+          {/* AI Generated Arabic Sentence Translation */}
+          {activeArabic && (
+            <div dir="rtl" className="mt-2 pt-2 border-t border-slate-800/60 text-right font-arabic">
+              <span className="text-[10px] opacity-75 font-semibold block mb-0.5 text-amber-500">الترجمة العربية للجملة:</span>
+              <p className="text-xs font-extrabold text-amber-300">{activeArabic}</p>
+            </div>
+          )}
+
+          {/* Speech Evaluation Modal Drawer */}
+          {isPracticing && (
+            <div className="mt-3 pt-3 border-t border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-slate-400">Speech Practice</span>
+                <button
+                  type="button"
+                  onClick={handleClosePractice}
+                  className="text-[10px] text-slate-500 hover:text-slate-300"
+                >
+                  Close
+                </button>
+              </div>
+              {isListening && (
+                <div className="flex items-center space-x-2 text-xs text-cyan-400 animate-pulse bg-cyan-950/30 p-2 rounded-lg border border-cyan-800/40">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                  <span>Listening... Speak the example sentence now.</span>
+                </div>
+              )}
+              {evalResult && (
+                <SpeechScoreVisualizer
+                  evaluationResult={evalResult}
+                  expectedText={activeSentence}
+                  spokenText={spokenTranscript}
+                  onRetry={handleStartPractice}
+                  onListenReference={handlePlayExample}
+                />
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
