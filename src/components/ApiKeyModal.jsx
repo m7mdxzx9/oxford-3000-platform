@@ -47,22 +47,22 @@ export const ApiKeyModal = () => {
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Gemini API Key</h3>
-            <p className="text-xs text-slate-400">Custom key for AI features & instant term fetcher</p>
+            <h3 className="text-lg font-bold text-white">AI API Key (Gemini & NVIDIA)</h3>
+            <p className="text-xs text-slate-400">Google Gemini (AIzaSy...) or NVIDIA NIM (nvapi-...)</p>
           </div>
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              API Key (Google AI Studio)
+              API Key (Google Gemini or NVIDIA NIM)
             </label>
             <div className="relative">
               <input
                 type={showKey ? 'text' : 'password'}
                 value={inputKey}
                 onChange={(e) => setInputKey(e.target.value)}
-                placeholder="AIzaSy..."
+                placeholder="AIzaSy... or nvapi-..."
                 className="w-full px-4 py-2.5 pr-10 rounded-xl bg-slate-900/90 border border-slate-700/80 text-cyan-300 placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
               />
               <button

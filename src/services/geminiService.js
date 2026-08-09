@@ -37,6 +37,35 @@ const callGeminiApi = async (promptText, apiKey = '') => {
   });
 
   for (const currentKey of keysToTry) {
+    // Auto-detect NVIDIA API keys (starting with nvapi-)
+    if (currentKey.startsWith('nvapi-')) {
+      try {
+        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentKey}`,
+          },
+          body: JSON.stringify({
+            model: 'meta/llama-3.1-70b-instruct',
+            messages: [{ role: 'user', content: promptText }],
+            temperature: 0.7,
+            max_tokens: 600,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data?.choices?.[0]?.message?.content;
+          if (text) return text;
+        } else {
+          console.warn(`NVIDIA API status ${res.status} for key:`, currentKey.substring(0, 10));
+        }
+      } catch (e) {
+        console.warn('NVIDIA API fetch error:', e);
+      }
+      continue;
+    }
+
     for (const endpoint of GEMINI_MODEL_ENDPOINTS) {
       try {
         const res = await fetch(`${endpoint}?key=${currentKey}`, {
