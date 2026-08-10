@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
   Sparkles,
@@ -36,6 +36,25 @@ export default function Navbar() {
   } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Smart Collapsible Mobile Header Scroll Listener
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > 70 && currentScrollY > lastScrollY) {
+        setIsHeaderVisible(false);
+      } else {
+        setIsHeaderVisible(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   const navItems = [
     { id: 'grid', label: t('navCatalog'), icon: BookOpen },
     { id: 'sentence', label: t('navSentence'), icon: Sparkles },
@@ -57,7 +76,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full glass-panel border-b transition-all duration-300">
+      <header className={`sticky top-0 z-40 w-full glass-panel border-b transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
             {/* Brand Logo & Title */}

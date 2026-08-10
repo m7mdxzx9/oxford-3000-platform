@@ -12,6 +12,7 @@ import WordModal from './WordModal';
 import ExportModal from './ExportModal';
 import IpaSyllableVisualizer from './IpaSyllableVisualizer';
 import AudioSpeedControl from './AudioSpeedControl';
+import EmptyState from './EmptyState';
 
 // CEFR Level Color Badge Mapping
 const CEFR_BADGES = {
@@ -717,54 +718,13 @@ export const LexiconGrid = () => {
           ))}
         </div>
       ) : (
-        /* Empty State & AI Instant Lexicon Fetcher Card */
-        <div className="glass-panel p-8 rounded-2xl border border-cyan-500/30 text-center max-w-lg mx-auto shadow-2xl shadow-cyan-950/40 my-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-4">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            AI Instant Lexicon Fetcher
-          </div>
-
-          <h3 className="text-xl font-bold text-white mb-2">
-            No local matches for "{searchQuery.trim() ? <span className="text-cyan-400 ltr-isolate" dir="ltr">{searchQuery.trim()}</span> : 'current filter'}"
-          </h3>
-          <p className="text-sm text-slate-300 mb-6">
-            Word is missing from the local Oxford 3000 dataset. Dynamically query Gemini AI to fetch CEFR level, Arabic translation, IPA phonetic, and usage example.
-          </p>
-
-          {searchQuery.trim() ? (
-            <button
-              onClick={handleFetchMissingTerm}
-              disabled={isFetchingTerm}
-              className="w-full inline-flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 text-white font-medium px-6 py-3.5 rounded-xl shadow-lg transition-all transform active:scale-98"
-            >
-              {isFetchingTerm ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Fetching '{searchQuery.trim()}' with Gemini AI...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.6 15.1a2 2 0 00-1.022.547l-1.8 1.8a2 2 0 001.414 3.414h15.616a2 2 0 001.414-3.414l-1.8-1.8z" />
-                  </svg>
-                  <span>Fetch '{searchQuery.trim()}' with Gemini AI</span>
-                </>
-              )}
-            </button>
-          ) : (
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 transition-all"
-            >
-              Clear All Filters
-            </button>
-          )}
-        </div>
+        <EmptyState
+          type="search"
+          searchQuery={searchQuery.trim()}
+          onReset={clearFilters}
+          onAiFetch={searchQuery.trim() ? handleFetchMissingTerm : null}
+          isFetchingTerm={isFetchingTerm}
+        />
       )}
 
       {/* Virtual Pagination Controls */}

@@ -215,7 +215,7 @@ export default function WordModal({ word, onClose }) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handlePlayWord(audioSpeed)}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/20 transition-all active:scale-95"
+                className="min-h-[44px] flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/20 transition-all active:scale-95"
               >
                 <Volume2 className="w-4 h-4" /> Listen ({audioSpeed}x)
               </button>
@@ -223,7 +223,7 @@ export default function WordModal({ word, onClose }) {
 
             <button
               onClick={handleRecordSpeech}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all active:scale-95 ${
+              className={`min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 ${
                 isRecording
                   ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30 font-bold'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
