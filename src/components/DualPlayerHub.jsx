@@ -491,8 +491,8 @@ export default function DualPlayerHub() {
         </div>
       )}
 
-      {/* Sub-Tabs Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 no-scrollbar">
+      {/* Sub-Tabs Bar (High Contrast & Theme Adaptive) */}
+      <div className="flex items-center gap-2 overflow-x-auto p-2 rounded-2xl border border-slate-300 dark:border-slate-800 bg-slate-900 dark:bg-slate-950 no-scrollbar shadow-lg">
         {[
           { id: 'dialogue', label: '💬 حوارات تفاعلية AI', icon: MessageSquare },
           { id: 'chain', label: '⚔️ تحدي السلسلة 1v1', icon: Gamepad2 },
@@ -504,8 +504,8 @@ export default function DualPlayerHub() {
             onClick={() => setSubTab(tb.id)}
             className={`px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 shrink-0 ${
               subTab === tb.id
-                ? 'theme-btn-primary shadow-sm font-black'
-                : 'opacity-70 hover:opacity-100'
+                ? 'bg-amber-500 text-slate-950 font-black shadow-md scale-105'
+                : 'text-slate-300 hover:text-white font-extrabold hover:bg-slate-800/80'
             }`}
           >
             <span>{tb.label}</span>
@@ -520,7 +520,7 @@ export default function DualPlayerHub() {
         <div className="space-y-6">
           <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 bg-[var(--bg-card)] text-[var(--text-main)] shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
-              <h3 className="text-xl font-black flex items-center gap-2">
+              <h3 className="text-xl font-black flex items-center gap-2 text-[var(--text-main)]">
                 <Sparkles className="w-5 h-5 text-amber-500" />
                 <span>مبتكر المحادثات والحوارات الثنائية التفاعلية</span>
               </h3>
@@ -529,13 +529,13 @@ export default function DualPlayerHub() {
             {/* Controls Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs font-black block mb-1 text-slate-700 dark:text-slate-300">
+                <label className="text-xs font-black block mb-1.5 text-[var(--text-main)]">
                   🎭 موضوع المحادثة:
                 </label>
                 <select
                   value={dialogueTopic}
                   onChange={(e) => setDialogueTopic(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 font-black text-xs"
+                  className="w-full p-3.5 rounded-2xl border-2 border-slate-300 dark:border-slate-800 bg-slate-900 text-white font-black text-xs shadow-sm"
                 >
                   {DIALOGUE_TOPICS.map((tp) => (
                     <option key={tp.id} value={tp.id}>
@@ -546,13 +546,13 @@ export default function DualPlayerHub() {
               </div>
 
               <div>
-                <label className="text-xs font-black block mb-1 text-slate-700 dark:text-slate-300">
+                <label className="text-xs font-black block mb-1.5 text-[var(--text-main)]">
                   🎯 مستوى الصعوبة (CEFR):
                 </label>
                 <select
                   value={dialogueLevel}
                   onChange={(e) => setDialogueLevel(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 font-black text-xs"
+                  className="w-full p-3.5 rounded-2xl border-2 border-slate-300 dark:border-slate-800 bg-slate-900 text-white font-black text-xs shadow-sm"
                 >
                   <option value="A1">A1 - مبتدئ جداً</option>
                   <option value="A2">A2 - مبتدئ متقدم</option>
@@ -562,13 +562,13 @@ export default function DualPlayerHub() {
               </div>
 
               <div>
-                <label className="text-xs font-black block mb-1 text-slate-700 dark:text-slate-300">
+                <label className="text-xs font-black block mb-1.5 text-[var(--text-main)]">
                   📏 عدد الجمل في الحوار:
                 </label>
                 <select
                   value={dialogueTurnsCount}
                   onChange={(e) => setDialogueTurnsCount(Number(e.target.value))}
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 font-black text-xs"
+                  className="w-full p-3.5 rounded-2xl border-2 border-slate-300 dark:border-slate-800 bg-slate-900 text-white font-black text-xs shadow-sm"
                 >
                   <option value={4}>قصير (4 جمل)</option>
                   <option value={6}>متوسط (6 جمل)</option>
@@ -579,13 +579,13 @@ export default function DualPlayerHub() {
 
             {dialogueTopic === 'Custom' && (
               <div>
-                <label className="text-xs font-black block mb-1">اكتب الموضوع المخصص بالإنجليزية:</label>
+                <label className="text-xs font-black block mb-1.5 text-[var(--text-main)]">اكتب الموضوع المخصص بالإنجليزية:</label>
                 <input
                   type="text"
                   value={customTopicInput}
                   onChange={(e) => setCustomTopicInput(e.target.value)}
                   placeholder="e.g. Planning a weekend trip to London..."
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 font-black text-sm"
+                  className="w-full p-3.5 rounded-2xl border-2 border-slate-300 dark:border-slate-800 bg-slate-900 text-white font-black text-sm"
                 />
               </div>
             )}
@@ -593,9 +593,9 @@ export default function DualPlayerHub() {
             <button
               onClick={handleGenerateDialogue}
               disabled={isGeneratingDialogue}
-              className="w-full py-3.5 rounded-2xl theme-btn-primary font-black text-sm shadow-lg transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              <Sparkles className="w-5 h-5 text-amber-300" />
+              <Sparkles className="w-5 h-5 text-slate-950" />
               <span>{isGeneratingDialogue ? 'جاري إنشاء حوار تفاعلي...' : 'توليد حوار تفاعلي بين محمد & ريوف'}</span>
             </button>
 
