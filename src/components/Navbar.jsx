@@ -16,6 +16,7 @@ import {
   Sun,
   Moon,
   Gamepad2,
+  Users,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -60,6 +61,7 @@ export default function Navbar() {
     { id: 'grid', label: t('navCatalog'), icon: BookOpen },
     { id: 'sentence', label: t('navSentence'), icon: Sparkles },
     { id: 'story', label: t('navStory'), icon: MessageSquare },
+    { id: 'dual', label: 'التعلم المشترك', icon: Users },
     { id: 'tutor', label: t('navTutor'), icon: UserCheck },
     { id: 'pronunciation', label: t('navPronunciation'), icon: Activity },
     { id: 'chain', label: 'لعبة السلسلة', icon: Gamepad2 },
@@ -70,9 +72,9 @@ export default function Navbar() {
   // Primary tabs featured in mobile bottom navigation bar
   const mobileBottomItems = [
     { id: 'grid', label: 'Catalog', icon: BookOpen },
+    { id: 'dual', label: 'Dual', icon: Users },
     { id: 'story', label: 'Story', icon: MessageSquare },
     { id: 'chain', label: 'Chain', icon: Gamepad2 },
-    { id: 'pronunciation', label: 'Speak', icon: Activity },
     { id: 'quiz', label: 'Quiz', icon: Award },
   ];
 

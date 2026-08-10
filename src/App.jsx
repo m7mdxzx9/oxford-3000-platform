@@ -9,6 +9,7 @@ import Storyteller from './components/Storyteller';
 import PersonalTutor from './components/PersonalTutor';
 import PronunciationStudio from './components/PronunciationStudio';
 import WordChainGame from './components/WordChainGame';
+import DualPlayerHub from './components/DualPlayerHub';
 import QuizGame from './components/QuizGame';
 import Analytics from './components/Analytics';
 
@@ -20,6 +21,7 @@ function MainContent() {
       {activeTab === 'grid' && <LexiconGrid />}
       {activeTab === 'sentence' && <SentenceGenerator />}
       {activeTab === 'story' && <Storyteller />}
+      {activeTab === 'dual' && <DualPlayerHub />}
       {activeTab === 'tutor' && <PersonalTutor />}
       {activeTab === 'pronunciation' && <PronunciationStudio />}
       {activeTab === 'chain' && <WordChainGame />}
