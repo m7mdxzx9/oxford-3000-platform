@@ -15,6 +15,7 @@ import {
   Activity,
   Sun,
   Moon,
+  Gamepad2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -61,6 +62,7 @@ export default function Navbar() {
     { id: 'story', label: t('navStory'), icon: MessageSquare },
     { id: 'tutor', label: t('navTutor'), icon: UserCheck },
     { id: 'pronunciation', label: t('navPronunciation'), icon: Activity },
+    { id: 'chain', label: 'لعبة السلسلة', icon: Gamepad2 },
     { id: 'quiz', label: t('navQuiz'), icon: Award },
     { id: 'analytics', label: t('navAnalytics'), icon: BarChart3 },
   ];
@@ -69,8 +71,8 @@ export default function Navbar() {
   const mobileBottomItems = [
     { id: 'grid', label: 'Catalog', icon: BookOpen },
     { id: 'story', label: 'Story', icon: MessageSquare },
+    { id: 'chain', label: 'Chain', icon: Gamepad2 },
     { id: 'pronunciation', label: 'Speak', icon: Activity },
-    { id: 'tutor', label: 'Tutor', icon: UserCheck },
     { id: 'quiz', label: 'Quiz', icon: Award },
   ];
 
