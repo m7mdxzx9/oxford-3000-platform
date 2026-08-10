@@ -251,21 +251,6 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         </div>
       </div>
 
-      {/* Contextual Visual Aid Photo Banner */}
-      <div className="relative w-full h-24 mb-3 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0">
-        <img
-          src={cardImg}
-          alt={wordObj.word}
-          loading="lazy"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80';
-          }}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-85"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-      </div>
-
       {/* Main Card Content */}
       <div className="space-y-3">
         {/* Word Title & Audio Play Button & Speed Controls */}

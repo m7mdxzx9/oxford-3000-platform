@@ -157,37 +157,7 @@ export default function WordModal({ word, onClose }) {
           <p className="text-lg sm:text-xl font-bold text-amber-300 dir-rtl">{word.arabic || word.translation}</p>
         </div>
 
-        {/* Contextual Visual Aid Photo Banner */}
-        <div className="mb-5 space-y-2">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
-              <Image className="w-3.5 h-3.5 text-purple-400" /> Contextual Visual Aid
-            </span>
 
-            <button
-              onClick={handleGenerateIllustration}
-              disabled={generatingImage}
-              className="flex items-center gap-1.5 px-3 py-1 bg-purple-600/80 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
-            >
-              {generatingImage ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {generatingImage ? 'Generating AI Image...' : '3D AI Concept'}
-            </button>
-          </div>
-
-          {illustrationUrl && (
-            <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-slate-950 flex items-center justify-center p-2 max-h-48">
-              <img
-                src={illustrationUrl}
-                alt={word.word}
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80';
-                }}
-                className="max-h-44 w-auto object-cover rounded-xl shadow-lg transition-transform hover:scale-105"
-              />
-            </div>
-          )}
-        </div>
 
         {/* Voice Selector & Speed Control Bar */}
         <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 mb-5 space-y-3">
