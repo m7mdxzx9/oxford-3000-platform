@@ -251,6 +251,7 @@ export default function DualPlayerHub() {
   // 4. TWO-PLAYER PVP WORD CHAIN GAME STATE (1v1: محمد vs ريوف)
   // --------------------------------------------------------------------------
   const [pvpPlayerTurn, setPvpPlayerTurn] = useState('محمد'); // 'محمد' | 'ريوف'
+  const [pvpStarter, setPvpStarter] = useState('محمد'); // Host Mohammed chooses who starts
   const [pvpChain, setPvpChain] = useState([]);
   const [pvpUsedWords, setPvpUsedWords] = useState(new Set());
   const [pvpInput, setPvpInput] = useState('');
@@ -259,6 +260,24 @@ export default function DualPlayerHub() {
   const [pvpGameOver, setPvpGameOver] = useState(false);
   const [pvpWinner, setPvpWinner] = useState(null);
   const [pvpError, setPvpError] = useState('');
+
+  // --------------------------------------------------------------------------
+  // 6. SIBLING CO-OP DETECTIVE & SPEED REACTION BUZZER STATES
+  // --------------------------------------------------------------------------
+  const [teamScore, setTeamScore] = useState(0);
+  const [detectiveCase, setDetectiveCase] = useState(() => {
+    const wordObj = OXFORD_3000[Math.floor(Math.random() * OXFORD_3000.length)];
+    return {
+      wordObj,
+      solved: false,
+    };
+  });
+  const [detectiveGuess, setDetectiveGuess] = useState('');
+  const [detectiveMessage, setDetectiveMessage] = useState('');
+
+  const [activeBuzzer, setActiveBuzzer] = useState(null); // null | 'محمد' | 'ريوف'
+  const [buzzScores, setBuzzScores] = useState({ محمد: 0, ريوف: 0 });
+  const [buzzIndex, setBuzzIndex] = useState(0);
 
   const oxfordMap = useMemo(() => {
     const map = new Map();
@@ -306,9 +325,15 @@ export default function DualPlayerHub() {
         if (data.senderDeviceId !== LOCAL_DEVICE_ID) {
           playAudio(data.entry.word, { presetId: voicePreset });
         }
-      } else if (data.type === 'PVP_CONFIG' && data.timeLimit !== undefined) {
-        setPvpTimeLimit(data.timeLimit);
-        setPvpTimer(data.timeLimit);
+      } else if (data.type === 'PVP_CONFIG') {
+        if (data.timeLimit !== undefined) {
+          setPvpTimeLimit(data.timeLimit);
+          setPvpTimer(data.timeLimit);
+        }
+        if (data.starter) {
+          setPvpStarter(data.starter);
+          if (pvpChain.length === 0) setPvpPlayerTurn(data.starter);
+        }
       } else if (data.type === 'PVP_RESTART') {
         setPvpChain([]);
         setPvpUsedWords(new Set());
@@ -317,7 +342,9 @@ export default function DualPlayerHub() {
         setPvpGameOver(false);
         setPvpWinner(null);
         setPvpError('');
-        setPvpPlayerTurn('محمد');
+        const starter = data.starter || pvpStarter;
+        setPvpPlayerTurn(starter);
+        if (data.starter) setPvpStarter(starter);
       } else if (data.type === 'SUBTAB_CHANGE' && data.subTab) {
         setSubTab(data.subTab);
       } else if (data.type === 'DIALOGUE_GENERATE' && data.dialogueScript) {
@@ -346,11 +373,30 @@ export default function DualPlayerHub() {
         setQuizAnswered(false);
       } else if (data.type === 'STATS_UPDATE' && data.stats) {
         setStats(data.stats);
+      } else if (data.type === 'DETECTIVE_GUESS') {
+        if (data.solved) {
+          setDetectiveCase((prev) => ({ ...prev, solved: true }));
+          setTeamScore((prev) => prev + 50);
+          setDetectiveMessage(`🎉 تم حل اللغز الكنسي بواسطة الفريق! الكلمة هي: "${data.word}"`);
+        } else {
+          setDetectiveMessage(`💡 محاولة غير صحيحة للكلمة: "${data.guess}"`);
+        }
+      } else if (data.type === 'DETECTIVE_NEW') {
+        setDetectiveCase({ wordObj: data.wordObj, solved: false });
+        setDetectiveGuess('');
+        setDetectiveMessage('');
+      } else if (data.type === 'BUZZER_HIT') {
+        setActiveBuzzer(data.player);
+        addNotification(`🔔 ضغط ${data.player} على الجرس! لديه 3 ثوانٍ للإجابة!`, 'warning');
+      } else if (data.type === 'BUZZER_ANSWER') {
+        if (data.scores) setBuzzScores(data.scores);
+        setActiveBuzzer(null);
+        setBuzzIndex((prev) => prev + 1);
       }
     });
 
     return () => unsubscribe();
-  }, [voicePreset, addNotification]);
+  }, [voicePreset, addNotification, pvpStarter, pvpChain.length]);
 
   // PvP Turn Countdown Timer
   useEffect(() => {
@@ -446,6 +492,21 @@ export default function DualPlayerHub() {
     });
   };
 
+  const handleSetPvpStarter = (starterName) => {
+    if (activeUser !== 'محمد') {
+      addNotification('عذراً، تحديد من يبدأ اللعبة خاص بـ محمد فقط 🔒', 'warning');
+      return;
+    }
+    setPvpStarter(starterName);
+    if (pvpChain.length === 0) setPvpPlayerTurn(starterName);
+    sendRealtimeMove({
+      type: 'PVP_CONFIG',
+      id: `starter-${Date.now()}`,
+      starter: starterName,
+      timeLimit: pvpTimeLimit,
+    });
+  };
+
   const handleRestartPvpChain = () => {
     if (activeUser !== 'محمد') {
       addNotification('عذراً، زر بدء جولة جديدة خاص بـ محمد فقط 🔒', 'warning');
@@ -458,12 +519,13 @@ export default function DualPlayerHub() {
     setPvpGameOver(false);
     setPvpWinner(null);
     setPvpError('');
-    setPvpPlayerTurn('محمد');
+    setPvpPlayerTurn(pvpStarter);
 
     sendRealtimeMove({
       type: 'PVP_RESTART',
       id: `restart-${Date.now()}`,
       timeLimit: pvpTimeLimit,
+      starter: pvpStarter,
     });
   };
 
@@ -548,6 +610,78 @@ export default function DualPlayerHub() {
       type: 'SUBTAB_CHANGE',
       id: `tab-${Date.now()}`,
       subTab: newTab,
+    });
+  };
+
+  // Detective Handlers
+  const handleSubmitDetectiveGuess = (e) => {
+    if (e) e.preventDefault();
+    if (detectiveCase.solved) return;
+
+    const cleanInput = detectiveGuess.trim().toLowerCase();
+    const target = detectiveCase.wordObj.word.trim().toLowerCase();
+
+    const isSolved = cleanInput === target;
+    if (isSolved) {
+      setDetectiveCase((prev) => ({ ...prev, solved: true }));
+      setTeamScore((prev) => prev + 50);
+      setDetectiveMessage(`🎉 صح! تم حل اللغز بنجاح! الكلمة هي: "${detectiveCase.wordObj.word}"`);
+    } else {
+      setDetectiveMessage(`💡 التخمين غير صحيح، جرب كلمة أخرى!`);
+    }
+
+    sendRealtimeMove({
+      type: 'DETECTIVE_GUESS',
+      id: `det-${Date.now()}`,
+      guess: detectiveGuess,
+      word: detectiveCase.wordObj.word,
+      solved: isSolved,
+    });
+
+    setDetectiveGuess('');
+  };
+
+  const handleNextDetectiveCase = () => {
+    const nextWord = OXFORD_3000[Math.floor(Math.random() * OXFORD_3000.length)];
+    const newCase = { wordObj: nextWord, solved: false };
+    setDetectiveCase(newCase);
+    setDetectiveGuess('');
+    setDetectiveMessage('');
+
+    sendRealtimeMove({
+      type: 'DETECTIVE_NEW',
+      id: `detnew-${Date.now()}`,
+      wordObj: nextWord,
+    });
+  };
+
+  // Speed Reaction Buzzers Handlers
+  const handleHitBuzzer = (player) => {
+    if (activeBuzzer) return;
+    setActiveBuzzer(player);
+    sendRealtimeMove({
+      type: 'BUZZER_HIT',
+      id: `buzz-${Date.now()}`,
+      player,
+    });
+  };
+
+  const handleAnswerBuzzerOption = (opt, correctOpt) => {
+    if (!activeBuzzer) return;
+    const isCorrect = opt === correctOpt;
+    const newScores = {
+      ...buzzScores,
+      [activeBuzzer]: isCorrect ? buzzScores[activeBuzzer] + 10 : Math.max(0, buzzScores[activeBuzzer] - 5),
+    };
+
+    setBuzzScores(newScores);
+    setActiveBuzzer(null);
+    setBuzzIndex((prev) => prev + 1);
+
+    sendRealtimeMove({
+      type: 'BUZZER_ANSWER',
+      id: `buzzans-${Date.now()}`,
+      scores: newScores,
     });
   };
 
@@ -659,6 +793,8 @@ export default function DualPlayerHub() {
           { id: 'dialogue', label: '💬 حوارات تفاعلية AI', icon: MessageSquare },
           { id: 'chain', label: '⚔️ تحدي السلسلة 1v1', icon: Gamepad2 },
           { id: 'quiz', label: '⚡ مواجهة السرعة السريعة', icon: Award },
+          { id: 'detective', label: '🕵️‍♂️ التحري اللغوي (لغز الفريق)', icon: HelpCircle },
+          { id: 'speed_buzz', label: '🔔 تحدي سرعة الجرس 1v1', icon: Flame },
           { id: 'leaderboard', label: '🏆 لوحة المقارنة والإنجاز', icon: BarChart3 },
         ].map((tb) => (
           <button
@@ -848,40 +984,63 @@ export default function DualPlayerHub() {
 
           {!pvpGameOver ? (
             <div className="space-y-5">
-              {/* Timer Limit Selector Bar */}
-              <div className="flex items-center justify-between gap-2 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs font-black shadow-md">
-                <div className="flex items-center gap-2">
+              {/* Timer Limit & Starter Selector Bar */}
+              <div className="flex items-center justify-between flex-wrap gap-3 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs font-black shadow-md">
+                <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1.5 text-cyan-400">
                     <Clock className="w-4 h-4 text-cyan-400" /> وقت كل دور:
                   </span>
-                  {activeUser !== 'محمد' && (
-                    <span className="text-[10px] text-amber-400 font-extrabold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                      🔒 تحكم محمد
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1" dir="ltr">
+                    {[
+                      { value: 10, label: '10s' },
+                      { value: 15, label: '15s' },
+                      { value: 30, label: '30s' },
+                      { value: 60, label: '60s' },
+                      { value: 0, label: 'Off' },
+                    ].map((tOpt) => (
+                      <button
+                        key={tOpt.value}
+                        onClick={() => handleSetPvpTimeLimit(tOpt.value)}
+                        disabled={activeUser !== 'محمد'}
+                        className={`px-2.5 py-1 rounded-xl text-xs font-black transition-all ${
+                          pvpTimeLimit === tOpt.value
+                            ? 'bg-amber-500 text-slate-950 font-black scale-105 shadow-md'
+                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50'
+                        }`}
+                      >
+                        {tOpt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar" dir="ltr">
-                  {[
-                    { value: 10, label: '10s' },
-                    { value: 15, label: '15s' },
-                    { value: 30, label: '30s' },
-                    { value: 60, label: '60s' },
-                    { value: 0, label: 'Off' },
-                  ].map((tOpt) => (
+                {/* Host Starter Control */}
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-400 font-black">من يبدأ اللعبة؟</span>
+                  <div className="flex items-center gap-1">
                     <button
-                      key={tOpt.value}
-                      onClick={() => handleSetPvpTimeLimit(tOpt.value)}
+                      onClick={() => handleSetPvpStarter('محمد')}
                       disabled={activeUser !== 'محمد'}
                       className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
-                        pvpTimeLimit === tOpt.value
-                          ? 'bg-amber-500 text-slate-950 font-black scale-105 shadow-md'
-                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                        pvpStarter === 'محمد'
+                          ? 'bg-cyan-500 text-slate-950 font-black scale-105 shadow-md'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50'
                       }`}
                     >
-                      {tOpt.label}
+                      👑 يبدأ محمد
                     </button>
-                  ))}
+                    <button
+                      onClick={() => handleSetPvpStarter('ريوف')}
+                      disabled={activeUser !== 'محمد'}
+                      className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
+                        pvpStarter === 'ريوف'
+                          ? 'bg-purple-500 text-white font-black scale-105 shadow-md'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50'
+                      }`}
+                    >
+                      ⭐ تبدأ ريوف
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1049,6 +1208,169 @@ export default function DualPlayerHub() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* SUB-TAB 5: CO-OP DETECTIVE MYSTERY PUZZLE                           */}
+      {/* ------------------------------------------------------------------ */}
+      {subTab === 'detective' && (
+        <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 bg-[var(--bg-card)] text-[var(--text-main)] shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+            <div>
+              <h3 className="text-xl font-black flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-amber-500" />
+                <span>قسم التحري اللغوي والغاز المفردات (Co-op Detective)</span>
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-bold">
+                يتعاون محمد وريوف كفريق واحد لفك شفرة الكلمة السرية وحل اللغز!
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-950 dark:text-amber-300 font-black text-xs">
+                نقاط الفريق 🏆: {teamScore}
+              </span>
+              <button onClick={handleNextDetectiveCase} className="px-3 py-1.5 rounded-xl theme-btn-primary text-xs font-black">
+                لغز جديد 🕵️
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="p-6 rounded-3xl bg-slate-950 text-white space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <span className="text-xs text-cyan-400 font-black">تلميحات القضية السرية:</span>
+                <span className="text-xs px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold">
+                  {detectiveCase.wordObj.cefr} | {detectiveCase.wordObj.pos}
+                </span>
+              </div>
+
+              <div className="space-y-2 text-sm font-black">
+                <p className="text-amber-400">💡 المعنى العربي: "{detectiveCase.wordObj.arabic}"</p>
+                <p dir="ltr" className="ltr-isolate text-base text-white leading-relaxed font-mono">
+                  📝 "{getWordExample(detectiveCase.wordObj).replace(new RegExp(detectiveCase.wordObj.word, 'gi'), '_____')}"
+                </p>
+              </div>
+            </div>
+
+            {detectiveMessage && (
+              <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-950 dark:text-amber-300 font-black text-sm text-center">
+                {detectiveMessage}
+              </div>
+            )}
+
+            {!detectiveCase.solved ? (
+              <form onSubmit={handleSubmitDetectiveGuess} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  dir="ltr"
+                  value={detectiveGuess}
+                  onChange={(e) => setDetectiveGuess(e.target.value)}
+                  placeholder="اكتب استنتاج الفريق للكلمة السرية..."
+                  className="ltr-isolate flex-1 p-3.5 rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-950 dark:text-white font-black text-sm"
+                />
+                <button type="submit" className="px-6 py-3.5 rounded-2xl theme-btn-primary font-black text-sm shadow-md">
+                  تخمين الكلمة
+                </button>
+              </form>
+            ) : (
+              <div className="text-center pt-2">
+                <button onClick={handleNextDetectiveCase} className="px-6 py-3 rounded-2xl theme-btn-primary font-black text-sm shadow-md">
+                  القضية التالية ←
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* SUB-TAB 6: SPEED REACTION BUZZERS (1v1)                              */}
+      {/* ------------------------------------------------------------------ */}
+      {subTab === 'speed_buzz' && (
+        <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 bg-[var(--bg-card)] text-[var(--text-main)] shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+            <h3 className="text-xl font-black flex items-center gap-2">
+              <Flame className="w-5 h-5 text-orange-500" />
+              <span>تحدي التداعي وسرعة الجرس (Speed Reaction Buzzers)</span>
+            </h3>
+            <div className="flex items-center gap-4 text-xs font-black">
+              <span>محمد 🔔: {buzzScores.محمد}</span>
+              <span>ريوف 🔔: {buzzScores.ريوف}</span>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Word Display */}
+            <div className="p-8 rounded-3xl bg-slate-950 text-white text-center space-y-2 shadow-2xl">
+              <span className="text-xs text-slate-400 font-black block">الكلمة الحالية:</span>
+              <h3 dir="ltr" className="ltr-isolate text-4xl font-black text-amber-400">
+                {OXFORD_3000[buzzIndex % OXFORD_3000.length]?.word}
+              </h3>
+            </div>
+
+            {/* Buzzer Buttons */}
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => handleHitBuzzer('محمد')}
+                disabled={activeBuzzer !== null || activeUser !== 'محمد'}
+                className={`p-6 rounded-3xl font-black text-lg transition-all shadow-xl active:scale-95 flex flex-col items-center justify-center gap-2 ${
+                  activeBuzzer === 'محمد'
+                    ? 'bg-cyan-500 text-slate-950 ring-4 ring-cyan-300 scale-105'
+                    : 'bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50'
+                }`}
+              >
+                <span>🔔 جرس محمد</span>
+                <span className="text-xs font-normal">اضغط أولاً للإجابة</span>
+              </button>
+
+              <button
+                onClick={() => handleHitBuzzer('ريوف')}
+                disabled={activeBuzzer !== null || activeUser !== 'ريوف'}
+                className={`p-6 rounded-3xl font-black text-lg transition-all shadow-xl active:scale-95 flex flex-col items-center justify-center gap-2 ${
+                  activeBuzzer === 'ريوف'
+                    ? 'bg-purple-500 text-white ring-4 ring-purple-300 scale-105'
+                    : 'bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-50'
+                }`}
+              >
+                <span>🔔 جرس ريوف</span>
+                <span className="text-xs font-normal">اضغطي أولاً للإجابة</span>
+              </button>
+            </div>
+
+            {/* Options when Buzzer is active */}
+            {activeBuzzer && (
+              <div className="p-5 rounded-3xl bg-amber-500/15 border-2 border-amber-500/40 space-y-3 animate-pulse">
+                <p className="text-xs font-black text-amber-950 dark:text-amber-300 text-center">
+                  🔔 الدور الآن لـ <strong>{activeBuzzer}</strong> اختيار الترجمة الصحيحة:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    OXFORD_3000[buzzIndex % OXFORD_3000.length]?.arabic,
+                    'خيار خطأ 1',
+                    'خيار خطأ 2',
+                    'خيار خطأ 3',
+                  ]
+                    .sort(() => 0.5 - Math.random())
+                    .map((opt, oIdx) => (
+                      <button
+                        key={oIdx}
+                        onClick={() =>
+                          handleAnswerBuzzerOption(
+                            opt,
+                            OXFORD_3000[buzzIndex % OXFORD_3000.length]?.arabic
+                          )
+                        }
+                        className="p-3 rounded-xl bg-slate-900 text-white font-black text-sm font-arabic hover:bg-slate-800"
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
