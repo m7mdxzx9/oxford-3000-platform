@@ -16,6 +16,7 @@ import {
 import { OXFORD_3000 } from '../data/oxford3000';
 import { playAudio } from '../services/audioService';
 import { useApp } from '../context/AppContext';
+import { getWordExample } from '../utils/exampleSentenceService';
 
 export default function QuizGame() {
   const { t, voicePreset } = useApp();
@@ -347,11 +348,25 @@ export default function QuizGame() {
             })}
           </div>
 
-          {/* Correct Example Context Hint when Answered (High Contrast) */}
-          {isAnswered && currentItem.wordObj.example && (
-            <div className="p-5 rounded-2xl bg-slate-900 text-white border-2 border-cyan-500/40 text-xs space-y-1.5 shadow-xl">
-              <span className="font-black text-cyan-400 block text-xs tracking-wider">Example Usage:</span>
-              <p className="font-black ltr-token text-base text-white">"{currentItem.wordObj.example}"</p>
+          {/* Correct Example Context Hint when Answered (High Contrast & Realistic Sentence) */}
+          {isAnswered && (
+            <div className="p-5 rounded-2xl bg-slate-950 text-white border-2 border-cyan-500/40 text-xs space-y-2 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-cyan-300 flex items-center gap-1.5 text-xs tracking-wider">
+                  <HelpCircle className="w-4 h-4 text-cyan-400" /> مثال توضيحي للجملة (Example Usage):
+                </span>
+                <button
+                  type="button"
+                  onClick={() => playAudio(getWordExample(currentItem.wordObj), { presetId: voicePreset })}
+                  className="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition-all flex items-center gap-1 active:scale-95 shadow-sm"
+                  title="استمع لنطق الجملة التوضيحية كاملاً"
+                >
+                  <Volume2 className="w-3.5 h-3.5" /> استمع للجملة
+                </button>
+              </div>
+              <p className="font-black ltr-token text-base text-white leading-relaxed">
+                "{getWordExample(currentItem.wordObj)}"
+              </p>
             </div>
           )}
 

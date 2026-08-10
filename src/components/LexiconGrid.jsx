@@ -13,6 +13,7 @@ import ExportModal from './ExportModal';
 import IpaSyllableVisualizer from './IpaSyllableVisualizer';
 import AudioSpeedControl from './AudioSpeedControl';
 import EmptyState from './EmptyState';
+import { getWordExample } from '../utils/exampleSentenceService';
 
 // CEFR Level Color Badge Mapping
 const CEFR_BADGES = {
@@ -105,7 +106,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
 
   const posStyle = POS_STYLES[wordObj.pos?.toLowerCase()] || 'bg-slate-500/15 text-slate-300 border-slate-500/30';
 
-  const activeSentence = customAiSentence?.sentence || wordObj.example;
+  const activeSentence = customAiSentence?.sentence || getWordExample(wordObj);
   const activeArabic = customAiSentence?.arabic;
   const activeWordTranslations = customAiSentence?.wordTranslations;
 
