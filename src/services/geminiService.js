@@ -25,8 +25,8 @@ const callGeminiApi = async (promptText, apiKey = '') => {
     new Set([
       apiKey ? apiKey.trim() : '',
       typeof window !== 'undefined' && window.localStorage ? (localStorage.getItem('oxford3000_gemini_api_key') || '').trim() : '',
-      DEFAULT_GEMINI_KEY,
       DEFAULT_NVIDIA_KEY,
+      DEFAULT_GEMINI_KEY,
     ])
   ).filter(Boolean);
 
@@ -39,7 +39,41 @@ const callGeminiApi = async (promptText, apiKey = '') => {
   });
 
   for (const currentKey of keysToTry) {
-    // 1. Groq API Provider (gsk_...) - Full Browser CORS Support
+    // 1. NVIDIA NIM API Provider (nvapi-...) with CORS Proxy fallback for Web Browsers
+    if (currentKey.startsWith('nvapi-')) {
+      const endpointsToTry = [
+        'https://integrate.api.nvidia.com/v1/chat/completions',
+        'https://cors.eu.org/https://integrate.api.nvidia.com/v1/chat/completions',
+      ];
+
+      for (const nvEp of endpointsToTry) {
+        try {
+          const res = await fetch(nvEp, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${currentKey}`,
+            },
+            body: JSON.stringify({
+              model: 'meta/llama-3.1-8b-instruct',
+              messages: [{ role: 'user', content: promptText }],
+              temperature: 0.7,
+              max_tokens: 1000,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const text = data?.choices?.[0]?.message?.content;
+            if (text) return text;
+          }
+        } catch (e) {
+          console.warn(`NVIDIA API endpoint ${nvEp} error:`, e);
+        }
+      }
+      continue;
+    }
+
+    // 2. Groq API Provider (gsk_...)
     if (currentKey.startsWith('gsk_')) {
       try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -67,7 +101,7 @@ const callGeminiApi = async (promptText, apiKey = '') => {
       continue;
     }
 
-    // 2. Google Gemini API Provider (AIzaSy...) - Native Browser CORS Support
+    // 3. Google Gemini API Provider (AIzaSy...)
     if (currentKey.startsWith('AIzaSy') || currentKey === DEFAULT_GEMINI_KEY) {
       for (const endpoint of GEMINI_MODEL_ENDPOINTS) {
         try {
@@ -84,33 +118,6 @@ const callGeminiApi = async (promptText, apiKey = '') => {
         } catch (e) {
           console.warn(`Gemini endpoint ${endpoint} error:`, e);
         }
-      }
-      continue;
-    }
-
-    // 3. NVIDIA NIM API Provider (nvapi-...)
-    if (currentKey.startsWith('nvapi-')) {
-      try {
-        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentKey}`,
-          },
-          body: JSON.stringify({
-            model: 'meta/llama-3.1-8b-instruct',
-            messages: [{ role: 'user', content: promptText }],
-            temperature: 0.7,
-            max_tokens: 1000,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const text = data?.choices?.[0]?.message?.content;
-          if (text) return text;
-        }
-      } catch (e) {
-        console.warn('NVIDIA API fetch error (browser CORS restriction):', e);
       }
     }
   }
