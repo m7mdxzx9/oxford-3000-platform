@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Plus, Check, Star, Volume2, Sparkles, RefreshCw, Mic, BookOpen } from 'lucide-react';
+import { Plus, Check, Star, Volume2, Sparkles, RefreshCw, Mic, BookOpen, Download } from 'lucide-react';
 import { oxford3000Data } from '../data/oxford3000';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
@@ -8,6 +8,7 @@ import { startListening, stopListening, evaluateSpeech } from '../services/speec
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 import WordModal from './WordModal';
+import ExportModal from './ExportModal';
 
 // CEFR Level Color Badge Mapping
 const CEFR_BADGES = {
@@ -408,6 +409,7 @@ export const LexiconGrid = () => {
   // Gemini Missing Term State
   const [isFetchingTerm, setIsFetchingTerm] = useState(false);
   const [activeModalWord, setActiveModalWord] = useState(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Merge static oxford3000 dataset with dynamic custom words
   const fullDataset = useMemo(() => {
@@ -519,22 +521,33 @@ export const LexiconGrid = () => {
             </p>
           </div>
 
-          {/* Items Per Page Selector */}
-          <div className="flex items-center space-x-2 text-xs text-zinc-400">
-            <span>Show:</span>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="glass-input px-2.5 py-1.5 rounded-lg text-zinc-200 bg-zinc-900 border border-white/[0.08] focus:border-indigo-500"
+          {/* Actions Bar: Export Deck & Items Per Page */}
+          <div className="flex items-center space-x-3 space-x-reverse">
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl theme-btn-primary text-xs font-black transition-all shadow-sm hover:brightness-110 shrink-0"
+              title="Export vocabulary deck to PDF, Anki, Markdown, or JSON"
             >
-              <option value={16}>16 per page</option>
-              <option value={20}>20 per page</option>
-              <option value={24}>24 per page</option>
-              <option value={32}>32 per page</option>
-            </select>
+              <Download className="w-3.5 h-3.5" />
+              <span>📥 تصدير الكلمات (Export)</span>
+            </button>
+
+            <div className="flex items-center space-x-2 text-xs text-zinc-400">
+              <span>Show:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="glass-input px-2.5 py-1.5 rounded-lg text-zinc-200 bg-zinc-900 border border-white/[0.08] focus:border-indigo-500"
+              >
+                <option value={16}>16 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={24}>24 per page</option>
+                <option value={32}>32 per page</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -791,6 +804,13 @@ export const LexiconGrid = () => {
           onClose={() => setActiveModalWord(null)}
         />
       )}
+
+      {/* Vocabulary Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        filteredWords={filteredWords}
+      />
     </div>
   );
 };
