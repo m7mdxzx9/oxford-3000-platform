@@ -4,11 +4,14 @@ import { oxford3000Data } from '../data/oxford3000';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { fetchMissingTerm, generateSentence } from '../services/geminiService';
-import { startListening, stopListening, evaluateSpeech } from '../services/speechEvaluation';
+import { startListening, stopListening, evaluateSpeech, isSpeechRecognitionSupported } from '../services/speechEvaluation';
+import { getCuratedWordImage } from '../services/imageService';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 import WordModal from './WordModal';
 import ExportModal from './ExportModal';
+import IpaSyllableVisualizer from './IpaSyllableVisualizer';
+import AudioSpeedControl from './AudioSpeedControl';
 
 // CEFR Level Color Badge Mapping
 const CEFR_BADGES = {
@@ -232,34 +235,48 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         </div>
       </div>
 
+      {/* Contextual Visual Aid Photo Banner */}
+      <div className="relative w-full h-24 mb-3 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0">
+        <img
+          src={getCuratedWordImage(wordObj.word)}
+          alt={wordObj.word}
+          loading="lazy"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80';
+          }}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-85"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+      </div>
+
       {/* Main Card Content */}
       <div className="space-y-3">
-        {/* Word Title & Audio Play Button */}
+        {/* Word Title & Audio Play Button & Speed Controls */}
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 dir="ltr" className="ltr-isolate text-xl font-extrabold tracking-tight transition-colors">
               {wordObj.word}
             </h3>
-            {wordObj.ipa && (
-              <p dir="ltr" className="ltr-isolate text-xs font-mono opacity-70 mt-0.5">
-                {wordObj.ipa}
-              </p>
-            )}
+            {wordObj.ipa && <IpaSyllableVisualizer ipa={wordObj.ipa} />}
           </div>
 
-          {/* Audio TTS Button */}
-          <button
-            onClick={handlePlayWord}
-            disabled={isPlayingWord}
-            className={`p-2.5 rounded-xl border transition-all active:scale-90 flex items-center justify-center ${
-              isPlayingWord
-                ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md animate-pulse'
-                : 'theme-btn-secondary opacity-90 hover:opacity-100'
-            }`}
-            title="Listen to pronunciation (TTS)"
-          >
-            <Volume2 className="w-4 h-4 text-cyan-400" />
-          </button>
+          {/* Audio TTS Button & Speed Toggle */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <AudioSpeedControl compact={true} />
+            <button
+              onClick={handlePlayWord}
+              disabled={isPlayingWord}
+              className={`p-2 rounded-xl border transition-all active:scale-90 flex items-center justify-center ${
+                isPlayingWord
+                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md animate-pulse'
+                  : 'theme-btn-secondary opacity-90 hover:opacity-100'
+              }`}
+              title="Listen to pronunciation (TTS)"
+            >
+              <Volume2 className="w-4 h-4 text-cyan-400" />
+            </button>
+          </div>
         </div>
 
         {/* Badges Row (POS & CEFR) */}

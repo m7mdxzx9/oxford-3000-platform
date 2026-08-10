@@ -2,19 +2,21 @@ import React, { useState } from 'react';
 import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, Image, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
-import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
+import { recordAndEvaluateSpeech, stopListening, isSpeechRecognitionSupported } from '../services/speechEvaluation';
 import { generateVisualIllustration } from '../services/imagenService';
 import { generateSentence } from '../services/geminiService';
+import { getCuratedWordImage } from '../services/imageService';
 import SentenceTokenViewer from './SentenceTokenViewer';
+import AudioSpeedControl from './AudioSpeedControl';
+import IpaSyllableVisualizer from './IpaSyllableVisualizer';
 
 export default function WordModal({ word, onClose }) {
-  const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets, apiKey } = useApp();
+  const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets, audioSpeed, setAudioSpeed, apiKey } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [speechResult, setSpeechResult] = useState(null);
-  const [activeSpeed, setActiveSpeed] = useState(0.9);
 
-  // Imagen 4.0 Visual Memory Illustration State
-  const [illustrationUrl, setIllustrationUrl] = useState(null);
+  // Imagen 4.0 & Contextual Visual Illustration State
+  const [illustrationUrl, setIllustrationUrl] = useState(() => getCuratedWordImage(word.word));
   const [generatingImage, setGeneratingImage] = useState(false);
 
   // Custom AI Sentence State
@@ -31,8 +33,7 @@ export default function WordModal({ word, onClose }) {
   const activeArabicSentence = customAiSentence?.arabic;
   const activeWordTranslations = customAiSentence?.wordTranslations;
 
-  const handlePlayWord = (rate = activeSpeed) => {
-    setActiveSpeed(rate);
+  const handlePlayWord = (rate = audioSpeed) => {
     playAudio(word.word, { speed: rate, presetId: voicePreset });
   };
 
@@ -67,6 +68,11 @@ export default function WordModal({ word, onClose }) {
   };
 
   const handleRecordSpeech = () => {
+    if (!isSpeechRecognitionSupported()) {
+      addNotification('Web Speech API is not supported on this browser version. You can practice in Chrome/Edge!', 'warning');
+      return;
+    }
+
     if (isRecording) {
       stopListening();
       setIsRecording(false);
@@ -82,10 +88,12 @@ export default function WordModal({ word, onClose }) {
       (res) => {
         setIsRecording(false);
         setSpeechResult(res);
-        if (res.score >= 80) {
+        if (res.score >= 85) {
           addNotification(`Outstanding pronunciation! Score: ${res.score}%`, 'success');
+        } else if (res.score >= 60) {
+          addNotification(`Good effort! Score: ${res.score}%. Practice stressed syllables.`, 'info');
         } else {
-          addNotification(`Score: ${res.score}%. Practice stressed syllables.`, 'info');
+          addNotification(`Score: ${res.score}%. Listen to audio and try again.`, 'warning');
         }
       },
       (err) => {
@@ -121,14 +129,12 @@ export default function WordModal({ word, onClose }) {
           )}
         </div>
 
-        {/* Word & Phonetic */}
+        {/* Word & IPA Syllable Stress Visualizer */}
         <div className="flex items-baseline justify-between gap-2 mb-2 flex-wrap">
           <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight ltr-token">
             {word.word}
           </h2>
-          <span className="text-sm sm:text-lg text-cyan-400/90 font-mono ltr-token">
-            {word.ipa || word.phonetic || `/${word.word}/`}
-          </span>
+          <IpaSyllableVisualizer ipa={word.ipa || word.phonetic || `/${word.word}/`} />
         </div>
 
         {/* Arabic Meaning */}
@@ -137,87 +143,98 @@ export default function WordModal({ word, onClose }) {
           <p className="text-lg sm:text-xl font-bold text-amber-300 dir-rtl">{word.arabic || word.translation}</p>
         </div>
 
-        {/* Imagen 4.0 3D Visual Memory Concept */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Image className="w-3.5 h-3.5 text-purple-400" /> Imagen 4.0 Visual Memory
+        {/* Contextual Visual Aid Photo Banner */}
+        <div className="mb-5 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+              <Image className="w-3.5 h-3.5 text-purple-400" /> Contextual Visual Aid
             </span>
 
-            {!illustrationUrl && (
-              <button
-                onClick={handleGenerateIllustration}
-                disabled={generatingImage}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/80 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
-              >
-                {generatingImage ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                {generatingImage ? 'Generating...' : 'Generate 3D Concept'}
-              </button>
-            )}
+            <button
+              onClick={handleGenerateIllustration}
+              disabled={generatingImage}
+              className="flex items-center gap-1.5 px-3 py-1 bg-purple-600/80 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+            >
+              {generatingImage ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {generatingImage ? 'Generating AI Image...' : '3D AI Concept'}
+            </button>
           </div>
 
           {illustrationUrl && (
-            <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-slate-950 flex items-center justify-center p-3">
-              <img src={illustrationUrl} alt={word.word} className="w-36 h-36 sm:w-48 sm:h-48 object-contain rounded-xl shadow-lg" />
+            <div className="relative rounded-2xl overflow-hidden border border-purple-500/30 bg-slate-950 flex items-center justify-center p-2 max-h-48">
+              <img
+                src={illustrationUrl}
+                alt={word.word}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80';
+                }}
+                className="max-h-44 w-auto object-cover rounded-xl shadow-lg transition-transform hover:scale-105"
+              />
             </div>
           )}
         </div>
 
-        {/* Voice Selector & Audio Controls */}
+        {/* Voice Selector & Speed Control Bar */}
         <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 mb-5 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs text-cyan-300 font-semibold flex items-center gap-1">
               <Volume2 className="w-4 h-4" /> Voice:
             </span>
-            <select
-              value={voicePreset}
-              onChange={(e) => setVoicePreset(e.target.value)}
-              className="bg-slate-900 text-xs text-white p-1.5 rounded-xl border border-slate-800 focus:outline-none max-w-[200px] truncate"
-            >
-              {voicePresets.map((vp) => (
-                <option key={vp.id} value={vp.id}>
-                  {vp.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2 flex-wrap">
+              <AudioSpeedControl speed={audioSpeed} onSpeedChange={setAudioSpeed} compact={true} />
+              <select
+                value={voicePreset}
+                onChange={(e) => setVoicePreset(e.target.value)}
+                className="bg-slate-900 text-xs text-white p-1.5 rounded-xl border border-slate-800 focus:outline-none max-w-[180px] truncate font-bold"
+              >
+                {voicePresets.map((vp) => (
+                  <option key={vp.id} value={vp.id}>
+                    {vp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
               <button
-                onClick={() => handlePlayWord(0.9)}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-600/20 transition-all"
+                onClick={() => handlePlayWord(audioSpeed)}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/20 transition-all active:scale-95"
               >
-                <Volume2 className="w-4 h-4" /> Natural (0.9x)
-              </button>
-              <button
-                onClick={() => handlePlayWord(0.6)}
-                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-xl text-xs font-medium transition-all"
-              >
-                Slow (0.6x)
+                <Volume2 className="w-4 h-4" /> Listen ({audioSpeed}x)
               </button>
             </div>
 
             <button
               onClick={handleRecordSpeech}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all active:scale-95 ${
                 isRecording
                   ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30 font-bold'
                   : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
               }`}
             >
               {isRecording ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-rose-400" />}
-              {isRecording ? '🛑 إلغاء / توقف المايك' : 'Practice Voice'}
+              {isRecording ? '🛑 إلغاء / توقف المايك' : 'Mic Practice'}
             </button>
           </div>
         </div>
 
-        {/* Speech Score Result */}
+        {/* Speech Score Result Banner */}
         {speechResult && (
-          <div className="mb-5 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5">
+          <div className="mb-5 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300">Speech Accuracy Score</span>
-              <span className={`text-base font-extrabold ${speechResult.score >= 80 ? 'text-emerald-400' : 'text-amber-400'}`}>
+              <span className="text-xs font-bold text-slate-300">Speech Accuracy Score</span>
+              <span
+                className={`text-sm px-2.5 py-0.5 rounded-full font-black font-mono border ${
+                  speechResult.score >= 85
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : speechResult.score >= 60
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                    : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                }`}
+              >
                 {speechResult.score}%
               </span>
             </div>

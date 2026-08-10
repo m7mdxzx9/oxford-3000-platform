@@ -60,6 +60,11 @@ export const AppProvider = ({ children }) => {
     return stored || 'us-female';
   });
 
+  const [audioSpeed, setAudioSpeed] = useState(() => {
+    const stored = localStorage.getItem('oxford3000_audio_speed');
+    return stored ? parseFloat(stored) : 0.9;
+  });
+
   const [favorites, setFavorites] = useState(() => loadFromStorage(STORAGE_KEYS.FAVORITES, []));
   const [mastered, setMastered] = useState(() => loadFromStorage(STORAGE_KEYS.MASTERED, []));
   const [customWords, setCustomWords] = useState(() => loadFromStorage(STORAGE_KEYS.CUSTOM_WORDS, []));
@@ -198,6 +203,8 @@ export const AppProvider = ({ children }) => {
     voicePreset,
     setVoicePreset,
     voicePresets: VOICE_PRESETS,
+    audioSpeed,
+    setAudioSpeed,
     favorites,
     toggleFavorite,
     isFavorite,
