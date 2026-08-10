@@ -29,6 +29,7 @@ import { playAudio } from '../services/audioService';
 import { useApp } from '../context/AppContext';
 import { generateStory } from '../services/geminiService';
 import { getWordExample } from '../utils/exampleSentenceService';
+import { sendRealtimeMove, subscribeRealtimeMoves } from '../services/realtimeSyncService';
 
 /**
  * DualPlayerHub Component (قسم التعلم المشترك)
@@ -217,6 +218,7 @@ export default function DualPlayerHub() {
   const [pvpChain, setPvpChain] = useState([]);
   const [pvpUsedWords, setPvpUsedWords] = useState(new Set());
   const [pvpInput, setPvpInput] = useState('');
+  const [pvpTimeLimit, setPvpTimeLimit] = useState(15); // 10, 15, 30, 60, 0 (off)
   const [pvpTimer, setPvpTimer] = useState(15);
   const [pvpGameOver, setPvpGameOver] = useState(false);
   const [pvpWinner, setPvpWinner] = useState(null);
@@ -240,11 +242,51 @@ export default function DualPlayerHub() {
     return clean ? clean.slice(-1) : '';
   }, [pvpChain]);
 
-  // PvP 15-second Turn Countdown Timer
+  // Real-time Multi-Device Sync Event Listener (Phone <-> Laptop <-> Tablet)
   useEffect(() => {
-    if (pvpGameOver || pvpChain.length === 0) return;
+    const unsubscribe = subscribeRealtimeMoves((data) => {
+      if (!data) return;
 
-    setPvpTimer(15);
+      if (data.type === 'PVP_WORD' && data.entry) {
+        setPvpChain((prev) => {
+          if (prev.some((item) => item.id === data.entry.id)) return prev;
+          return [...prev, data.entry];
+        });
+
+        setPvpUsedWords((prev) => {
+          const newSet = new Set(prev);
+          const clean = data.entry.word.toLowerCase().replace(/[^a-z0-9]/g, '');
+          newSet.add(clean);
+          return newSet;
+        });
+
+        if (data.nextPlayer) setPvpPlayerTurn(data.nextPlayer);
+        if (data.timeLimit !== undefined) {
+          setPvpTimeLimit(data.timeLimit);
+          setPvpTimer(data.timeLimit);
+        }
+
+        playAudio(data.entry.word, { presetId: voicePreset });
+      } else if (data.type === 'PVP_RESTART') {
+        setPvpChain([]);
+        setPvpUsedWords(new Set());
+        setPvpInput('');
+        setPvpTimer(data.timeLimit || 15);
+        setPvpGameOver(false);
+        setPvpWinner(null);
+        setPvpError('');
+        setPvpPlayerTurn('محمد');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [voicePreset]);
+
+  // PvP Turn Countdown Timer
+  useEffect(() => {
+    if (pvpGameOver || pvpChain.length === 0 || pvpTimeLimit === 0) return;
+
+    setPvpTimer(pvpTimeLimit);
     const timer = setInterval(() => {
       setPvpTimer((prev) => {
         if (prev <= 1) {
@@ -261,7 +303,7 @@ export default function DualPlayerHub() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [pvpPlayerTurn, pvpChain, pvpGameOver]);
+  }, [pvpPlayerTurn, pvpChain, pvpGameOver, pvpTimeLimit]);
 
   const handlePvpSubmit = (e) => {
     if (e) e.preventDefault();
@@ -293,10 +335,11 @@ export default function DualPlayerHub() {
     }
 
     // Valid Turn!
+    const nextPlayer = pvpPlayerTurn === 'محمد' ? 'ريوف' : 'محمد';
     const entry = {
       ...foundWord,
       playedBy: pvpPlayerTurn,
-      id: `pvp-${Date.now()}`,
+      id: `pvp-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
     };
 
     const newUsed = new Set(pvpUsedWords);
@@ -305,23 +348,35 @@ export default function DualPlayerHub() {
     setPvpChain((prev) => [...prev, entry]);
     setPvpUsedWords(newUsed);
     setPvpInput('');
-
-    // Switch turn to other player
-    const nextPlayer = pvpPlayerTurn === 'محمد' ? 'ريوف' : 'محمد';
     setPvpPlayerTurn(nextPlayer);
 
     playAudio(foundWord.word, { presetId: voicePreset });
+
+    // Send real-time move to second device!
+    sendRealtimeMove({
+      type: 'PVP_WORD',
+      id: entry.id,
+      entry,
+      nextPlayer,
+      timeLimit: pvpTimeLimit,
+    });
   };
 
   const handleRestartPvpChain = () => {
     setPvpChain([]);
     setPvpUsedWords(new Set());
     setPvpInput('');
-    setPvpTimer(15);
+    setPvpTimer(pvpTimeLimit || 15);
     setPvpGameOver(false);
     setPvpWinner(null);
     setPvpError('');
     setPvpPlayerTurn('محمد');
+
+    sendRealtimeMove({
+      type: 'PVP_RESTART',
+      id: `restart-${Date.now()}`,
+      timeLimit: pvpTimeLimit,
+    });
   };
 
   // --------------------------------------------------------------------------
@@ -456,33 +511,33 @@ export default function DualPlayerHub() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-3">
+            <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="text-xs font-black block mb-1">اختر الحساب:</label>
+                <label className="text-xs font-black block mb-1.5 text-[var(--text-main)]">اختر الحساب:</label>
                 <select
                   value={loginUsername}
                   onChange={(e) => setLoginUsername(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 font-black text-sm"
+                  className="w-full p-3.5 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-slate-900 text-white font-black text-sm shadow-md focus:border-cyan-500"
                 >
-                  <option value="محمد">محمد (Mohammed)</option>
-                  <option value="ريوف">ريوف (Ryof)</option>
+                  <option value="محمد" className="bg-slate-900 text-white font-black py-1">محمد (Mohammed)</option>
+                  <option value="ريوف" className="bg-slate-900 text-white font-black py-1">ريوف (Ryof)</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-black block mb-1">كلمة المرور:</label>
+                <label className="text-xs font-black block mb-1.5 text-[var(--text-main)]">كلمة المرور:</label>
                 <input
                   type="password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="أدخل كلمة المرور الخاصة بحسابك..."
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 font-black text-sm"
+                  className="w-full p-3.5 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-slate-900 text-white font-black text-sm placeholder-slate-400 focus:border-cyan-500 shadow-md"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl theme-btn-primary font-black text-sm shadow-lg active:scale-95"
+                className="w-full py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-xl transition-all active:scale-95"
               >
                 دخول
               </button>
@@ -681,18 +736,49 @@ export default function DualPlayerHub() {
 
           {!pvpGameOver ? (
             <div className="space-y-5">
+              {/* Timer Limit Selector Bar */}
+              <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs font-black">
+                <span className="flex items-center gap-1.5 text-cyan-400">
+                  <Clock className="w-4 h-4 text-cyan-400" /> وقت كل دور:
+                </span>
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar" dir="ltr">
+                  {[
+                    { value: 10, label: '10s' },
+                    { value: 15, label: '15s' },
+                    { value: 30, label: '30s' },
+                    { value: 60, label: '60s' },
+                    { value: 0, label: 'Off' },
+                  ].map((tOpt) => (
+                    <button
+                      key={tOpt.value}
+                      onClick={() => {
+                        setPvpTimeLimit(tOpt.value);
+                        setPvpTimer(tOpt.value);
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
+                        pvpTimeLimit === tOpt.value
+                          ? 'bg-amber-500 text-slate-950 font-black scale-105 shadow-md'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {tOpt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Turn & Timer Header Bar */}
-              <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between text-white">
                 <div className="flex items-center gap-2 font-black text-sm">
                   <span>الدور الحاضر:</span>
-                  <span className={`px-3 py-1 rounded-xl text-white font-black shadow-sm ${pvpPlayerTurn === 'محمد' ? 'bg-cyan-600' : 'bg-purple-600'}`}>
+                  <span className={`px-3.5 py-1 rounded-xl text-white font-black shadow-md ${pvpPlayerTurn === 'محمد' ? 'bg-cyan-600' : 'bg-purple-600'}`}>
                     دور {pvpPlayerTurn}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-950 dark:text-amber-300 font-black text-xs">
-                  <Clock className="w-4 h-4 text-amber-500 animate-spin" />
-                  <span>{pvpTimer} ثانية متبقية</span>
+                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 font-black text-xs border border-amber-500/30">
+                  <Clock className="w-4 h-4 text-amber-400 animate-spin" />
+                  <span>{pvpTimeLimit === 0 ? 'بدون مؤقت' : `${pvpTimer} ثانية متبقية`}</span>
                 </div>
               </div>
 

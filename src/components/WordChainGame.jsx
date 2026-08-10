@@ -36,9 +36,31 @@ export default function WordChainGame() {
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedWordModal, setSelectedWordModal] = useState(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
+  const [turnTimeLimit, setTurnTimeLimit] = useState(15); // 10, 15, 30, 60, 0 (Off)
+  const [turnTimer, setTurnTimer] = useState(15);
 
   const logEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Turn Countdown Timer
+  useEffect(() => {
+    if (chain.length === 0 || isBotThinking || turnTimeLimit === 0) return;
+
+    setTurnTimer(turnTimeLimit);
+    const timer = setInterval(() => {
+      setTurnTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setErrorMessage('⌛ انتهى الوقت المخصص لدورك! تم إعادة ضبط السلسلة.');
+          setStreak(0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [chain, isBotThinking, turnTimeLimit]);
 
   // Fast lookup map for Oxford 3000 dataset
   const oxfordMap = useMemo(() => {
@@ -222,6 +244,37 @@ export default function WordChainGame() {
           >
             <RotateCcw className="w-5 h-5 text-slate-700 dark:text-slate-300" />
           </button>
+        </div>
+      </div>
+
+      {/* Timer Control Selector Bar */}
+      <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs font-black flex items-center justify-between shadow-lg">
+        <span className="flex items-center gap-1.5 text-cyan-400">
+          <HelpCircle className="w-4 h-4 text-cyan-400" /> ضبط وقت الحركة لكل دور:
+        </span>
+        <div className="flex items-center gap-1.5" dir="ltr">
+          {[
+            { value: 10, label: '10s' },
+            { value: 15, label: '15s' },
+            { value: 30, label: '30s' },
+            { value: 60, label: '60s' },
+            { value: 0, label: 'Off' },
+          ].map((tOpt) => (
+            <button
+              key={tOpt.value}
+              onClick={() => {
+                setTurnTimeLimit(tOpt.value);
+                setTurnTimer(tOpt.value);
+              }}
+              className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
+                turnTimeLimit === tOpt.value
+                  ? 'bg-amber-500 text-slate-950 font-black scale-105 shadow-md'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              {tOpt.label}
+            </button>
+          ))}
         </div>
       </div>
 
