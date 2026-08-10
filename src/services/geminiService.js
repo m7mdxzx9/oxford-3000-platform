@@ -58,7 +58,7 @@ const callGeminiApi = async (promptText, apiKey = '') => {
               model: 'meta/llama-3.1-8b-instruct',
               messages: [{ role: 'user', content: promptText }],
               temperature: 0.7,
-              max_tokens: 1000,
+              max_tokens: 3500,
             }),
           });
           if (res.ok) {
@@ -207,28 +207,31 @@ Return ONLY raw JSON object:
 };
 
 /**
- * Advanced Interactive Multi-Scene AI Story Generator (5-6 Rich Chapters with Full Paragraphs & Quizzes)
+ * Advanced Interactive Multi-Scene AI Story Generator (Epic Long Novel Engine with Custom Lengths)
  */
-export const generateStory = async (words = [], genre = 'adventure', cefrLevel = 'B1', apiKey = '') => {
+export const generateStory = async (words = [], genre = 'adventure', cefrLevel = 'B1', apiKey = '', storyLength = 'epic') => {
   const wordList = Array.isArray(words) ? words.map((w) => (typeof w === 'string' ? w : w.word)) : [String(words)];
   const targetWordsStr = wordList.filter(Boolean).join(', ') || 'journey, achieve, obstacle, adventure';
 
-  const promptText = `Act as an award-winning English novelist and CEFR master linguist. Create an immersive, highly engaging 5-chapter story incorporating these target vocabulary words: [${targetWordsStr}].
+  const numChapters = storyLength === 'short' ? 3 : storyLength === 'medium' ? 5 : 8;
+  const wordCountRange = storyLength === 'epic' ? '60-110 words in 2-3 detailed paragraphs' : '35-65 words in a rich paragraph';
+
+  const promptText = `Act as an award-winning English novelist and master CEFR linguist. Write an immersive, highly detailed ${numChapters}-chapter epic story incorporating these target vocabulary words: [${targetWordsStr}].
 Genre: ${genre}
 CEFR Difficulty Level: ${cefrLevel}
 
-For each of the 5 chapters, output:
-1. "sceneNumber": 1, 2, 3, 4, or 5
-2. "sceneTitle": A captivating chapter title (e.g. "Chapter 1: The Unexpected Encounter")
-3. "text": Rich, well-written multi-sentence paragraph (25-45 words) tailored to ${cefrLevel} level, using target vocabulary naturally in story context.
-4. "arabic": Beautiful, accurate Arabic translation of the full paragraph.
-5. "focusWord": The target vocabulary word highlighted in this chapter.
-6. "comprehensionQuestion": An engaging reading comprehension question about this chapter.
+For each of the ${numChapters} chapters, output:
+1. "sceneNumber": 1 to ${numChapters}
+2. "sceneTitle": Captivating chapter title (e.g. "Chapter 1: The Echo of the Lost Cipher")
+3. "text": Detailed, engaging narrative text (${wordCountRange}) tailored strictly to ${cefrLevel} level, using target vocabulary in rich literary context.
+4. "arabic": Beautiful, fluent Arabic translation of the full chapter text.
+5. "focusWord": Primary target vocabulary word emphasized in this chapter.
+6. "comprehensionQuestion": An insightful reading comprehension question about this chapter.
 7. "options": Array of 4 multiple-choice options in English: ["Option A", "Option B", "Option C", "Option D"].
 8. "correctAnswer": Exact correct option string from the options array.
 9. "wordTranslations": Key-value dictionary mapping key English words in "text" to their Arabic translations.
 
-Return ONLY a valid raw JSON array of 5 chapter objects:
+Return ONLY a valid raw JSON array of ${numChapters} chapter objects:
 [
   {
     "sceneNumber": 1,
