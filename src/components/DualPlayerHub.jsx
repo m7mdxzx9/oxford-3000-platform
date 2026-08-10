@@ -23,6 +23,8 @@ import {
   Settings2,
   ChevronRight,
   ShieldCheck,
+  HelpCircle,
+  Search,
 } from 'lucide-react';
 import { OXFORD_3000 } from '../data/oxford3000';
 import { playAudio } from '../services/audioService';
