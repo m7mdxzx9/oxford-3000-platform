@@ -77,6 +77,10 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
   // Dynamic photo state for this word card
   const [cardImg, setCardImg] = useState(() => getCuratedWordImage(wordObj.word));
 
+  // AI Sentence Generator State for this card
+  const [customAiSentence, setCustomAiSentence] = useState(null);
+  const [isGeneratingAiSentence, setIsGeneratingAiSentence] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
     fetchWordImage(wordObj.word).then((url) => {
