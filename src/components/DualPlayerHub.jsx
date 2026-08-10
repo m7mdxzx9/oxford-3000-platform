@@ -267,6 +267,9 @@ export default function DualPlayerHub() {
         }
 
         playAudio(data.entry.word, { presetId: voicePreset });
+      } else if (data.type === 'PVP_CONFIG' && data.timeLimit !== undefined) {
+        setPvpTimeLimit(data.timeLimit);
+        setPvpTimer(data.timeLimit);
       } else if (data.type === 'PVP_RESTART') {
         setPvpChain([]);
         setPvpUsedWords(new Set());
@@ -362,7 +365,25 @@ export default function DualPlayerHub() {
     });
   };
 
+  const handleSetPvpTimeLimit = (newLimit) => {
+    if (activeUser !== 'محمد') {
+      addNotification('عذراً، التحكم في خيارات الوقت متاح لـ محمد فقط 🔒', 'warning');
+      return;
+    }
+    setPvpTimeLimit(newLimit);
+    setPvpTimer(newLimit);
+    sendRealtimeMove({
+      type: 'PVP_CONFIG',
+      id: `config-${Date.now()}`,
+      timeLimit: newLimit,
+    });
+  };
+
   const handleRestartPvpChain = () => {
+    if (activeUser !== 'محمد') {
+      addNotification('عذراً، زر بدء جولة جديدة خاص بـ محمد فقط 🔒', 'warning');
+      return;
+    }
     setPvpChain([]);
     setPvpUsedWords(new Set());
     setPvpInput('');
@@ -727,20 +748,33 @@ export default function DualPlayerHub() {
             </h3>
             <button
               onClick={handleRestartPvpChain}
-              className="px-3 py-1.5 rounded-xl theme-btn-secondary text-xs font-black flex items-center gap-1"
+              className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm ${
+                activeUser === 'محمد'
+                  ? 'theme-btn-primary'
+                  : 'bg-slate-200 dark:bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+              }`}
+              title={activeUser === 'محمد' ? 'بدء جولة جديدة' : 'التحكم خاص بـ محمد فقط'}
             >
               <RotateCcw className="w-4 h-4" />
-              <span>جولة جديدة</span>
+              <span>جولة جديدة {activeUser !== 'محمد' && '🔒'}</span>
             </button>
           </div>
 
           {!pvpGameOver ? (
             <div className="space-y-5">
               {/* Timer Limit Selector Bar */}
-              <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs font-black">
-                <span className="flex items-center gap-1.5 text-cyan-400">
-                  <Clock className="w-4 h-4 text-cyan-400" /> وقت كل دور:
-                </span>
+              <div className="flex items-center justify-between gap-2 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs font-black shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1.5 text-cyan-400">
+                    <Clock className="w-4 h-4 text-cyan-400" /> وقت كل دور:
+                  </span>
+                  {activeUser !== 'محمد' && (
+                    <span className="text-[10px] text-amber-400 font-extrabold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                      🔒 تحكم محمد
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar" dir="ltr">
                   {[
                     { value: 10, label: '10s' },
@@ -751,14 +785,12 @@ export default function DualPlayerHub() {
                   ].map((tOpt) => (
                     <button
                       key={tOpt.value}
-                      onClick={() => {
-                        setPvpTimeLimit(tOpt.value);
-                        setPvpTimer(tOpt.value);
-                      }}
+                      onClick={() => handleSetPvpTimeLimit(tOpt.value)}
+                      disabled={activeUser !== 'محمد'}
                       className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
                         pvpTimeLimit === tOpt.value
                           ? 'bg-amber-500 text-slate-950 font-black scale-105 shadow-md'
-                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed'
                       }`}
                     >
                       {tOpt.label}
