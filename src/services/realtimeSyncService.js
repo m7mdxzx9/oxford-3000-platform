@@ -1,24 +1,27 @@
 /**
- * Robust Real-time Multi-Device Sync Engine for Oxford 3000 PvP Games.
+ * Robust Real-time Multi-Device Sync Engine for Oxford 3000 Dual Player Hub.
  * Combines SSE (Server-Sent Events) + Fast HTTP Polling Fallback + BroadcastChannel API.
  */
 
-const ROOM_NAME = 'oxford3000_pvp_room_m7md_ryof_v2';
+const ROOM_NAME = 'oxford3000_pvp_room_m7md_ryof_v3';
 const NTFY_BASE = `https://ntfy.sh/${ROOM_NAME}`;
+
+export const LOCAL_DEVICE_ID = `dev_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`;
 
 let broadcastChannel = null;
 try {
   if (typeof BroadcastChannel !== 'undefined') {
-    broadcastChannel = new BroadcastChannel('oxford3000_pvp_channel_v2');
+    broadcastChannel = new BroadcastChannel('oxford3000_pvp_channel_v3');
   }
 } catch (e) {}
 
 /**
- * Send real-time move event to all connected devices.
+ * Send real-time move or state change event to all connected devices.
  */
 export async function sendRealtimeMove(moveData) {
   const payload = {
     ...moveData,
+    senderDeviceId: LOCAL_DEVICE_ID,
     senderTimestamp: Date.now(),
   };
 
@@ -42,8 +45,7 @@ export async function sendRealtimeMove(moveData) {
 }
 
 /**
- * Subscribe to real-time move events from any device in the room.
- * Uses SSE + Fast Polling (1.5s interval) to guarantee 100% delivery across mobile & desktop.
+ * Subscribe to real-time events from any device in the room.
  */
 export function subscribeRealtimeMoves(onMoveReceived) {
   const seenEventIds = new Set();
@@ -82,10 +84,10 @@ export function subscribeRealtimeMoves(onMoveReceived) {
     console.error('SSE connection error:', err);
   }
 
-  // 3. Fast Poll backup (pulls messages every 1.5 seconds so no move is ever lost)
+  // 3. Fast Poll backup (pulls messages every 1.2s to guarantee zero missing events)
   const pollInterval = setInterval(async () => {
     try {
-      const res = await fetch(`${NTFY_BASE}/json?poll=1&since=2m`);
+      const res = await fetch(`${NTFY_BASE}/json?poll=1&since=1m`);
       if (res.ok) {
         const text = await res.text();
         const lines = text.split('\n').filter(Boolean);
@@ -100,7 +102,7 @@ export function subscribeRealtimeMoves(onMoveReceived) {
         });
       }
     } catch (e) {}
-  }, 1500);
+  }, 1200);
 
   return () => {
     if (broadcastChannel) {

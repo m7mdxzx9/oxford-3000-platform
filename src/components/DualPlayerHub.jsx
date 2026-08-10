@@ -29,7 +29,7 @@ import { playAudio } from '../services/audioService';
 import { useApp } from '../context/AppContext';
 import { generateStory } from '../services/geminiService';
 import { getWordExample } from '../utils/exampleSentenceService';
-import { sendRealtimeMove, subscribeRealtimeMoves } from '../services/realtimeSyncService';
+import { sendRealtimeMove, subscribeRealtimeMoves, LOCAL_DEVICE_ID } from '../services/realtimeSyncService';
 
 /**
  * DualPlayerHub Component (قسم التعلم المشترك)
@@ -195,10 +195,19 @@ export default function DualPlayerHub() {
         },
       ];
 
-      setDialogueScript({
+      const generatedScript = {
         topic: finalTopic,
         level: dialogueLevel,
         turns: turns.slice(0, dialogueTurnsCount),
+      };
+
+      setDialogueScript(generatedScript);
+
+      // Broadcast generated dialogue to second device in real time!
+      sendRealtimeMove({
+        type: 'DIALOGUE_GENERATE',
+        id: `dialogue-${Date.now()}`,
+        dialogueScript: generatedScript,
       });
     } catch (err) {
       console.error(err);
@@ -266,7 +275,10 @@ export default function DualPlayerHub() {
           setPvpTimer(data.timeLimit);
         }
 
-        playAudio(data.entry.word, { presetId: voicePreset });
+        // NO AUDIO DUPLICATION: Play audio ONLY if sent by another device!
+        if (data.senderDeviceId !== LOCAL_DEVICE_ID) {
+          playAudio(data.entry.word, { presetId: voicePreset });
+        }
       } else if (data.type === 'PVP_CONFIG' && data.timeLimit !== undefined) {
         setPvpTimeLimit(data.timeLimit);
         setPvpTimer(data.timeLimit);
@@ -279,11 +291,28 @@ export default function DualPlayerHub() {
         setPvpWinner(null);
         setPvpError('');
         setPvpPlayerTurn('محمد');
+      } else if (data.type === 'SUBTAB_CHANGE' && data.subTab) {
+        setSubTab(data.subTab);
+      } else if (data.type === 'DIALOGUE_GENERATE' && data.dialogueScript) {
+        setDialogueScript(data.dialogueScript);
+        if (data.dialogueScript.topic) setDialogueTopic(data.dialogueScript.topic);
+        if (data.dialogueScript.level) setDialogueLevel(data.dialogueScript.level);
+        addNotification('تم استلام حوار تفاعلي جديد من الحساب الآخر! 💬', 'info');
+      } else if (data.type === 'QUIZ_ANSWER') {
+        if (data.turn !== undefined) setQuizTurn(data.turn);
+        if (data.option !== undefined) setSelectedQuizOption(data.option);
+        setQuizAnswered(true);
+        if (data.scores) setQuizScores(data.scores);
+      } else if (data.type === 'QUIZ_NEXT') {
+        if (data.turn !== undefined) setQuizTurn(data.turn);
+        setSelectedQuizOption(null);
+        setQuizAnswered(false);
+        if (data.quizPlayerTurn) setQuizPlayerTurn(data.quizPlayerTurn);
       }
     });
 
     return () => unsubscribe();
-  }, [voicePreset]);
+  }, [voicePreset, addNotification]);
 
   // PvP Turn Countdown Timer
   useEffect(() => {
@@ -433,20 +462,39 @@ export default function DualPlayerHub() {
     setSelectedQuizOption(opt);
     setQuizAnswered(true);
 
-    if (opt === currentQuizItem.correct) {
-      setQuizScores((prev) => ({
-        ...prev,
-        [quizPlayerTurn]: prev[quizPlayerTurn] + 10,
-      }));
-    }
+    const isCorrect = opt === currentQuizItem.correct;
+    const updatedScores = {
+      ...quizScores,
+      [quizPlayerTurn]: isCorrect ? quizScores[quizPlayerTurn] + 10 : quizScores[quizPlayerTurn],
+    };
+
+    if (isCorrect) setQuizScores(updatedScores);
+
+    sendRealtimeMove({
+      type: 'QUIZ_ANSWER',
+      id: `qans-${Date.now()}`,
+      turn: quizTurn,
+      option: opt,
+      scores: updatedScores,
+      quizPlayerTurn,
+    });
   };
 
   const handleNextQuizQuestion = () => {
     if (quizTurn + 1 < quizDuelItems.length) {
-      setQuizTurn((prev) => prev + 1);
+      const nextTurn = quizTurn + 1;
+      const nextPlayer = quizPlayerTurn === 'محمد' ? 'ريوف' : 'محمد';
+      setQuizTurn(nextTurn);
       setSelectedQuizOption(null);
       setQuizAnswered(false);
-      setQuizPlayerTurn((prev) => (prev === 'محمد' ? 'ريوف' : 'محمد'));
+      setQuizPlayerTurn(nextPlayer);
+
+      sendRealtimeMove({
+        type: 'QUIZ_NEXT',
+        id: `qnxt-${Date.now()}`,
+        turn: nextTurn,
+        quizPlayerTurn: nextPlayer,
+      });
     } else {
       setQuizGameOver(true);
       const winner = quizScores.محمد > quizScores.ريوف ? 'محمد' : quizScores.ريوف > quizScores.محمد ? 'ريوف' : 'تعادل';
@@ -463,6 +511,15 @@ export default function DualPlayerHub() {
     setQuizGameOver(false);
     setSelectedQuizOption(null);
     setQuizAnswered(false);
+  };
+
+  const handleSwitchSubTab = (newTab) => {
+    setSubTab(newTab);
+    sendRealtimeMove({
+      type: 'SUBTAB_CHANGE',
+      id: `tab-${Date.now()}`,
+      subTab: newTab,
+    });
   };
 
   return (
@@ -577,7 +634,7 @@ export default function DualPlayerHub() {
         ].map((tb) => (
           <button
             key={tb.id}
-            onClick={() => setSubTab(tb.id)}
+            onClick={() => handleSwitchSubTab(tb.id)}
             className={`px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 shrink-0 ${
               subTab === tb.id
                 ? 'bg-amber-500 text-slate-950 font-black shadow-md scale-105'
