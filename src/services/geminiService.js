@@ -14,46 +14,104 @@ const getApiKey = (providedKey) => {
     const stored = localStorage.getItem('oxford3000_gemini_api_key') || localStorage.getItem('gemini_api_key');
     if (stored && stored.trim()) return stored.trim();
   }
-  return DEFAULT_NVIDIA_KEY;
+  return DEFAULT_GEMINI_KEY;
 };
 
 /**
- * Robust NVIDIA NIM AI Poster (Exclusive 100% NVIDIA AI Engine).
+ * Universal Multi-Provider AI poster (Gemini, Groq, NVIDIA).
  */
 const callGeminiApi = async (promptText, apiKey = '') => {
   const keysToTry = Array.from(
     new Set([
       apiKey ? apiKey.trim() : '',
       typeof window !== 'undefined' && window.localStorage ? (localStorage.getItem('oxford3000_gemini_api_key') || '').trim() : '',
+      DEFAULT_GEMINI_KEY,
       DEFAULT_NVIDIA_KEY,
     ])
   ).filter(Boolean);
 
+  const geminiBody = JSON.stringify({
+    contents: [{ parts: [{ text: promptText }] }],
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.7,
+    },
+  });
+
   for (const currentKey of keysToTry) {
-    const nvKey = currentKey.startsWith('nvapi-') ? currentKey : DEFAULT_NVIDIA_KEY;
-    try {
-      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${nvKey}`,
-        },
-        body: JSON.stringify({
-          model: 'meta/llama-3.1-8b-instruct',
-          messages: [{ role: 'user', content: promptText }],
-          temperature: 0.7,
-          max_tokens: 1200,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.choices?.[0]?.message?.content;
-        if (text) return text;
-      } else {
-        console.warn(`NVIDIA API status ${res.status} for key:`, nvKey.substring(0, 10));
+    // 1. Groq API Provider (gsk_...) - Full Browser CORS Support
+    if (currentKey.startsWith('gsk_')) {
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentKey}`,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-70b-versatile',
+            messages: [{ role: 'user', content: promptText }],
+            temperature: 0.7,
+            max_tokens: 1000,
+            response_format: { type: 'json_object' }
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data?.choices?.[0]?.message?.content;
+          if (text) return text;
+        }
+      } catch (e) {
+        console.warn('Groq API error:', e);
       }
-    } catch (e) {
-      console.warn('NVIDIA API fetch error:', e);
+      continue;
+    }
+
+    // 2. Google Gemini API Provider (AIzaSy...) - Native Browser CORS Support
+    if (currentKey.startsWith('AIzaSy') || currentKey === DEFAULT_GEMINI_KEY) {
+      for (const endpoint of GEMINI_MODEL_ENDPOINTS) {
+        try {
+          const res = await fetch(`${endpoint}?key=${currentKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: geminiBody,
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text;
+          }
+        } catch (e) {
+          console.warn(`Gemini endpoint ${endpoint} error:`, e);
+        }
+      }
+      continue;
+    }
+
+    // 3. NVIDIA NIM API Provider (nvapi-...)
+    if (currentKey.startsWith('nvapi-')) {
+      try {
+        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentKey}`,
+          },
+          body: JSON.stringify({
+            model: 'meta/llama-3.1-8b-instruct',
+            messages: [{ role: 'user', content: promptText }],
+            temperature: 0.7,
+            max_tokens: 1000,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data?.choices?.[0]?.message?.content;
+          if (text) return text;
+        }
+      } catch (e) {
+        console.warn('NVIDIA API fetch error (browser CORS restriction):', e);
+      }
     }
   }
 
