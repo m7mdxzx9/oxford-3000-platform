@@ -12,9 +12,9 @@ export const AudioSpeedControl = ({ speed, onSpeedChange, compact = false }) => 
     if (speed !== undefined) return speed;
     try {
       const stored = localStorage.getItem('oxford3000_audio_speed');
-      return stored ? parseFloat(stored) : 0.9;
+      return stored ? parseFloat(stored) : 1.0;
     } catch (e) {
-      return 0.9;
+      return 1.0;
     }
   });
 
@@ -35,8 +35,29 @@ export const AudioSpeedControl = ({ speed, onSpeedChange, compact = false }) => 
     }
   };
 
+  const handleCycleSpeed = (e) => {
+    if (e) e.stopPropagation();
+    const currentIndex = SPEED_OPTIONS.findIndex((v) => Math.abs(v - currentSpeed) < 0.05);
+    const nextIndex = (currentIndex + 1) % SPEED_OPTIONS.length;
+    const newSpeed = SPEED_OPTIONS[nextIndex];
+    handleSelectSpeed(newSpeed, e);
+  };
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={handleCycleSpeed}
+        className="px-2 py-1 rounded-xl text-[10px] font-black border transition-all bg-cyan-500/15 text-cyan-950 dark:text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/25 active:scale-95 shadow-sm shrink-0 flex items-center gap-1"
+        title="انقر لتغيير سرعة النطق الصوتي (Click to cycle audio speed)"
+      >
+        <span>⚡ {currentSpeed}x</span>
+      </button>
+    );
+  }
+
   return (
-    <div dir="ltr" className="ltr-isolate inline-flex items-center gap-1 p-1 rounded-xl border bg-slate-100 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800/80 shadow-sm select-none">
+    <div dir="ltr" className="ltr-isolate inline-flex items-center gap-1 p-1 rounded-xl border bg-slate-100 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800/80 shadow-sm select-none shrink-0">
       {!compact && (
         <span className="flex items-center gap-1 text-[10px] font-black text-slate-700 dark:text-slate-400 px-1">
           <Gauge className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />

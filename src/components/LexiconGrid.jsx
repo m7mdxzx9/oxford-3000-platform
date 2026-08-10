@@ -199,102 +199,97 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           : ''
       }`}
     >
-      {/* Top Bar Controls (Storyteller Select Checkbox, Mastered Toggle, Favorite Toggle) */}
+      {/* Top Header Row (Word Title + Action Buttons Group) */}
       <div className="flex items-center justify-between gap-2 mb-3">
-        {/* Storyteller Select Checkbox */}
-        <button
-          onClick={handleSelectWord}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold border transition-all active:scale-95 shadow-sm ${
-            selected
-              ? 'theme-btn-primary'
-              : 'theme-btn-secondary opacity-90 hover:opacity-100'
-          }`}
-          title={selected ? 'Remove from Storyteller' : 'Select for AI Storyteller (Max 5)'}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Story</span>
-        </button>
+        {/* Word Title & POS/CEFR Badges */}
+        <div>
+          <h3 dir="ltr" className="ltr-isolate text-2xl font-black tracking-tight text-[var(--text-main)] leading-none mb-1">
+            {wordObj.word}
+          </h3>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span dir="ltr" className={`ltr-isolate text-[10px] font-extrabold px-2 py-0.5 rounded-md border capitalize ${posStyle}`}>
+              {wordObj.pos || 'word'}
+            </span>
+            <span dir="ltr" className={`ltr-isolate text-[10px] font-black px-2 py-0.5 rounded-md border shadow-sm ${cefrStyle.bg}`}>
+              {wordObj.cefr || 'A1'}
+            </span>
+          </div>
+        </div>
 
-        {/* Action Icons (Mastered & Favorite) */}
-        <div className="flex items-center space-x-1.5">
-          {/* Mastered Toggle */}
+        {/* Action Controls Group (Story, Mastered, Favorite) */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={handleSelectWord}
+            className={`px-2 py-1 rounded-lg text-xs font-black border transition-all active:scale-95 shadow-sm ${
+              selected
+                ? 'theme-btn-primary'
+                : 'theme-btn-secondary opacity-80 hover:opacity-100'
+            }`}
+            title={selected ? 'Remove from Storyteller' : 'Select for AI Storyteller'}
+          >
+            <Plus className="w-3.5 h-3.5 inline mr-0.5" />
+            <span>Story</span>
+          </button>
+
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleMastered(wordObj.word);
             }}
-            className={`p-2 rounded-xl border transition-all active:scale-90 flex items-center justify-center ${
+            className={`p-1.5 rounded-lg border transition-all active:scale-90 flex items-center justify-center ${
               mastered
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
                 : 'theme-btn-secondary opacity-70 hover:opacity-100'
             }`}
             title={mastered ? 'Marked as Mastered' : 'Mark as Mastered'}
           >
-            <Check className={`w-4 h-4 ${mastered ? 'text-emerald-400' : ''}`} />
+            <Check className={`w-3.5 h-3.5 ${mastered ? 'text-emerald-400' : ''}`} />
           </button>
 
-          {/* Favorite Toggle */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               toggleFavorite(wordObj.word);
             }}
-            className={`p-2 rounded-xl border transition-all active:scale-90 flex items-center justify-center ${
+            className={`p-1.5 rounded-lg border transition-all active:scale-90 flex items-center justify-center ${
               favorited
                 ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
                 : 'theme-btn-secondary opacity-70 hover:opacity-100'
             }`}
             title={favorited ? 'Remove from Favorites' : 'Add to Favorites'}
           >
-            <Star className={`w-4 h-4 ${favorited ? 'fill-amber-400 text-amber-400' : ''}`} />
+            <Star className={`w-3.5 h-3.5 ${favorited ? 'fill-amber-400 text-amber-400' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Main Card Content */}
       <div className="space-y-3">
-        {/* Word Title & Audio Play Button & Speed Controls */}
-        <div className="flex items-start justify-between gap-2">
+        {/* Pronunciation & Audio TTS Row */}
+        <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
           <div>
-            <h3 dir="ltr" className="ltr-isolate text-xl font-extrabold tracking-tight transition-colors">
-              {wordObj.word}
-            </h3>
             {wordObj.ipa && <IpaSyllableVisualizer ipa={wordObj.ipa} />}
           </div>
 
-          {/* Audio TTS Button & Speed Toggle */}
           <div className="flex items-center gap-1.5 shrink-0">
             <AudioSpeedControl compact={true} />
             <button
               onClick={handlePlayWord}
               disabled={isPlayingWord}
-              className={`p-2 rounded-xl border transition-all active:scale-90 flex items-center justify-center ${
+              className={`p-1.5 rounded-lg border transition-all active:scale-90 flex items-center justify-center ${
                 isPlayingWord
                   ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md animate-pulse'
                   : 'theme-btn-secondary opacity-90 hover:opacity-100'
               }`}
               title="Listen to pronunciation (TTS)"
             >
-              <Volume2 className="w-4 h-4 text-cyan-400" />
+              <Volume2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             </button>
           </div>
         </div>
 
-        {/* Badges Row (POS & CEFR) */}
-        <div className="flex items-center flex-wrap gap-2">
-          {/* POS Tag */}
-          <span dir="ltr" className={`ltr-isolate text-xs font-semibold px-2.5 py-0.5 rounded-lg border capitalize ${posStyle}`}>
-            {wordObj.pos || 'word'}
-          </span>
-
-          {/* CEFR Level Tag */}
-          <span dir="ltr" className={`ltr-isolate text-xs font-bold px-2.5 py-0.5 rounded-lg border shadow-sm ${cefrStyle.bg}`}>
-            {wordObj.cefr || 'A1'}
-          </span>
-        </div>
-
         {/* Arabic Translation Block (RTL Isolated) */}
-        <div dir="rtl" className="rtl-text rtl-isolate p-3 rounded-2xl border border-amber-500/30 mt-2 bg-amber-500/10">
+        <div dir="rtl" className="rtl-text rtl-isolate p-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-center">
           <p className="text-lg font-black tracking-wide font-arabic text-amber-950 dark:text-amber-300">
             {wordObj.arabic}
           </p>
