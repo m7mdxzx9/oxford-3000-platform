@@ -267,10 +267,15 @@ export default function DualPlayerHub() {
   // 6. SIBLING CO-OP DETECTIVE & SPEED REACTION BUZZER STATES
   // --------------------------------------------------------------------------
   const [teamScore, setTeamScore] = useState(0);
+  const [detectiveLevel, setDetectiveLevel] = useState('all'); // 'all' | 'A1-A2' | 'B1-B2'
+  const [detectiveLength, setDetectiveLength] = useState('any'); // 'any' | 'short' | 'medium' | 'long'
+  const [detectivePuzzleType, setDetectivePuzzleType] = useState('context'); // 'context' | 'anagram' | 'definition'
+
   const [detectiveCase, setDetectiveCase] = useState(() => {
     const wordObj = OXFORD_3000[Math.floor(Math.random() * OXFORD_3000.length)];
     return {
       wordObj,
+      puzzleType: 'context',
       solved: false,
     };
   });
@@ -379,12 +384,16 @@ export default function DualPlayerHub() {
         if (data.solved) {
           setDetectiveCase((prev) => ({ ...prev, solved: true }));
           setTeamScore((prev) => prev + 50);
-          setDetectiveMessage(`🎉 تم حل اللغز الكنسي بواسطة الفريق! الكلمة هي: "${data.word}"`);
+          setDetectiveMessage(`🎉 تم حل اللغز بنجاح بواسطة الفريق! الكلمة هي: "${data.word}"`);
         } else {
           setDetectiveMessage(`💡 محاولة غير صحيحة للكلمة: "${data.guess}"`);
         }
       } else if (data.type === 'DETECTIVE_NEW') {
-        setDetectiveCase({ wordObj: data.wordObj, solved: false });
+        if (data.caseData) setDetectiveCase(data.caseData);
+        else if (data.wordObj) setDetectiveCase({ wordObj: data.wordObj, puzzleType: data.puzzleType || 'context', solved: false });
+        if (data.level) setDetectiveLevel(data.level);
+        if (data.length) setDetectiveLength(data.length);
+        if (data.puzzleType) setDetectivePuzzleType(data.puzzleType);
         setDetectiveGuess('');
         setDetectiveMessage('');
       } else if (data.type === 'BUZZER_HIT') {
@@ -643,9 +652,41 @@ export default function DualPlayerHub() {
     setDetectiveGuess('');
   };
 
-  const handleNextDetectiveCase = () => {
-    const nextWord = OXFORD_3000[Math.floor(Math.random() * OXFORD_3000.length)];
-    const newCase = { wordObj: nextWord, solved: false };
+  const filterDetectiveWords = (lvl = detectiveLevel, len = detectiveLength) => {
+    return OXFORD_3000.filter((item) => {
+      if (!item || !item.word) return false;
+      const cleanLen = item.word.replace(/[^a-z]/gi, '').length;
+
+      if (lvl === 'A1-A2' && !['A1', 'A2'].includes(item.cefr)) return false;
+      if (lvl === 'B1-B2' && !['B1', 'B2'].includes(item.cefr)) return false;
+
+      if (len === 'short' && (cleanLen < 3 || cleanLen > 5)) return false;
+      if (len === 'medium' && (cleanLen < 6 || cleanLen > 8)) return false;
+      if (len === 'long' && cleanLen < 9) return false;
+
+      return true;
+    });
+  };
+
+  const handleNextDetectiveCase = (customLvl, customLen, customType) => {
+    if (activeUser !== 'محمد') {
+      addNotification('عذراً، التحكم في خيارات وإعدادات الألغاز خاص بـ محمد فقط 🔒', 'warning');
+      return;
+    }
+
+    const lvl = customLvl !== undefined ? customLvl : detectiveLevel;
+    const len = customLen !== undefined ? customLen : detectiveLength;
+    const pType = customType !== undefined ? customType : detectivePuzzleType;
+
+    if (customLvl !== undefined) setDetectiveLevel(customLvl);
+    if (customLen !== undefined) setDetectiveLength(customLen);
+    if (customType !== undefined) setDetectivePuzzleType(customType);
+
+    const pool = filterDetectiveWords(lvl, len);
+    const finalPool = pool.length > 0 ? pool : OXFORD_3000;
+    const nextWord = finalPool[Math.floor(Math.random() * finalPool.length)];
+
+    const newCase = { wordObj: nextWord, puzzleType: pType, solved: false };
     setDetectiveCase(newCase);
     setDetectiveGuess('');
     setDetectiveMessage('');
@@ -653,7 +694,10 @@ export default function DualPlayerHub() {
     sendRealtimeMove({
       type: 'DETECTIVE_NEW',
       id: `detnew-${Date.now()}`,
-      wordObj: nextWord,
+      caseData: newCase,
+      level: lvl,
+      length: len,
+      puzzleType: pType,
     });
   };
 
@@ -1218,7 +1262,7 @@ export default function DualPlayerHub() {
       {/* ------------------------------------------------------------------ */}
       {subTab === 'detective' && (
         <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 bg-[var(--bg-card)] text-[var(--text-main)] shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4 flex-wrap gap-4">
             <div>
               <h3 className="text-xl font-black flex items-center gap-2">
                 <HelpCircle className="w-5 h-5 text-amber-500" />
@@ -1233,26 +1277,124 @@ export default function DualPlayerHub() {
               <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-950 dark:text-amber-300 font-black text-xs">
                 نقاط الفريق 🏆: {teamScore}
               </span>
-              <button onClick={handleNextDetectiveCase} className="px-3 py-1.5 rounded-xl theme-btn-primary text-xs font-black">
-                لغز جديد 🕵️
+              <button
+                onClick={() => handleNextDetectiveCase()}
+                disabled={activeUser !== 'محمد'}
+                className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all shadow-sm ${
+                  activeUser === 'محمد'
+                    ? 'theme-btn-primary'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                }`}
+                title={activeUser === 'محمد' ? 'توليد لغز جديد' : 'التحكم متاح لـ محمد فقط'}
+              >
+                لغز جديد 🕵️ {activeUser !== 'محمد' && '🔒'}
               </button>
             </div>
           </div>
 
+          {/* Puzzle Settings Controls Bar (Mohammed Host Only) */}
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-white space-y-3">
+            <div className="flex items-center justify-between text-xs font-black text-amber-400">
+              <span>⚙️ خيارات اللغز ومستوى الصعوبة:</span>
+              {activeUser !== 'محمد' && (
+                <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                  🔒 تحكم محمد
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-black">
+              {/* Level Filter */}
+              <div>
+                <label className="block mb-1 text-slate-400">المستوى (CEFR):</label>
+                <select
+                  value={detectiveLevel}
+                  onChange={(e) => handleNextDetectiveCase(e.target.value, detectiveLength, detectivePuzzleType)}
+                  disabled={activeUser !== 'محمد'}
+                  className="w-full p-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white font-black focus:border-amber-500 disabled:opacity-50"
+                >
+                  <option value="all">الجميع (كل المستويات)</option>
+                  <option value="A1-A2">A1-A2 (مبتدئ)</option>
+                  <option value="B1-B2">B1-B2 (متوسط متقدم)</option>
+                </select>
+              </div>
+
+              {/* Length Filter */}
+              <div>
+                <label className="block mb-1 text-slate-400">طول الكلمة:</label>
+                <select
+                  value={detectiveLength}
+                  onChange={(e) => handleNextDetectiveCase(detectiveLevel, e.target.value, detectivePuzzleType)}
+                  disabled={activeUser !== 'محمد'}
+                  className="w-full p-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white font-black focus:border-amber-500 disabled:opacity-50"
+                >
+                  <option value="any">الجميع (أي طول)</option>
+                  <option value="short">3-5 أحرف (قصيرة)</option>
+                  <option value="medium">6-8 أحرف (متوسطة)</option>
+                  <option value="long">9+ أحرف (طويلة/معقدة)</option>
+                </select>
+              </div>
+
+              {/* Puzzle Type */}
+              <div>
+                <label className="block mb-1 text-slate-400">نوع اللغز:</label>
+                <select
+                  value={detectivePuzzleType}
+                  onChange={(e) => handleNextDetectiveCase(detectiveLevel, detectiveLength, e.target.value)}
+                  disabled={activeUser !== 'محمد'}
+                  className="w-full p-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white font-black focus:border-amber-500 disabled:opacity-50"
+                >
+                  <option value="context">📝 الكلمة المفقودة بالسياق</option>
+                  <option value="anagram">🔤 الشفرة والحروف المبعثرة</option>
+                  <option value="definition">📖 تعريف المعجم والنطق</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-4">
-            <div className="p-6 rounded-3xl bg-slate-950 text-white space-y-4 shadow-xl">
+            <div className="p-6 rounded-3xl bg-slate-950 text-white space-y-4 shadow-xl border border-slate-800">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <span className="text-xs text-cyan-400 font-black">تلميحات القضية السرية:</span>
+                <span className="text-xs text-cyan-400 font-black">
+                  تلميحات القضية ({detectiveCase.puzzleType === 'anagram' ? 'شفرة الحروف' : detectiveCase.puzzleType === 'definition' ? 'تعريف المعجم' : 'السياق والكلمة المفقودة'}):
+                </span>
                 <span className="text-xs px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold">
-                  {detectiveCase.wordObj.cefr} | {detectiveCase.wordObj.pos}
+                  {detectiveCase.wordObj.cefr} | {detectiveCase.wordObj.pos} | {detectiveCase.wordObj.word.length} أحرف
                 </span>
               </div>
 
-              <div className="space-y-2 text-sm font-black">
+              <div className="space-y-3 text-sm font-black">
                 <p className="text-amber-400">💡 المعنى العربي: "{detectiveCase.wordObj.arabic}"</p>
-                <p dir="ltr" className="ltr-isolate text-base text-white leading-relaxed font-mono">
-                  📝 "{getWordExample(detectiveCase.wordObj).replace(new RegExp(detectiveCase.wordObj.word, 'gi'), '_____')}"
-                </p>
+
+                {/* Puzzle Type 1: Context Blank */}
+                {detectiveCase.puzzleType === 'context' && (
+                  <p dir="ltr" className="ltr-isolate text-base text-white leading-relaxed font-mono bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                    📝 "{getWordExample(detectiveCase.wordObj).replace(new RegExp(detectiveCase.wordObj.word, 'gi'), '███████')}"
+                  </p>
+                )}
+
+                {/* Puzzle Type 2: Scrambled Anagram */}
+                {detectiveCase.puzzleType === 'anagram' && (
+                  <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-center space-y-2">
+                    <span className="text-xs text-slate-400 font-black block">🔤 الحروف المبعثرة للشفرة:</span>
+                    <p dir="ltr" className="ltr-isolate text-2xl font-black font-mono text-cyan-400 tracking-widest">
+                      [ {detectiveCase.wordObj.word.toUpperCase().split('').sort(() => 0.5 - Math.random()).join(' - ')} ]
+                    </p>
+                  </div>
+                )}
+
+                {/* Puzzle Type 3: Definition & IPA */}
+                {detectiveCase.puzzleType === 'definition' && (
+                  <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-2">
+                    <span className="text-xs text-slate-400 font-black block">📖 دليل المعنى والنطق الفونيمي:</span>
+                    <p dir="ltr" className="ltr-isolate text-sm font-mono text-cyan-300">
+                      Pronunciation (IPA): /{detectiveCase.wordObj.ipa || detectiveCase.wordObj.word}/
+                    </p>
+                    <p dir="ltr" className="ltr-isolate text-sm font-mono text-white">
+                      Definition: "The Oxford 3000 key term for '{detectiveCase.wordObj.arabic}'"
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1278,8 +1420,16 @@ export default function DualPlayerHub() {
               </form>
             ) : (
               <div className="text-center pt-2">
-                <button onClick={handleNextDetectiveCase} className="px-6 py-3 rounded-2xl theme-btn-primary font-black text-sm shadow-md">
-                  القضية التالية ←
+                <button
+                  onClick={() => handleNextDetectiveCase()}
+                  disabled={activeUser !== 'محمد'}
+                  className={`px-6 py-3 rounded-2xl font-black text-sm shadow-md ${
+                    activeUser === 'محمد'
+                      ? 'theme-btn-primary'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                  }`}
+                >
+                  القضية التالية ← {activeUser !== 'محمد' && '🔒'}
                 </button>
               </div>
             )}
