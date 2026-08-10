@@ -18,7 +18,7 @@ const getApiKey = (providedKey) => {
 };
 
 /**
- * Robust Universal Gemini & NVIDIA AI poster with multi-model fallback chain & strict JSON config.
+ * Robust NVIDIA NIM AI Poster (Exclusive 100% NVIDIA AI Engine).
  */
 const callGeminiApi = async (promptText, apiKey = '') => {
   const keysToTry = Array.from(
@@ -26,65 +26,34 @@ const callGeminiApi = async (promptText, apiKey = '') => {
       apiKey ? apiKey.trim() : '',
       typeof window !== 'undefined' && window.localStorage ? (localStorage.getItem('oxford3000_gemini_api_key') || '').trim() : '',
       DEFAULT_NVIDIA_KEY,
-      DEFAULT_GEMINI_KEY,
     ])
   ).filter(Boolean);
 
-  const body = JSON.stringify({
-    contents: [{ parts: [{ text: promptText }] }],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      temperature: 0.7,
-    },
-  });
-
   for (const currentKey of keysToTry) {
-    // Auto-detect NVIDIA API keys (starting with nvapi-)
-    if (currentKey.startsWith('nvapi-')) {
-      try {
-        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${currentKey}`,
-          },
-          body: JSON.stringify({
-            model: 'meta/llama-3.1-70b-instruct',
-            messages: [{ role: 'user', content: promptText }],
-            temperature: 0.7,
-            max_tokens: 600,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const text = data?.choices?.[0]?.message?.content;
-          if (text) return text;
-        } else {
-          console.warn(`NVIDIA API status ${res.status} for key:`, currentKey.substring(0, 10));
-        }
-      } catch (e) {
-        console.warn('NVIDIA API fetch error:', e);
+    const nvKey = currentKey.startsWith('nvapi-') ? currentKey : DEFAULT_NVIDIA_KEY;
+    try {
+      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${nvKey}`,
+        },
+        body: JSON.stringify({
+          model: 'meta/llama-3.1-8b-instruct',
+          messages: [{ role: 'user', content: promptText }],
+          temperature: 0.7,
+          max_tokens: 1200,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.choices?.[0]?.message?.content;
+        if (text) return text;
+      } else {
+        console.warn(`NVIDIA API status ${res.status} for key:`, nvKey.substring(0, 10));
       }
-      continue;
-    }
-
-    for (const endpoint of GEMINI_MODEL_ENDPOINTS) {
-      try {
-        const res = await fetch(`${endpoint}?key=${currentKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body,
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) return text;
-        } else {
-          console.warn(`Gemini endpoint ${endpoint} status ${res.status} for key:`, currentKey.substring(0, 10));
-        }
-      } catch (e) {
-        console.warn(`Gemini endpoint ${endpoint} fetch error:`, e);
-      }
+    } catch (e) {
+      console.warn('NVIDIA API fetch error:', e);
     }
   }
 
@@ -156,16 +125,16 @@ Return ONLY raw JSON object:
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed && parsed.sentence) return { ...parsed, isRealAi: true, aiModel: 'Live AI Engine' };
+        if (parsed && parsed.sentence) return { ...parsed, isRealAi: true, aiModel: 'NVIDIA Llama 3.1 AI' };
       } catch (e) {}
     }
   }
 
   // Pure AI Notice (No local fallback templates)
   return {
-    sentence: `To generate live AI sentences for "${word}", please enter your free Gemini API key from Google AI Studio.`,
-    arabic: `لتوليد جمل حية ومباشرة بالذكاء الاصطناعي لكلمة "${word}"، يرجى إضافة مفتاح Gemini API المجاني الخاص بك.`,
-    grammarNote: `Requires active Gemini API Key (HTTP 429 Quota Exceeded on default key).`,
+    sentence: `To generate live AI sentences for "${word}", please check your NVIDIA API key settings.`,
+    arabic: `لتوليد جمل حية ومباشرة بالذكاء الاصطناعي لكلمة "${word}"، يرجى التأكد من مفتاح NVIDIA API الخاص بك.`,
+    grammarNote: `Requires active NVIDIA API Key.`,
     wordTranslations: {},
     isRealAi: false,
     needsApiKey: true,
