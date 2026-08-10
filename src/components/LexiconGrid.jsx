@@ -308,16 +308,16 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         </div>
 
         {/* Arabic Translation Block (RTL Isolated) */}
-        <div dir="rtl" className="rtl-text rtl-isolate p-3 rounded-2xl border border-white/[0.08] mt-2 bg-slate-950/40">
-          <p className="text-lg font-extrabold tracking-wide font-arabic text-amber-300">
+        <div dir="rtl" className="rtl-text rtl-isolate p-3 rounded-2xl border border-amber-500/30 mt-2 bg-amber-500/10">
+          <p className="text-lg font-black tracking-wide font-arabic text-amber-950 dark:text-amber-300">
             {wordObj.arabic}
           </p>
         </div>
 
         {/* AI Sentence Generator & Interactive Tokens Block */}
-        <div dir="ltr" className="ltr-isolate bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800/60 text-xs text-slate-300 space-y-2.5">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium flex-wrap gap-1.5">
-            <span className="font-extrabold flex items-center gap-1.5 text-cyan-400">
+        <div dir="ltr" className="ltr-isolate bg-slate-100 dark:bg-slate-950/60 p-3.5 rounded-2xl border border-slate-300 dark:border-slate-800/60 text-xs text-slate-950 dark:text-slate-200 space-y-2.5 font-extrabold">
+          <div className="flex items-center justify-between text-[11px] text-slate-700 dark:text-slate-400 font-bold flex-wrap gap-1.5">
+            <span className="font-black flex items-center gap-1.5 text-cyan-800 dark:text-cyan-400">
               {customAiSentence ? '✨ AI Sentence' : 'Example Sentence'}
             </span>
 
@@ -326,7 +326,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
                 type="button"
                 onClick={handleCreateNewAiSentence}
                 disabled={isGeneratingAiSentence}
-                className="px-2.5 py-1 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1 bg-purple-500/15 text-purple-300 border-purple-500/30 hover:bg-purple-500/25 active:scale-95 shadow-sm"
+                className="px-2.5 py-1 rounded-xl text-xs font-black transition-all border flex items-center gap-1 bg-purple-500/20 text-purple-950 dark:text-purple-300 border-purple-500/40 hover:bg-purple-500/30 active:scale-95 shadow-sm"
                 title="Generate new custom AI sentence for this word"
               >
                 <span>{isGeneratingAiSentence ? 'Generating...' : customAiSentence ? '🔄 Change' : '✨ AI Sentence'}</span>
@@ -338,7 +338,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
                     type="button"
                     onClick={handlePlayExample}
                     disabled={isPlayingExample}
-                    className="px-2 py-1 rounded-lg text-[11px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/25 hover:bg-cyan-500/20 transition-all flex items-center gap-1 active:scale-95"
+                    className="px-2 py-1 rounded-lg text-[11px] font-black text-cyan-900 dark:text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all flex items-center gap-1 active:scale-95"
                     title="Listen to full example sentence"
                   >
                     <span>{isPlayingExample ? 'Playing...' : 'Play'}</span>
@@ -346,7 +346,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
                   <button
                     type="button"
                     onClick={handleStartPractice}
-                    className="px-2 py-1 rounded-lg text-[11px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-all flex items-center gap-1 active:scale-95"
+                    className="px-2 py-1 rounded-lg text-[11px] font-black text-amber-950 dark:text-amber-300 bg-amber-500/20 border border-amber-500/30 hover:bg-amber-500/30 transition-all flex items-center gap-1 active:scale-95"
                     title="Practice speaking sentence with mic"
                   >
                     <span>Mic</span>

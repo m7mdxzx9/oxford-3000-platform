@@ -36,10 +36,10 @@ export const AudioSpeedControl = ({ speed, onSpeedChange, compact = false }) => 
   };
 
   return (
-    <div dir="ltr" className="ltr-isolate inline-flex items-center gap-1 p-1 rounded-xl border bg-slate-950/60 border-slate-800/80 shadow-sm select-none">
+    <div dir="ltr" className="ltr-isolate inline-flex items-center gap-1 p-1 rounded-xl border bg-slate-100 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800/80 shadow-sm select-none">
       {!compact && (
-        <span className="flex items-center gap-1 text-[10px] font-extrabold text-slate-400 px-1">
-          <Gauge className="w-3 h-3 text-cyan-400" />
+        <span className="flex items-center gap-1 text-[10px] font-black text-slate-700 dark:text-slate-400 px-1">
+          <Gauge className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
           <span>Speed:</span>
         </span>
       )}
@@ -54,7 +54,7 @@ export const AudioSpeedControl = ({ speed, onSpeedChange, compact = false }) => 
             className={`px-1.5 py-0.5 rounded-lg text-[10px] font-black transition-all active:scale-90 ${
               isActive
                 ? 'bg-cyan-500 text-slate-950 shadow-sm border border-cyan-400 font-extrabold'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                : 'text-slate-800 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800/60'
             }`}
             title={`Set audio playback speed to ${val}x`}
           >
