@@ -18,6 +18,7 @@ import {
   Gamepad2,
   Users,
   HelpCircle,
+  Palette,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -128,17 +129,19 @@ export default function Navbar() {
 
             {/* Controls Bar */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* Dynamic Theme Switcher Pills */}
-              <div className="hidden 2xl:flex items-center gap-1 p-1 rounded-xl border bg-[var(--bg-card)] shrink-0">
+              {/* Dynamic Theme Switcher Pills - ALWAYS VISIBLE ON MOBILE & DESKTOP */}
+              <div className="flex items-center gap-1 p-1 rounded-xl border bg-[var(--bg-card)] shrink-0" title="اختر الهوية البصرية">
+                <Palette className="w-3.5 h-3.5 opacity-70 ml-0.5 shrink-0 text-amber-500" />
                 {THEMES.map((th) => (
                   <button
                     key={th.id}
                     onClick={() => setTheme(th.id)}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-extrabold transition-all ${
+                    className={`flex items-center justify-center w-7 h-6 sm:w-auto sm:px-2 py-0.5 rounded-lg text-xs font-black transition-all ${
                       theme === th.id
-                        ? 'theme-btn-primary shadow-sm'
-                        : 'opacity-70 hover:opacity-100'
+                        ? 'theme-btn-primary shadow-sm scale-105'
+                        : 'opacity-75 hover:opacity-100'
                     }`}
+                    title={th.name}
                   >
                     <span>{th.emoji}</span>
                   </button>
