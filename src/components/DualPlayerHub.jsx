@@ -99,12 +99,12 @@ export default function DualPlayerHub() {
   };
 
   // --------------------------------------------------------------------------
-  // 2. SIBLING SCOREBOARD PERSISTENT STATE
+  // 2. SIBLING SCOREBOARD PERSISTENT STATE (AUTHENTIC REAL STATS)
   // --------------------------------------------------------------------------
   const [stats, setStats] = useState(() => {
     const defaultStats = {
-      محمد: { mastered: 145, duelsWon: 12, chainWins: 8, totalScore: 1850 },
-      ريوف: { mastered: 130, duelsWon: 10, chainWins: 9, totalScore: 1720 },
+      محمد: { mastered: 0, duelsWon: 0, chainWins: 0, totalScore: 0 },
+      ريوف: { mastered: 0, duelsWon: 0, chainWins: 0, totalScore: 0 },
     };
     try {
       const stored = localStorage.getItem('oxford3000_sibling_stats');
@@ -126,6 +126,14 @@ export default function DualPlayerHub() {
       try {
         localStorage.setItem('oxford3000_sibling_stats', JSON.stringify(updated));
       } catch (e) {}
+
+      // Broadcast stats update to second device
+      sendRealtimeMove({
+        type: 'STATS_UPDATE',
+        id: `stats-${Date.now()}`,
+        stats: updated,
+      });
+
       return updated;
     });
   };
@@ -218,6 +226,25 @@ export default function DualPlayerHub() {
 
   const toggleTranslationTurn = (idx) => {
     setVisibleTranslations((prev) => ({ ...prev, [idx]: !prev[idx] }));
+    sendRealtimeMove({
+      type: 'DIALOGUE_TOGGLE',
+      id: `dtoggle-${Date.now()}`,
+      idx,
+    });
+  };
+
+  const handleRestartQuizDuel = () => {
+    setQuizTurn(0);
+    setQuizPlayerTurn('محمد');
+    setQuizScores({ محمد: 0, ريوف: 0 });
+    setQuizGameOver(false);
+    setSelectedQuizOption(null);
+    setQuizAnswered(false);
+
+    sendRealtimeMove({
+      type: 'QUIZ_RESTART',
+      id: `qrestart-${Date.now()}`,
+    });
   };
 
   // --------------------------------------------------------------------------
@@ -298,6 +325,8 @@ export default function DualPlayerHub() {
         if (data.dialogueScript.topic) setDialogueTopic(data.dialogueScript.topic);
         if (data.dialogueScript.level) setDialogueLevel(data.dialogueScript.level);
         addNotification('تم استلام حوار تفاعلي جديد من الحساب الآخر! 💬', 'info');
+      } else if (data.type === 'DIALOGUE_TOGGLE' && data.idx !== undefined) {
+        setVisibleTranslations((prev) => ({ ...prev, [data.idx]: !prev[data.idx] }));
       } else if (data.type === 'QUIZ_ANSWER') {
         if (data.turn !== undefined) setQuizTurn(data.turn);
         if (data.option !== undefined) setSelectedQuizOption(data.option);
@@ -308,6 +337,15 @@ export default function DualPlayerHub() {
         setSelectedQuizOption(null);
         setQuizAnswered(false);
         if (data.quizPlayerTurn) setQuizPlayerTurn(data.quizPlayerTurn);
+      } else if (data.type === 'QUIZ_RESTART') {
+        setQuizTurn(0);
+        setQuizPlayerTurn('محمد');
+        setQuizScores({ محمد: 0, ريوف: 0 });
+        setQuizGameOver(false);
+        setSelectedQuizOption(null);
+        setQuizAnswered(false);
+      } else if (data.type === 'STATS_UPDATE' && data.stats) {
+        setStats(data.stats);
       }
     });
 
@@ -502,15 +540,6 @@ export default function DualPlayerHub() {
         updateSiblingStat(winner, 'duelsWon', 1);
       }
     }
-  };
-
-  const handleRestartQuizDuel = () => {
-    setQuizTurn(0);
-    setQuizPlayerTurn('محمد');
-    setQuizScores({ محمد: 0, ريوف: 0 });
-    setQuizGameOver(false);
-    setSelectedQuizOption(null);
-    setQuizAnswered(false);
   };
 
   const handleSwitchSubTab = (newTab) => {
