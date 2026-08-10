@@ -17,6 +17,7 @@ import {
   Moon,
   Gamepad2,
   Users,
+  HelpCircle,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -62,6 +63,7 @@ export default function Navbar() {
     { id: 'sentence', label: t('navSentence'), icon: Sparkles },
     { id: 'story', label: t('navStory'), icon: MessageSquare },
     { id: 'dual', label: 'التعلم المشترك', icon: Users },
+    { id: 'detective', label: 'قسم التحري', icon: HelpCircle },
     { id: 'tutor', label: t('navTutor'), icon: UserCheck },
     { id: 'pronunciation', label: t('navPronunciation'), icon: Activity },
     { id: 'chain', label: 'لعبة السلسلة', icon: Gamepad2 },
