@@ -42,7 +42,6 @@ export default function Navbar() {
     { id: 'story', label: t('navStory'), icon: MessageSquare },
     { id: 'tutor', label: t('navTutor'), icon: UserCheck },
     { id: 'pronunciation', label: t('navPronunciation'), icon: Activity },
-    { id: 'flashcards', label: t('navFlashcards'), icon: Layers },
     { id: 'quiz', label: t('navQuiz'), icon: Award },
     { id: 'analytics', label: t('navAnalytics'), icon: BarChart3 },
   ];

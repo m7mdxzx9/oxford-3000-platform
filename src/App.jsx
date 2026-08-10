@@ -8,7 +8,6 @@ import SentenceGenerator from './components/SentenceGenerator';
 import Storyteller from './components/Storyteller';
 import PersonalTutor from './components/PersonalTutor';
 import PronunciationStudio from './components/PronunciationStudio';
-import Flashcards from './components/Flashcards';
 import QuizGame from './components/QuizGame';
 import Analytics from './components/Analytics';
 
@@ -22,7 +21,6 @@ function MainContent() {
       {activeTab === 'story' && <Storyteller />}
       {activeTab === 'tutor' && <PersonalTutor />}
       {activeTab === 'pronunciation' && <PronunciationStudio />}
-      {activeTab === 'flashcards' && <Flashcards />}
       {activeTab === 'quiz' && <QuizGame />}
       {activeTab === 'analytics' && <Analytics />}
     </main>
