@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Check, Star, Volume2, Sparkles, RefreshCw, Mic, BookOpen, Download } from 'lucide-react';
 import { oxford3000Data } from '../data/oxford3000';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { fetchMissingTerm, generateSentence } from '../services/geminiService';
 import { startListening, stopListening, evaluateSpeech, isSpeechRecognitionSupported } from '../services/speechEvaluation';
-import { getCuratedWordImage } from '../services/imageService';
+import { getCuratedWordImage, fetchWordImage } from '../services/imageService';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 import WordModal from './WordModal';
@@ -74,9 +74,20 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
   const [evalResult, setEvalResult] = useState(null);
   const [spokenTranscript, setSpokenTranscript] = useState('');
 
-  // AI Sentence Generator State for this card
-  const [customAiSentence, setCustomAiSentence] = useState(null);
-  const [isGeneratingAiSentence, setIsGeneratingAiSentence] = useState(false);
+  // Dynamic photo state for this word card
+  const [cardImg, setCardImg] = useState(() => getCuratedWordImage(wordObj.word));
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchWordImage(wordObj.word).then((url) => {
+      if (isMounted && url) {
+        setCardImg(url);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [wordObj.word]);
 
   const favorited = isFavorite(wordObj.word);
   const mastered = isMastered(wordObj.word);
@@ -238,7 +249,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
       {/* Contextual Visual Aid Photo Banner */}
       <div className="relative w-full h-24 mb-3 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0">
         <img
-          src={getCuratedWordImage(wordObj.word)}
+          src={cardImg}
           alt={wordObj.word}
           loading="lazy"
           onError={(e) => {

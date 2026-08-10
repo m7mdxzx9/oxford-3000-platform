@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, Image, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening, isSpeechRecognitionSupported } from '../services/speechEvaluation';
 import { generateVisualIllustration } from '../services/imagenService';
 import { generateSentence } from '../services/geminiService';
-import { getCuratedWordImage } from '../services/imageService';
+import { getCuratedWordImage, fetchWordImage } from '../services/imageService';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import AudioSpeedControl from './AudioSpeedControl';
 import IpaSyllableVisualizer from './IpaSyllableVisualizer';
@@ -18,6 +18,20 @@ export default function WordModal({ word, onClose }) {
   // Imagen 4.0 & Contextual Visual Illustration State
   const [illustrationUrl, setIllustrationUrl] = useState(() => getCuratedWordImage(word.word));
   const [generatingImage, setGeneratingImage] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (word && word.word) {
+      fetchWordImage(word.word).then((url) => {
+        if (isMounted && url) {
+          setIllustrationUrl(url);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [word]);
 
   // Custom AI Sentence State
   const [customAiSentence, setCustomAiSentence] = useState(null);
