@@ -158,7 +158,7 @@ export const SentenceTokenViewer = ({
 
           if (!isWord) {
             return (
-              <span key={index} className="text-slate-400 select-none">
+              <span key={index} className="opacity-80 text-current select-none">
                 {token}
               </span>
             );
@@ -176,23 +176,23 @@ export const SentenceTokenViewer = ({
           const isTooltipActive = activeTooltipWord && activeTooltipWord.index === currentWordIndex;
 
           let tokenStyle =
-            'text-slate-200 hover:bg-cyan-500/20 hover:text-cyan-300 rounded px-1 transition-all duration-150 border border-transparent';
+            'text-current font-medium hover:bg-cyan-500/20 hover:text-cyan-700 dark:hover:text-cyan-300 rounded px-1 transition-all duration-150 border border-transparent';
 
           if (breakdownMap && matchStatus !== undefined) {
             if (matchStatus === true) {
               tokenStyle =
-                'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded px-1.5 font-medium shadow-sm';
+                'bg-emerald-500/20 text-emerald-950 dark:text-emerald-300 border border-emerald-500/50 rounded px-1.5 font-bold shadow-sm';
             } else {
               tokenStyle =
-                'bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded px-1.5 font-medium line-through decoration-rose-400/60 shadow-sm';
+                'bg-rose-500/20 text-rose-950 dark:text-rose-300 border border-rose-500/50 rounded px-1.5 font-bold line-through decoration-rose-500/60 shadow-sm';
             }
           } else if (isTarget) {
             tokenStyle =
-              'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 rounded px-1.5 font-semibold shadow-sm hover:bg-cyan-500/30 ring-1 ring-cyan-400/30';
+              'bg-cyan-500/25 text-cyan-950 dark:text-cyan-200 border border-cyan-500/60 rounded px-1.5 font-black shadow-sm hover:bg-cyan-500/35 ring-1 ring-cyan-500/40';
           }
 
           if (isPlaying) {
-            tokenStyle += ' ring-2 ring-cyan-400 animate-pulse bg-cyan-500/30 text-white font-bold';
+            tokenStyle += ' ring-2 ring-cyan-400 animate-pulse bg-cyan-500/40 text-cyan-950 dark:text-white font-black';
           }
 
           return (

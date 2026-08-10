@@ -9,31 +9,40 @@ import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 import AudioSpeedControl from './AudioSpeedControl';
 
-// Reading Mode Theme Presets
+// Reading Mode Theme Presets with high-contrast text tokens
 const READING_THEMES = {
   sepia: {
     id: 'sepia',
     label: 'Sepia Warm (ورقي دافئ)',
-    bg: 'bg-[#f8f1e5]',
-    text: 'text-[#2c221e]',
-    border: 'border-[#e2d5c3]',
-    accent: 'bg-[#8c6d52]/10 text-[#634935] border-[#8c6d52]/30',
+    bg: 'bg-[#fbf4e9]',
+    text: 'text-[#231812]',
+    border: 'border-[#dfcfb9]',
+    accent: 'bg-[#8c6d52]/15 text-[#3b2719] border-[#8c6d52]/40',
+    arText: 'text-[#3b2719]',
+    quizText: 'text-[#441a63]',
+    optBtn: 'bg-[#fffdf9] border-[#d8c6ac] text-[#1f140e] hover:bg-[#f3e6d3] font-bold shadow-sm',
   },
   dark: {
     id: 'dark',
     label: 'Midnight Dark (ليلي مريح)',
     bg: 'bg-[#090d16]',
-    text: 'text-slate-200',
+    text: 'text-slate-100',
     border: 'border-slate-800',
-    accent: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30',
+    accent: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+    arText: 'text-amber-300',
+    quizText: 'text-purple-300',
+    optBtn: 'bg-slate-900 border-slate-800 text-slate-100 hover:bg-slate-800 font-bold',
   },
   light: {
     id: 'light',
     label: 'Pure Light (ناصع ناصع)',
     bg: 'bg-white',
-    text: 'text-slate-900',
-    border: 'border-slate-200',
-    accent: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/30',
+    text: 'text-slate-950',
+    border: 'border-slate-300',
+    accent: 'bg-indigo-500/15 text-indigo-950 border-indigo-500/40',
+    arText: 'text-amber-950',
+    quizText: 'text-purple-950',
+    optBtn: 'bg-slate-50 border-slate-300 text-slate-950 hover:bg-slate-100 font-bold shadow-sm',
   },
 };
 
@@ -482,7 +491,7 @@ export default function Storyteller() {
             </div>
 
             {/* Paragraph Text with Interactive Token Viewer */}
-            <div className={`p-6 rounded-2xl border border-black/10 bg-black/[0.02] ${fontSize} leading-loose`}>
+            <div className={`p-6 rounded-2xl border border-black/10 bg-black/[0.03] ${fontSize} ${currentTheme.text} leading-loose font-extrabold`}>
               <SentenceTokenViewer
                 sentence={storyLines[activeChapterTab].text}
                 targetWords={selectedWords.length > 0 ? selectedWords : [storyLines[activeChapterTab].focusWord]}
@@ -494,9 +503,9 @@ export default function Storyteller() {
 
             {/* Arabic Paragraph Translation */}
             {showArabic && storyLines[activeChapterTab].arabic && (
-              <div className="p-5 rounded-2xl border border-amber-500/30 bg-amber-500/5 text-right dir-rtl font-arabic space-y-1">
-                <span className="text-xs font-extrabold text-amber-700 block">ترجمة الفصل إلى العربية:</span>
-                <p className="text-base font-bold text-amber-900 leading-relaxed">
+              <div className="p-5 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-right dir-rtl font-arabic space-y-1">
+                <span className="text-xs font-black text-amber-700 dark:text-amber-400 block">ترجمة الفصل إلى العربية:</span>
+                <p className={`text-base font-black ${currentTheme.arText} leading-relaxed`}>
                   {storyLines[activeChapterTab].arabic}
                 </p>
               </div>
@@ -504,17 +513,17 @@ export default function Storyteller() {
 
             {/* Word Breakdown Dictionary */}
             {showArabic && storyLines[activeChapterTab].wordTranslations && Object.keys(storyLines[activeChapterTab].wordTranslations).length > 0 && (
-              <div className="p-4 rounded-2xl border border-black/10 bg-black/[0.02] space-y-2 dir-rtl font-arabic font-sans">
-                <span className="text-xs font-extrabold text-amber-800 block">
+              <div className="p-4 rounded-2xl border border-black/10 bg-black/[0.03] space-y-2 dir-rtl font-arabic font-sans">
+                <span className="text-xs font-black text-amber-800 dark:text-amber-300 block">
                   🔤 قاموس مفردات هذا الفصل (أنقر على أي كلمة أعلاه لسماع نطقها):
                 </span>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {Object.entries(storyLines[activeChapterTab].wordTranslations).map(([enWord, arTrans], wIdx) => (
                     <span
                       key={wIdx}
-                      className="px-3 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-900 flex items-center gap-1.5"
+                      className={`px-3 py-1 rounded-xl border border-amber-500/40 bg-amber-500/15 text-xs font-black ${currentTheme.arText} flex items-center gap-1.5`}
                     >
-                      <span dir="ltr" className="font-sans font-extrabold ltr-isolate">{enWord}</span>: {arTrans}
+                      <span dir="ltr" className="font-sans font-black ltr-isolate">{enWord}</span>: {arTrans}
                     </span>
                   ))}
                 </div>
@@ -532,9 +541,9 @@ export default function Storyteller() {
 
             {/* Chapter Multiple Choice Quiz */}
             {storyLines[activeChapterTab].comprehensionQuestion && (
-              <div className="p-5 rounded-2xl border border-purple-500/30 bg-purple-500/5 font-sans space-y-3">
-                <div className="flex items-center gap-2 font-extrabold text-purple-900 text-sm">
-                  <HelpCircle className="w-5 h-5 text-purple-600 shrink-0" />
+              <div className="p-5 rounded-2xl border border-purple-500/40 bg-purple-500/10 font-sans space-y-3">
+                <div className={`flex items-center gap-2 font-black text-sm ${currentTheme.quizText}`}>
+                  <HelpCircle className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0" />
                   <span>اختبار استيعاب الفصل: {storyLines[activeChapterTab].comprehensionQuestion}</span>
                 </div>
 
@@ -546,12 +555,12 @@ export default function Storyteller() {
                       const isCorrect = opt === storyLines[activeChapterTab].correctAnswer;
                       const showFeedback = selectedOption !== undefined;
 
-                      let btnStyle = 'border-slate-300 bg-white hover:border-purple-400 text-slate-800';
+                      let btnStyle = currentTheme.optBtn;
                       if (showFeedback) {
                         if (isCorrect) {
-                          btnStyle = 'border-emerald-500 bg-emerald-500/20 text-emerald-900 font-extrabold';
+                          btnStyle = 'border-emerald-500 bg-emerald-500/20 text-emerald-950 dark:text-emerald-300 font-black ring-2 ring-emerald-500/50';
                         } else if (isSelected && !isCorrect) {
-                          btnStyle = 'border-rose-500 bg-rose-500/20 text-rose-900 font-extrabold';
+                          btnStyle = 'border-rose-500 bg-rose-500/20 text-rose-950 dark:text-rose-300 font-black ring-2 ring-rose-500/50';
                         }
                       }
 
@@ -559,7 +568,7 @@ export default function Storyteller() {
                         <button
                           key={oIdx}
                           onClick={() => handleAnswerQuestion(activeChapterTab, opt)}
-                          className={`p-3.5 rounded-xl border text-left text-xs font-semibold transition-all flex items-center justify-between gap-2 active:scale-95 ${btnStyle}`}
+                          className={`p-3.5 rounded-xl border text-left text-xs font-bold transition-all flex items-center justify-between gap-2 active:scale-95 ${btnStyle}`}
                         >
                           <span>{opt}</span>
                           {showFeedback && isCorrect && <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />}
