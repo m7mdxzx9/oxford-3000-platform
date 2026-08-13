@@ -41,11 +41,29 @@ export const THEMES = [
 ];
 
 export const AppProvider = ({ children }) => {
+  // 1. Core Navigation & State
   const [activeTab, setActiveTabState] = useState('grid');
+  const [notifications, setNotifications] = useState([]);
+  const [lastXpBurst, setLastXpBurst] = useState(null);
   const [xp, setXp] = useState(() => loadFromStorage(STORAGE_KEYS.XP, 120));
   const [dailyStreak, setDailyStreak] = useState(() => loadFromStorage(STORAGE_KEYS.STREAK, 1));
-  const [lastXpBurst, setLastXpBurst] = useState(null);
 
+  // 2. Notification Handlers (Declared early so all downstream callbacks can safely use them)
+  const removeNotification = useCallback((id) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const addNotification = useCallback((message, type = 'info', duration = 3000) => {
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
+    setNotifications((prev) => [...prev, { id, message, type }]);
+    if (duration > 0) {
+      setTimeout(() => {
+        removeNotification(id);
+      }, duration);
+    }
+  }, [removeNotification]);
+
+  // 3. Navigation with Sound
   const setActiveTab = useCallback((newTab) => {
     try {
       playTabSwitchSound();
@@ -53,6 +71,7 @@ export const AppProvider = ({ children }) => {
     setActiveTabState(newTab);
   }, []);
 
+  // 4. Gamification Handlers
   const addXp = useCallback((amount, reason) => {
     setXp((prev) => {
       const next = prev + amount;
@@ -71,6 +90,9 @@ export const AppProvider = ({ children }) => {
     }
   }, [addNotification]);
 
+  const level = Math.floor(xp / 100) + 1;
+
+  // 5. Theme & Appearance
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('uqu_theme') || localStorage.getItem(STORAGE_KEYS.THEME);
     return stored || 'brutalism';
@@ -96,21 +118,21 @@ export const AppProvider = ({ children }) => {
     return stored ? parseFloat(stored) : 0.9;
   });
 
+  // 6. Lexicon & Collections
   const [favorites, setFavorites] = useState(() => loadFromStorage(STORAGE_KEYS.FAVORITES, []));
   const [mastered, setMastered] = useState(() => loadFromStorage(STORAGE_KEYS.MASTERED, []));
   const [customWords, setCustomWords] = useState(() => loadFromStorage(STORAGE_KEYS.CUSTOM_WORDS, []));
   const [selectedWords, setSelectedWords] = useState([]);
 
-  // Default API Key set to provided Gemini key AIzaSyC747z4ewiUEQTenTLdphM11WLbr1EVbXs
+  // 7. API Keys & Modals
   const [apiKey, setApiKey] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.API_KEY);
     return stored !== null && stored.trim() !== '' ? stored : DEFAULT_GEMINI_KEY;
   });
 
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
 
-  // Update root data-theme and data-mode attributes whenever theme or mode changes
+  // Sync Root Theme / Mode Attributes
   useEffect(() => {
     localStorage.setItem('uqu_theme', theme);
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
@@ -158,18 +180,6 @@ export const AppProvider = ({ children }) => {
     }
   }, [apiKey]);
 
-  const addNotification = useCallback((message, type = 'info', duration = 3000) => {
-    const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
-    setNotifications((prev) => [...prev, { id, message, type }]);
-    if (duration > 0) {
-      setTimeout(() => { removeNotification(id); }, duration);
-    }
-  }, []);
-
-  const removeNotification = useCallback((id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  }, []);
-
   const toggleFavorite = useCallback((wordTerm) => {
     setFavorites((prev) => {
       const exists = prev.includes(wordTerm);
@@ -202,8 +212,6 @@ export const AppProvider = ({ children }) => {
     setCustomWords((prev) => [wordObj, ...prev]);
     addNotification(`Added custom word: "${wordObj.word}"`, 'success');
   }, [addNotification]);
-
-  const level = Math.floor(xp / 100) + 1;
 
   const clearSelectedWords = useCallback(() => {
     setSelectedWords([]);
