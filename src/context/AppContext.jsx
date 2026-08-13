@@ -47,25 +47,28 @@ export const AppProvider = ({ children }) => {
   const [lastXpBurst, setLastXpBurst] = useState(null);
 
   const setActiveTab = useCallback((newTab) => {
-    setActiveTabState((current) => {
-      if (current !== newTab) {
-        playTabSwitchSound();
-      }
-      return newTab;
-    });
+    try {
+      playTabSwitchSound();
+    } catch (e) {}
+    setActiveTabState(newTab);
   }, []);
 
   const addXp = useCallback((amount, reason) => {
     setXp((prev) => {
       const next = prev + amount;
       saveToStorage(STORAGE_KEYS.XP, next);
-      playSuccessChime();
-      setLastXpBurst({ amount, reason, id: Date.now() });
-      if (reason) {
-        addNotification(`+${amount} XP: ${reason} 🌟`, 'success', 2500);
-      }
       return next;
     });
+
+    try {
+      playSuccessChime();
+    } catch (e) {}
+
+    setLastXpBurst({ amount, reason, id: Date.now() });
+
+    if (reason) {
+      addNotification(`+${amount} XP: ${reason} 🌟`, 'success', 2500);
+    }
   }, [addNotification]);
 
   const [theme, setTheme] = useState(() => {
