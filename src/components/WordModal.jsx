@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, Image, RefreshCw } from 'lucide-react';
+import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, RefreshCw, Layers, ExternalLink } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening, isSpeechRecognitionSupported } from '../services/speechEvaluation';
-import { generateVisualIllustration } from '../services/imagenService';
 import { generateSentence } from '../services/geminiService';
 import { getCuratedWordImage, fetchWordImage } from '../services/imageService';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import AudioSpeedControl from './AudioSpeedControl';
 import IpaSyllableVisualizer from './IpaSyllableVisualizer';
-
 import { fetchFreeDictDetails, fetchDatamuseDetails } from '../services/dictionaryService';
 
 export default function WordModal({ word, onClose }) {
-  const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets, audioSpeed, setAudioSpeed, apiKey } = useApp();
+  const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets, audioSpeed, setAudioSpeed, apiKey, addXp } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [speechResult, setSpeechResult] = useState(null);
-
-  // Imagen 4.0 & Contextual Visual Illustration State
-  const [illustrationUrl, setIllustrationUrl] = useState(() => getCuratedWordImage(word.word));
-  const [generatingImage, setGeneratingImage] = useState(false);
 
   // FreeDict & Datamuse API Data State
   const [freeDictData, setFreeDictData] = useState(null);
@@ -28,12 +22,6 @@ export default function WordModal({ word, onClose }) {
   useEffect(() => {
     let isMounted = true;
     if (word && word.word) {
-      fetchWordImage(word.word).then((url) => {
-        if (isMounted && url) {
-          setIllustrationUrl(url);
-        }
-      });
-
       // Fetch FreeDict details
       fetchFreeDictDetails(word.word).then((data) => {
         if (isMounted && data) setFreeDictData(data);
@@ -67,21 +55,6 @@ export default function WordModal({ word, onClose }) {
     playAudio(word.word, { speed: rate, presetId: voicePreset });
   };
 
-  const handleGenerateIllustration = async () => {
-    setGeneratingImage(true);
-    try {
-      const url = await generateVisualIllustration(word.word, word.example || '', apiKey);
-      if (url) {
-        setIllustrationUrl(url);
-        addNotification(`Generated 3D visual illustration for "${word.word}"`, 'success');
-      }
-    } catch (err) {
-      addNotification('Failed to generate visual illustration.', 'warning');
-    } finally {
-      setGeneratingImage(false);
-    }
-  };
-
   const handleGenerateAiSentence = async (overrideLevel = sentenceLevel) => {
     setGeneratingSentence(true);
     try {
@@ -99,7 +72,7 @@ export default function WordModal({ word, onClose }) {
 
   const handleRecordSpeech = () => {
     if (!isSpeechRecognitionSupported()) {
-      addNotification('Web Speech API is not supported on this browser version. You can practice in Chrome/Edge!', 'warning');
+      addNotification('Web Speech API is not supported on this browser version.', 'warning');
       return;
     }
 
@@ -118,69 +91,71 @@ export default function WordModal({ word, onClose }) {
       (res) => {
         setIsRecording(false);
         setSpeechResult(res);
-        if (res.score >= 85) {
+        if (res.score >= 80) {
           addNotification(`Outstanding pronunciation! Score: ${res.score}%`, 'success');
-        } else if (res.score >= 60) {
-          addNotification(`Good effort! Score: ${res.score}%. Practice stressed syllables.`, 'info');
+          if (addXp) addXp(25, `إتقان نطق "${word.word}"`);
         } else {
-          addNotification(`Score: ${res.score}%. Listen to audio and try again.`, 'warning');
+          addNotification(`Score: ${res.score}%. Listen to audio and try again.`, 'info');
         }
       },
       (err) => {
         setIsRecording(false);
-        addNotification(`Recording issue: ${err.message || err}`, 'warning');
+        addNotification(`Recording note: ${err.message || err}`, 'info');
       }
     );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="glass-panel w-full max-w-2xl bg-[#0a1636]/90 border border-cyan-500/30 rounded-3xl p-4 sm:p-8 shadow-2xl relative flex flex-col max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="card-theme-target w-full max-w-2xl border rounded-3xl p-5 sm:p-7 shadow-2xl relative flex flex-col max-h-[92vh] overflow-y-auto overscroll-contain">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-full transition-all"
+          className="absolute top-4 right-4 p-2 rounded-xl theme-btn-secondary opacity-70 hover:opacity-100 transition-all"
+          aria-label="Close modal"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
 
         {/* Header Badges */}
         <div className="flex items-center gap-2 flex-wrap mb-3 pr-8">
-          <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+          <span className="px-2.5 py-0.5 text-xs font-black rounded-lg theme-btn-primary">
             CEFR {word.cefr || word.level || 'B1'}
           </span>
-          <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-slate-800 text-slate-300 italic">
-            {word.pos}
+          <span className="px-2.5 py-0.5 text-xs font-black rounded-lg theme-btn-secondary uppercase font-mono">
+            {word.pos || 'word'}
           </span>
           {word.isCustom && (
-            <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> Gemini AI Generated
+            <span className="px-2.5 py-0.5 text-xs font-bold rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" /> Gemini AI
             </span>
           )}
         </div>
 
-        {/* Word & IPA Syllable Stress Visualizer */}
-        <div className="flex items-baseline justify-between gap-2 mb-2 flex-wrap">
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight ltr-token">
+        {/* Word Title & IPA Visualizer */}
+        <div className="flex items-baseline justify-between gap-2 mb-3 flex-wrap">
+          <h2 dir="ltr" className="ltr-isolate text-3xl sm:text-4xl font-black tracking-tight">
             {word.word}
           </h2>
           <IpaSyllableVisualizer ipa={word.ipa || word.phonetic || `/${word.word}/`} />
         </div>
 
-        {/* Arabic Meaning */}
-        <div className="mb-4 p-3.5 rounded-xl bg-slate-900/90 border border-slate-700 text-right">
-          <span className="text-[11px] text-slate-200 font-bold block mb-0.5">الترجمة العربية والتعريف</span>
-          <p className="text-lg sm:text-2xl font-black text-amber-300 dir-rtl">{word.arabic || word.translation}</p>
+        {/* Arabic Translation Block */}
+        <div dir="rtl" className="rtl-text mb-4 p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-center font-arabic">
+          <span className="text-[11px] opacity-75 font-bold block mb-0.5">الترجمة العربية والسياق</span>
+          <p className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-300">
+            {word.arabic || word.translation}
+          </p>
         </div>
 
-        {/* FreeDict & Datamuse API Live Information */}
+        {/* Synonyms & Antonyms from Dictionary Service */}
         {datamuseData && (datamuseData.synonyms?.length > 0 || datamuseData.antonyms?.length > 0) && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 space-y-2.5 text-xs font-black">
+          <div className="mb-4 p-3.5 rounded-2xl border bg-black/5 space-y-2 text-xs font-black">
             {datamuseData.synonyms?.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-cyan-300 font-extrabold">المرادفات (Synonyms):</span>
-                {datamuseData.synonyms.map((syn, idx) => (
-                  <span key={idx} className="px-2.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 font-bold">
+                <span className="text-cyan-600 dark:text-cyan-400 font-black">المرادفات (Synonyms):</span>
+                {datamuseData.synonyms.slice(0, 5).map((syn, idx) => (
+                  <span key={idx} className="px-2 py-0.5 rounded-lg theme-btn-secondary text-[11px] font-bold">
                     {syn}
                   </span>
                 ))}
@@ -188,9 +163,9 @@ export default function WordModal({ word, onClose }) {
             )}
             {datamuseData.antonyms?.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-rose-300 font-extrabold">المتضادات (Antonyms):</span>
-                {datamuseData.antonyms.map((ant, idx) => (
-                  <span key={idx} className="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-200 border border-rose-400/40 font-bold">
+                <span className="text-rose-600 dark:text-rose-400 font-black">المتضادات (Antonyms):</span>
+                {datamuseData.antonyms.slice(0, 5).map((ant, idx) => (
+                  <span key={idx} className="px-2 py-0.5 rounded-lg theme-btn-secondary text-[11px] font-bold text-rose-500">
                     {ant}
                   </span>
                 ))}
@@ -199,21 +174,21 @@ export default function WordModal({ word, onClose }) {
           </div>
         )}
 
-        {/* Voice Selector & Speed Control Bar */}
-        <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-cyan-500/40 mb-5 space-y-3">
+        {/* Voice Engine Controls */}
+        <div className="p-4 rounded-2xl border bg-black/5 mb-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs text-cyan-200 font-extrabold flex items-center gap-1.5">
-              <Volume2 className="w-4 h-4 text-cyan-400" /> Voice Engine:
+            <span className="text-xs font-black flex items-center gap-1.5 opacity-80">
+              <Volume2 className="w-4 h-4 text-cyan-500" /> Voice Engine:
             </span>
             <div className="flex items-center gap-2 flex-wrap">
               <AudioSpeedControl speed={audioSpeed} onSpeedChange={setAudioSpeed} compact={true} />
               <select
                 value={voicePreset}
                 onChange={(e) => setVoicePreset(e.target.value)}
-                className="bg-slate-950 text-xs text-white p-1.5 rounded-xl border border-slate-700 focus:outline-none max-w-[180px] truncate font-extrabold"
+                className="glass-input text-xs font-black p-1.5 rounded-xl border focus:outline-none max-w-[170px] truncate"
               >
                 {voicePresets.map((vp) => (
-                  <option key={vp.id} value={vp.id}>
+                  <option key={vp.id} value={vp.id} className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold">
                     {vp.name}
                   </option>
                 ))}
@@ -225,9 +200,9 @@ export default function WordModal({ word, onClose }) {
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => handlePlayWord(audioSpeed)}
-                className="min-h-[44px] flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/20 transition-all active:scale-95"
+                className="min-h-[44px] flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 theme-btn-primary rounded-xl text-xs font-black shadow-md active:scale-95 transition-all"
               >
-                <Volume2 className="w-4 h-4" /> TTS Voice ({audioSpeed}x)
+                <Volume2 className="w-4 h-4" /> Listen Audio ({audioSpeed}x)
               </button>
 
               {freeDictData?.audioUrl && (
@@ -236,58 +211,52 @@ export default function WordModal({ word, onClose }) {
                     const a = new Audio(freeDictData.audioUrl);
                     a.play();
                   }}
-                  className="min-h-[44px] flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all active:scale-95"
+                  className="min-h-[44px] flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 theme-btn-secondary rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all"
                 >
-                  <Volume2 className="w-4 h-4 text-amber-300" /> Human MP3 Audio 🔊
+                  <Volume2 className="w-4 h-4 text-amber-500" /> MP3 Audio 🔊
                 </button>
               )}
             </div>
 
             <button
               onClick={handleRecordSpeech}
-              className={`min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 ${
+              className={`min-h-[44px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all active:scale-95 border ${
                 isRecording
-                  ? 'bg-rose-600 text-white animate-pulse shadow-lg shadow-rose-600/30 font-bold'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                  ? 'bg-rose-600 text-white animate-pulse font-black shadow-md'
+                  : 'theme-btn-secondary'
               }`}
             >
-              {isRecording ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-rose-400" />}
-              {isRecording ? '🛑 إلغاء / توقف المايك' : 'Mic Practice'}
+              {isRecording ? <MicOff className="w-4 h-4 text-white" /> : <Mic className="w-4 h-4 text-rose-500" />}
+              {isRecording ? 'Stop Recording' : 'Mic Practice'}
             </button>
           </div>
         </div>
 
-        {/* Speech Score Result Banner */}
+        {/* Speech Evaluation Score */}
         {speechResult && (
-          <div className="mb-5 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+          <div className="mb-4 p-3.5 rounded-2xl border bg-black/5 space-y-1.5 text-xs font-bold">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-300">Speech Accuracy Score</span>
-              <span
-                className={`text-sm px-2.5 py-0.5 rounded-full font-black font-mono border ${
-                  speechResult.score >= 85
-                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                    : speechResult.score >= 60
-                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                    : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                }`}
-              >
+              <span className="opacity-80">Speech Accuracy Score:</span>
+              <span className={`text-sm px-2.5 py-0.5 rounded-lg font-black font-mono border ${
+                speechResult.score >= 80 ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300' : 'bg-amber-500/20 text-amber-600 dark:text-amber-300'
+              }`}>
                 {speechResult.score}%
               </span>
             </div>
-            <p className="text-xs text-slate-400 italic">Transcribed: "{speechResult.transcript || 'None'}"</p>
+            <p className="opacity-75 italic">Transcribed: "{speechResult.transcript || 'None'}"</p>
           </div>
         )}
 
         {/* AI Sentence Generator & Interactive Tokens Block */}
-        <div className="mb-5 space-y-2.5">
+        <div className="mb-4 space-y-2.5">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label className="block text-xs font-black uppercase tracking-wider opacity-80">
               {customAiSentence ? `✨ AI Sentence (${sentenceLevel})` : 'Context Example'}
             </label>
 
             <div className="flex items-center gap-1.5 flex-wrap">
               {/* CEFR Level Quick Selector */}
-              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-0.5 p-0.5 rounded-xl border theme-btn-secondary">
                 {['A1', 'A2', 'B1', 'B2', 'C1'].map((lvl) => (
                   <button
                     key={lvl}
@@ -295,10 +264,10 @@ export default function WordModal({ word, onClose }) {
                       setSentenceLevel(lvl);
                       handleGenerateAiSentence(lvl);
                     }}
-                    className={`px-2 py-0.5 text-[10px] font-extrabold rounded-lg transition-all ${
+                    className={`px-2 py-0.5 text-[10px] font-black rounded-lg transition-all ${
                       sentenceLevel === lvl
-                        ? 'bg-purple-600 text-white shadow-sm'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'theme-btn-primary shadow-sm'
+                        : 'opacity-70 hover:opacity-100'
                     }`}
                   >
                     {lvl}
@@ -309,7 +278,7 @@ export default function WordModal({ word, onClose }) {
               <button
                 onClick={() => handleGenerateAiSentence(sentenceLevel)}
                 disabled={generatingSentence}
-                className="flex items-center gap-1.5 px-3 py-1 bg-purple-600/80 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1 theme-btn-primary rounded-xl text-xs font-black shadow-sm active:scale-95 disabled:opacity-50"
               >
                 {generatingSentence ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                 {generatingSentence ? 'Generating...' : customAiSentence ? '🔄 Change' : '✨ AI Sentence'}
@@ -318,7 +287,7 @@ export default function WordModal({ word, onClose }) {
           </div>
 
           {activeSentence && (
-            <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-cyan-900/30 space-y-2">
+            <div className="p-3.5 rounded-2xl border bg-black/5 space-y-2">
               <SentenceTokenViewer
                 sentence={activeSentence}
                 targetWord={word.word}
@@ -327,9 +296,9 @@ export default function WordModal({ word, onClose }) {
               />
 
               {activeArabicSentence && (
-                <div dir="rtl" className="mt-2 pt-2 border-t border-slate-800/80 text-right font-arabic">
-                  <span className="text-[10px] text-slate-400 block mb-0.5">الترجمة العربية للجملة:</span>
-                  <p className="text-xs font-bold text-amber-300">{activeArabicSentence}</p>
+                <div dir="rtl" className="rtl-text mt-2 pt-2 border-t border-black/10 text-right font-arabic">
+                  <span className="text-[10px] opacity-75 block mb-0.5 font-bold">الترجمة العربية للجملة:</span>
+                  <p className="text-xs font-black text-amber-600 dark:text-amber-300">{activeArabicSentence}</p>
                 </div>
               )}
             </div>
@@ -337,14 +306,14 @@ export default function WordModal({ word, onClose }) {
         </div>
 
         {/* Footer Actions */}
-        <div className="mt-auto pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="mt-auto pt-3 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <button
               onClick={() => toggleFavorite(word.word)}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition-all border ${
                 fav
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-500/40'
+                  : 'theme-btn-secondary opacity-75 hover:opacity-100'
               }`}
             >
               <Star className={`w-4 h-4 ${fav ? 'fill-amber-400 text-amber-400' : ''}`} />
@@ -353,20 +322,20 @@ export default function WordModal({ word, onClose }) {
 
             <button
               onClick={() => toggleMastered(word.word)}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition-all border ${
                 mst
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/40'
+                  : 'theme-btn-secondary opacity-75 hover:opacity-100'
               }`}
             >
-              <CheckCircle className={`w-4 h-4 ${mst ? 'text-emerald-400' : ''}`} />
+              <CheckCircle className={`w-4 h-4 ${mst ? 'text-emerald-500' : ''}`} />
               {mst ? 'Mastered' : 'Mark Mastered'}
             </button>
           </div>
 
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all"
+            className="w-full sm:w-auto px-6 py-2.5 theme-btn-primary rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
           >
             Done
           </button>

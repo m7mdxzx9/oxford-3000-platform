@@ -21,7 +21,7 @@ export const EmptyState = ({
           <StarOff className="w-8 h-8" />
         </div>
         <h3 className="text-xl sm:text-2xl font-black">{title || 'لا توجد كلمات مفضلة محددة بعد'}</h3>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-bold max-w-md mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm opacity-80 font-bold max-w-md mx-auto leading-relaxed">
           {description ||
             'لم تقم بحفظ أي كلمات في قائمتك المفضلة حتى الآن. انقر على أيقونة النجمة ⭐ الموجودة في أي كارت كلمة للحفظ والمراجعة السريعة.'}
         </p>
@@ -36,7 +36,7 @@ export const EmptyState = ({
           <Sparkles className="w-8 h-8" />
         </div>
         <h3 className="text-xl sm:text-2xl font-black">{title || 'لا توجد كلمات مكتملة الإتقان بعد'}</h3>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-bold max-w-md mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm opacity-80 font-bold max-w-md mx-auto leading-relaxed">
           {description ||
             'علامة الإتقان تتيح لك متابعة تقدمك الإجمالي في مفردات أكسفورد الـ 3000. انقر علىعلامة الصواب (✓) في الكارت عند حظها وتدربك عليها.'}
         </p>
@@ -46,7 +46,7 @@ export const EmptyState = ({
 
   // Default: No Search Results Found Empty State
   return (
-    <div className="card-theme-target p-8 sm:p-12 rounded-3xl border border-slate-200 dark:border-slate-800 text-center max-w-xl mx-auto shadow-2xl space-y-5 my-8 bg-[var(--bg-card)] text-[var(--text-main)]">
+    <div className="card-theme-target p-8 sm:p-12 rounded-3xl border text-center max-w-xl mx-auto shadow-2xl space-y-5 my-8 bg-[var(--bg-card)] text-[var(--text-main)]">
       <div className="w-16 h-16 rounded-3xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mx-auto shadow-md">
         <SearchX className="w-8 h-8" />
       </div>
@@ -55,7 +55,7 @@ export const EmptyState = ({
         <h3 className="text-xl sm:text-2xl font-black">
           {title || 'لم يتم العثور على كلمات مطابقة'}
         </h3>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-bold max-w-md mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm opacity-80 font-bold max-w-md mx-auto leading-relaxed">
           {description || (
             <>
               لم تجد نتائج مطابقة للبحث عن{' '}

@@ -42,16 +42,16 @@ export const IpaSyllableVisualizer = ({ ipa = '' }) => {
 
   return (
     <div dir="ltr" className="ltr-isolate inline-flex items-center gap-1 font-mono text-xs my-1 select-none">
-      <span className="text-slate-900 dark:text-slate-200 font-black text-[13px]">/</span>
+      <span className="text-[var(--text-main)] font-black text-[13px] opacity-70">/</span>
       {syllables.map((syl, idx) => {
         if (syl.isPrimary) {
           return (
             <span
               key={idx}
-              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-cyan-500 text-slate-950 dark:bg-cyan-400 dark:text-slate-950 border border-cyan-600 font-black shadow-sm tracking-wider"
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg theme-btn-primary font-black shadow-sm tracking-wider text-[11px]"
               title="Primary Stress (ˈ)"
             >
-              <span className="text-slate-950 font-black text-[13px]">ˈ</span>
+              <span className="font-black text-[12px]">ˈ</span>
               <span>{syl.text}</span>
             </span>
           );
@@ -61,22 +61,22 @@ export const IpaSyllableVisualizer = ({ ipa = '' }) => {
           return (
             <span
               key={idx}
-              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500 text-slate-950 dark:bg-amber-400 dark:text-slate-950 border border-amber-600 font-extrabold tracking-wide"
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 font-black tracking-wide text-[11px]"
               title="Secondary Stress (ˌ)"
             >
-              <span className="text-slate-950 font-black text-[13px]">ˌ</span>
+              <span className="font-black text-[12px]">ˌ</span>
               <span>{syl.text}</span>
             </span>
           );
         }
 
         return (
-          <span key={idx} className="px-0.5 text-slate-900 dark:text-slate-100 font-black">
+          <span key={idx} className="px-0.5 text-[var(--text-main)] font-bold">
             {syl.text}
           </span>
         );
       })}
-      <span className="text-slate-900 dark:text-slate-200 font-black text-[13px]">/</span>
+      <span className="text-[var(--text-main)] font-black text-[13px] opacity-70">/</span>
     </div>
   );
 };

@@ -106,13 +106,13 @@ export default function PronunciationStudio() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Studio Header Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border relative overflow-hidden">
+      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border shadow-xl relative overflow-hidden">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2.5 theme-btn-primary rounded-xl">
+          <div className="p-2.5 theme-btn-primary rounded-2xl shadow-md">
             <Activity className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Pronunciation & Speech Studio</h2>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Pronunciation & Speech Studio</h2>
             <p className="text-xs sm:text-sm opacity-80 mt-1">
               Real-time Speech Recognition & Live Transcription Engine with Levenshtein phonetic alignment.
             </p>
@@ -121,9 +121,9 @@ export default function PronunciationStudio() {
       </div>
 
       {/* Target Sentence Input & Dual TTS Engine Controls */}
-      <div className="glass-panel p-6 rounded-3xl border space-y-6">
+      <div className="card-theme-target p-6 rounded-3xl border space-y-6 shadow-xl">
         <div>
-          <label className="block text-xs font-extrabold uppercase tracking-wider mb-2 opacity-75">
+          <label className="block text-xs font-black uppercase tracking-wider mb-2 opacity-75">
             Target Practice Sentence or Word
           </label>
           <textarea
@@ -239,9 +239,9 @@ export default function PronunciationStudio() {
       </div>
 
       {/* Interactive Token breakdown */}
-      <div className="glass-panel p-6 rounded-3xl border space-y-4">
-        <span className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-2">
-          <Sparkles className="w-4 h-4" /> Click individual tokens to evaluate word pronunciation
+      <div className="card-theme-target p-6 rounded-3xl border space-y-4 shadow-xl">
+        <span className="text-xs font-black uppercase tracking-wider flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-amber-500" /> Click individual tokens to evaluate word pronunciation
         </span>
         <div className="p-5 rounded-2xl border bg-black/5">
           <SentenceTokenViewer sentence={targetSentence} evaluationResult={evalResult} />

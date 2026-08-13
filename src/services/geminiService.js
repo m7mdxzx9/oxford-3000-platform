@@ -315,4 +315,18 @@ Return ONLY raw JSON object:
   return `Great effort! Practicing your English daily is the best way to master the Oxford 3000 vocabulary. Keep expressing your ideas in English! 🌟\n\n💡 الشرح: استمر في ممارسة اللغة الإنجليزية يومياً، فهي أفضل طريقة لإتقان مفردات قاموس أكسفورد.`;
 };
 
+export const GEMINI_API_URL = GEMINI_MODEL_ENDPOINTS[0];
 export const getTutorResponse = generateTutorResponse;
+
+export default {
+  GEMINI_API_URL,
+  GEMINI_MODEL_ENDPOINTS,
+  fetchMissingTerm,
+  generateSentence,
+  generateStory,
+  generateTutorResponse,
+  getTutorResponse,
+  DEFAULT_GROQ_KEY,
+  DEFAULT_NVIDIA_KEY,
+  DEFAULT_GEMINI_KEY,
+};

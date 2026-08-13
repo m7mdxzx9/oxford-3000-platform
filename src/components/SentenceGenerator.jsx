@@ -146,25 +146,25 @@ export default function SentenceGenerator() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Banner */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border relative overflow-hidden">
+      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border shadow-xl relative overflow-hidden">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2.5 theme-btn-primary rounded-xl">
+          <div className="p-2.5 theme-btn-primary rounded-2xl shadow-md">
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">{t('sentenceTitle')}</h2>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">{t('sentenceTitle')}</h2>
             <p className="text-xs sm:text-sm opacity-80 mt-1">{t('sentenceSubtitle')}</p>
           </div>
         </div>
       </div>
 
       {/* Advanced Control Panel */}
-      <div className="glass-panel p-6 rounded-3xl border space-y-6">
+      <div className="card-theme-target p-6 rounded-3xl border space-y-6 shadow-xl">
         {/* CEFR Difficulty Level Selector Bar */}
         <div className="space-y-2">
-          <label className="block text-xs font-extrabold uppercase tracking-wider opacity-75 flex items-center justify-between">
+          <label className="block text-xs font-black uppercase tracking-wider opacity-75 flex items-center justify-between">
             <span>🎯 AI Sentence Difficulty Level (مستوى صعوبة الجملة):</span>
-            <span className="text-amber-500 font-bold">{cefrLevel} Level</span>
+            <span className="text-amber-500 font-black">{cefrLevel} Level</span>
           </label>
           <div className="grid grid-cols-5 gap-2">
             {[
@@ -442,9 +442,9 @@ export default function SentenceGenerator() {
                 {Object.entries(aiResult.wordTranslations).map(([enWord, arTrans], idx) => (
                   <span
                     key={idx}
-                    className="px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-extrabold text-amber-300 font-arabic flex items-center gap-1"
+                    className="px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-black text-amber-700 dark:text-amber-300 font-arabic flex items-center gap-1"
                   >
-                    <span dir="ltr" className="font-sans text-white ltr-isolate">{enWord}</span>: {arTrans}
+                    <span dir="ltr" className="font-mono text-cyan-600 dark:text-cyan-400 font-bold ltr-isolate">{enWord}</span>: {arTrans}
                   </span>
                 ))}
               </div>

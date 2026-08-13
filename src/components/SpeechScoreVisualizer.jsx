@@ -56,11 +56,11 @@ export const SpeechScoreVisualizer = ({
   };
 
   return (
-    <div className={`glass-panel p-5 rounded-2xl border space-y-4 ${className}`}>
+    <div className={`card-theme-target p-5 rounded-3xl border space-y-4 shadow-xl ${className}`}>
       {/* Top Header & Score Badge */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-black/10 pb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-2xl theme-btn-primary flex items-center justify-center text-2xl shadow-inner">
+          <div className="w-12 h-12 rounded-2xl theme-btn-primary flex items-center justify-center text-2xl shadow-inner shrink-0">
             {gradeTheme.icon}
           </div>
           <div>

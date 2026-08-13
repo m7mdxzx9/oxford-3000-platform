@@ -248,9 +248,9 @@ export default function WordChainGame() {
       </div>
 
       {/* Timer Control Selector Bar */}
-      <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-xs font-black flex items-center justify-between shadow-lg">
-        <span className="flex items-center gap-1.5 text-cyan-400">
-          <HelpCircle className="w-4 h-4 text-cyan-400" /> ضبط وقت الحركة لكل دور:
+      <div className="card-theme-target p-3.5 rounded-2xl border text-xs font-black flex items-center justify-between shadow-md">
+        <span className="flex items-center gap-1.5 opacity-80">
+          <HelpCircle className="w-4 h-4 text-cyan-500" /> ضبط وقت الحركة لكل دور:
         </span>
         <div className="flex items-center gap-1.5" dir="ltr">
           {[
@@ -266,10 +266,10 @@ export default function WordChainGame() {
                 setTurnTimeLimit(tOpt.value);
                 setTurnTimer(tOpt.value);
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
+              className={`px-3 py-1 rounded-xl text-xs font-black transition-all border ${
                 turnTimeLimit === tOpt.value
-                  ? 'bg-amber-500 text-slate-950 font-black scale-105 shadow-md'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'theme-btn-primary font-black scale-105 shadow-sm'
+                  : 'theme-btn-secondary opacity-70 hover:opacity-100'
               }`}
             >
               {tOpt.label}
@@ -280,8 +280,8 @@ export default function WordChainGame() {
 
       {/* Error Toast Notification Banner */}
       {errorMessage && (
-        <div className="p-4 rounded-2xl bg-rose-500/15 border-2 border-rose-500/40 text-rose-950 dark:text-rose-200 flex items-center gap-3 font-black text-sm animate-pulse shadow-lg">
-          <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
+        <div className="p-4 rounded-2xl bg-rose-500/15 border-2 border-rose-500/40 text-rose-700 dark:text-rose-300 flex items-center gap-3 font-black text-sm animate-pulse shadow-lg">
+          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
           <span className="flex-1">{errorMessage}</span>
           <button onClick={() => setErrorMessage('')} className="p-1 hover:opacity-80">
             <X className="w-4 h-4" />
@@ -290,18 +290,18 @@ export default function WordChainGame() {
       )}
 
       {/* Main Chain Game Board */}
-      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xl min-h-[420px] flex flex-col justify-between">
+      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border space-y-6 shadow-2xl min-h-[420px] flex flex-col justify-between">
         
         {/* Chain Bubbles Log Container */}
-        <div className="flex-1 overflow-y-auto max-h-[380px] p-4 rounded-2xl bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/80 space-y-4 no-scrollbar">
+        <div className="flex-1 overflow-y-auto max-h-[380px] p-4 rounded-2xl border bg-black/5 space-y-4 no-scrollbar">
           {chain.length === 0 ? (
             <div className="text-center py-12 space-y-3">
               <div className="w-16 h-16 rounded-3xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mx-auto shadow-md">
                 <Sparkles className="w-8 h-8" />
               </div>
               <h3 className="text-lg font-black">ابدأ السلسلة اللغوية الآن!</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-bold max-w-sm mx-auto">
-                اكتب أي كلمة إنجليزية تبدأ بها اللعبة (مثل: <code dir="ltr" className="ltr-isolate font-mono text-cyan-600 dark:text-cyan-400">apple</code>). ستقوم اللعبة باختيار كلمة تبدأ بحرف النهاية!
+              <p className="text-xs opacity-80 font-bold max-w-sm mx-auto">
+                اكتب أي كلمة إنجليزية تبدأ بها اللعبة (مثل: <code dir="ltr" className="ltr-isolate font-mono text-cyan-600 dark:text-cyan-400 font-bold">apple</code>). ستقوم اللعبة باختيار كلمة تبدأ بحرف النهاية!
               </p>
             </div>
           ) : (

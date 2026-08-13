@@ -48,7 +48,7 @@ export const AudioSpeedControl = ({ speed, onSpeedChange, compact = false }) => 
       <button
         type="button"
         onClick={handleCycleSpeed}
-        className="px-2 py-1 rounded-xl text-[10px] font-black border transition-all bg-cyan-500/15 text-cyan-950 dark:text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/25 active:scale-95 shadow-sm shrink-0 flex items-center gap-1"
+        className="px-2 py-1 rounded-xl text-[10px] font-black border transition-all theme-btn-secondary hover:brightness-110 active:scale-95 shadow-sm shrink-0 flex items-center gap-1"
         title="انقر لتغيير سرعة النطق الصوتي (Click to cycle audio speed)"
       >
         <span>⚡ {currentSpeed}x</span>
@@ -57,10 +57,10 @@ export const AudioSpeedControl = ({ speed, onSpeedChange, compact = false }) => 
   }
 
   return (
-    <div dir="ltr" className="ltr-isolate inline-flex items-center gap-1 p-1 rounded-xl border bg-slate-100 dark:bg-slate-950/60 border-slate-300 dark:border-slate-800/80 shadow-sm select-none shrink-0">
+    <div dir="ltr" className="ltr-isolate inline-flex items-center gap-1 p-1 rounded-xl border bg-black/5 shadow-sm select-none shrink-0">
       {!compact && (
-        <span className="flex items-center gap-1 text-[10px] font-black text-slate-700 dark:text-slate-400 px-1">
-          <Gauge className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />
+        <span className="flex items-center gap-1 text-[10px] font-black opacity-75 px-1">
+          <Gauge className="w-3 h-3 text-cyan-500" />
           <span>Speed:</span>
         </span>
       )}
@@ -72,10 +72,10 @@ export const AudioSpeedControl = ({ speed, onSpeedChange, compact = false }) => 
             key={val}
             type="button"
             onClick={(e) => handleSelectSpeed(val, e)}
-            className={`px-1.5 py-0.5 rounded-lg text-[10px] font-black transition-all active:scale-90 ${
+            className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition-all border active:scale-90 ${
               isActive
-                ? 'bg-cyan-500 text-slate-950 shadow-sm border border-cyan-400 font-extrabold'
-                : 'text-slate-800 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800/60'
+                ? 'theme-btn-primary shadow-sm'
+                : 'theme-btn-secondary opacity-70 hover:opacity-100'
             }`}
             title={`Set audio playback speed to ${val}x`}
           >

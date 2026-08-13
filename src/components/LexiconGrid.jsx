@@ -529,16 +529,16 @@ export const LexiconGrid = () => {
   return (
     <div className="space-y-6">
       {/* Header & Search Bar Section */}
-      <div className="glass-panel p-6 rounded-2xl space-y-6">
+      <div className="card-theme-target p-6 rounded-3xl border space-y-6 shadow-xl">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
               <span>Oxford 3000™ Lexicon Catalog</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-mono">
+              <span className="text-xs px-2.5 py-0.5 rounded-full theme-btn-primary font-mono font-bold">
                 {totalFilteredItems} Words
               </span>
             </h1>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-xs opacity-75 mt-1 font-medium">
               Explore the complete Oxford 3000 CEFR vocabulary (A1-B2) with audio TTS, IPA phonetics, and Arabic translations.
             </p>
           </div>
@@ -547,22 +547,22 @@ export const LexiconGrid = () => {
           <div className="flex flex-wrap items-center justify-between gap-2.5 w-full md:w-auto">
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl theme-btn-primary text-xs font-black transition-all shadow-sm hover:brightness-110 shrink-0"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl theme-btn-primary text-xs font-black transition-all shadow-sm hover:brightness-110 shrink-0"
               title="Export vocabulary deck to PDF, Anki, Markdown, or JSON"
             >
               <Download className="w-3.5 h-3.5" />
               <span>📥 تصدير الكلمات (Export)</span>
             </button>
 
-            <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-bold shrink-0">
-              <span className="opacity-80">Show:</span>
+            <div className="flex items-center gap-1.5 text-xs opacity-80 font-bold shrink-0">
+              <span>Show:</span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-subtle)] focus:outline-none focus:ring-2 focus:ring-cyan-500/30 max-w-[130px] truncate"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold glass-input max-w-[130px] truncate"
               >
                 <option value={16}>16 per page</option>
                 <option value={20}>20 per page</option>
@@ -575,7 +575,7 @@ export const LexiconGrid = () => {
 
         {/* Interactive Search Bar & Clear Action */}
         <div className="relative w-full">
-          <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-zinc-400">
+          <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none opacity-60">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -585,7 +585,7 @@ export const LexiconGrid = () => {
             value={searchQuery}
             onChange={handleSearchChange}
             placeholder="Search word in English or translation in Arabic..."
-            className="w-full ps-10 pe-24 py-3 rounded-xl glass-input text-sm text-[var(--text-main)] placeholder:opacity-60 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium"
+            className="w-full ps-10 pe-24 py-3 rounded-2xl glass-input text-sm font-bold placeholder:opacity-60"
           />
           {searchQuery && (
             <button
@@ -593,7 +593,7 @@ export const LexiconGrid = () => {
                 setSearchQuery('');
                 setCurrentPage(1);
               }}
-              className="absolute inset-y-0 right-3 flex items-center px-2 text-xs font-semibold text-slate-400 hover:text-white"
+              className="absolute inset-y-0 right-3 flex items-center px-2 text-xs font-black opacity-70 hover:opacity-100"
             >
               Clear
             </button>
@@ -603,11 +603,11 @@ export const LexiconGrid = () => {
         {/* CEFR Level Filter Buttons */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">CEFR Level Filter</span>
+            <span className="text-xs font-black uppercase tracking-wider opacity-75">CEFR Level Filter</span>
             {(selectedCefr !== 'ALL' || selectedLetter !== 'ALL' || searchQuery) && (
               <button
                 onClick={clearFilters}
-                className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+                className="text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
               >
                 Reset All Filters
               </button>
@@ -620,10 +620,10 @@ export const LexiconGrid = () => {
                 <button
                   key={cefr}
                   onClick={() => handleCefrSelect(cefr)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${
                     isActive
-                      ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.35)] scale-105'
-                      : 'bg-slate-900/60 text-slate-300 border-slate-800 hover:border-cyan-500/40 hover:text-white'
+                      ? 'theme-btn-primary shadow-md scale-105'
+                      : 'theme-btn-secondary opacity-75 hover:opacity-100'
                   }`}
                 >
                   {cefr === 'ALL' ? 'ALL LEVELS' : cefr}
@@ -633,20 +633,20 @@ export const LexiconGrid = () => {
           </div>
         </div>
 
-        {/* A-Z Letter Filter Bar */}
+        {/* A-Z Letter Filter Bar (Smooth Touch Scrollable Strip) */}
         <div className="space-y-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">A-Z Alphabet Filter</span>
-          <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-1 scrollbar-thin">
+          <span className="text-xs font-black uppercase tracking-wider opacity-75">A-Z Alphabet Filter</span>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
             {alphabet.map((letter) => {
               const isActive = selectedLetter === letter;
               return (
                 <button
                   key={letter}
                   onClick={() => handleLetterSelect(letter)}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-all border ${
+                  className={`min-w-[34px] h-[34px] sm:min-w-[36px] sm:h-[36px] px-1.5 flex items-center justify-center rounded-xl text-xs font-black transition-all border shrink-0 ${
                     isActive
-                      ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm'
-                      : 'bg-slate-900/60 text-slate-400 border-slate-800/80 hover:bg-slate-800 hover:text-cyan-300'
+                      ? 'theme-btn-primary shadow-sm scale-105'
+                      : 'theme-btn-secondary opacity-70 hover:opacity-100'
                   }`}
                 >
                   {letter}
@@ -718,20 +718,20 @@ export const LexiconGrid = () => {
 
       {/* Virtual Pagination Controls */}
       {totalPages > 1 && (
-        <div className="glass-panel p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="card-theme-target p-4 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
           <button
             onClick={() => setCurrentPage(1)}
             disabled={safeCurrentPage === 1}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900/80 text-slate-300 border border-slate-700/60 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 hover:text-white transition-all"
+            className="px-3.5 py-2 rounded-xl text-xs font-black theme-btn-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             « First
           </button>
 
-          <div className="flex items-center space-x-1.5 overflow-x-auto max-w-full">
+          <div className="flex items-center space-x-1.5 overflow-x-auto max-w-full no-scrollbar">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={safeCurrentPage === 1}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900/80 text-slate-300 border border-slate-700/60 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 hover:text-white transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-black theme-btn-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               ‹ Prev
             </button>
@@ -744,13 +744,13 @@ export const LexiconGrid = () => {
                 const showEllipsis = prev && p - prev > 1;
                 return (
                   <React.Fragment key={p}>
-                    {showEllipsis && <span className="px-1 text-slate-500 text-xs">...</span>}
+                    {showEllipsis && <span className="px-1 opacity-50 text-xs font-bold">...</span>}
                     <button
                       onClick={() => setCurrentPage(p)}
-                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border ${
+                      className={`w-8 h-8 rounded-xl text-xs font-black transition-all border ${
                         safeCurrentPage === p
-                          ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-sm'
-                          : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
+                          ? 'theme-btn-primary shadow-sm scale-105'
+                          : 'theme-btn-secondary opacity-75 hover:opacity-100'
                       }`}
                     >
                       {p}
@@ -762,7 +762,7 @@ export const LexiconGrid = () => {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={safeCurrentPage === totalPages}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900/80 text-slate-300 border border-slate-700/60 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 hover:text-white transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-black theme-btn-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               Next ›
             </button>
@@ -771,7 +771,7 @@ export const LexiconGrid = () => {
           <button
             onClick={() => setCurrentPage(totalPages)}
             disabled={safeCurrentPage === totalPages}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900/80 text-slate-300 border border-slate-700/60 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 hover:text-white transition-all"
+            className="px-3.5 py-2 rounded-xl text-xs font-black theme-btn-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             Last »
           </button>

@@ -226,23 +226,23 @@ export const SentenceTokenViewer = ({
           const isTooltipActive = activeTooltipWord && activeTooltipWord.index === currentWordIndex;
 
           let tokenStyle =
-            'text-slate-900 dark:text-white font-bold hover:bg-cyan-500/20 hover:text-cyan-600 dark:hover:text-cyan-200 rounded px-1.5 py-0.5 transition-all duration-150 border border-transparent';
+            'text-[var(--text-main)] font-bold hover:bg-cyan-500/20 hover:text-cyan-600 dark:hover:text-cyan-300 rounded px-1.5 py-0.5 transition-all duration-150 border border-transparent';
 
           if (breakdownMap && matchStatus !== undefined) {
             if (matchStatus === true) {
               tokenStyle =
-                'bg-emerald-500/20 text-emerald-950 dark:text-emerald-200 border border-emerald-500/50 rounded px-1.5 font-extrabold shadow-sm';
+                'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/50 rounded px-1.5 font-black shadow-sm';
             } else {
               tokenStyle =
-                'bg-rose-500/20 text-rose-950 dark:text-rose-200 border border-rose-500/50 rounded px-1.5 font-extrabold line-through decoration-rose-500 shadow-sm';
+                'bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/50 rounded px-1.5 font-black line-through decoration-rose-500 shadow-sm';
             }
           } else if (isTarget) {
             tokenStyle =
-              'bg-cyan-500 text-slate-950 dark:bg-cyan-400 dark:text-slate-950 border border-cyan-600 rounded px-2 py-0.5 font-black shadow-md hover:bg-cyan-400 ring-2 ring-cyan-400/80 text-base';
+              'theme-btn-primary rounded-xl px-2 py-0.5 font-black shadow-md scale-105 text-base';
           }
 
           if (isPlaying) {
-            tokenStyle += ' ring-2 ring-cyan-400 animate-pulse bg-cyan-500 text-slate-950 font-black';
+            tokenStyle += ' ring-2 ring-cyan-400 animate-pulse font-black';
           }
 
           return (
@@ -259,7 +259,7 @@ export const SentenceTokenViewer = ({
               >
                 <span>{token}</span>
                 {breakdownMap && matchStatus !== undefined && (
-                  <span className={`text-[10px] ml-0.5 font-bold ${matchStatus ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  <span className={`text-[10px] ml-0.5 font-bold ${matchStatus ? 'text-emerald-500' : 'text-rose-500'}`}>
                     {matchStatus ? '✓' : '✗'}
                   </span>
                 )}
@@ -269,7 +269,7 @@ export const SentenceTokenViewer = ({
               {isTooltipActive && arabicTranslation && (
                 <span
                   dir="rtl"
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap font-arabic text-[11px] text-amber-300 font-extrabold bg-slate-900 border border-amber-500/60 px-2 py-0.5 rounded-lg shadow-xl z-30 animate-in fade-in"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap font-arabic text-[11px] text-amber-700 dark:text-amber-300 font-black card-theme-target border border-amber-500/60 px-2.5 py-1 rounded-xl shadow-2xl z-30 animate-in fade-in"
                 >
                   {arabicTranslation}
                 </span>
@@ -281,13 +281,13 @@ export const SentenceTokenViewer = ({
 
       {/* Active Selected Word Translation Popover Card */}
       {activeTooltipWord && (
-        <div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-center justify-between gap-2 text-xs font-bold text-amber-300 font-arabic dir-rtl">
+        <div className="p-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 flex items-center justify-between gap-2 text-xs font-black text-amber-700 dark:text-amber-300 font-arabic dir-rtl">
           <span>
-            ترجمة الكلمة: <strong dir="ltr" className="ltr-isolate text-white font-sans mx-1">({activeTooltipWord.word})</strong> = {activeTooltipWord.translation}
+            ترجمة الكلمة: <strong dir="ltr" className="ltr-isolate font-bold mx-1">({activeTooltipWord.word})</strong> = {activeTooltipWord.translation}
           </span>
           <button
             onClick={() => setActiveTooltipWord(null)}
-            className="text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-black/20"
+            className="text-[11px] opacity-70 hover:opacity-100 px-2 py-0.5 rounded-lg border theme-btn-secondary"
           >
             ✕ إغلاق
           </button>

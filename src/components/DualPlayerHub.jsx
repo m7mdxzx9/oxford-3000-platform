@@ -59,7 +59,7 @@ export default function DualPlayerHub() {
   // Active Sub-Tab: 'dialogue' | 'chain' | 'quiz' | 'leaderboard'
   const [subTab, setSubTab] = useState('dialogue');
 
-  // Hardcoded Accounts
+  // Hardcoded Accounts & Flexible Login
   const ACCOUNTS = {
     محمد: 'm7mdxzx9',
     ريوف: 'fahd1399',
@@ -70,14 +70,15 @@ export default function DualPlayerHub() {
     setLoginError('');
 
     const trimmedUser = loginUsername.trim();
-    const expectedPass = ACCOUNTS[trimmedUser];
-
-    if (!expectedPass) {
-      setLoginError('اسم المستخدم غير صحيح. (اختر محمد أو ريوف)');
+    if (!trimmedUser) {
+      setLoginError('يرجى إدخال اسم المستخدم.');
       return;
     }
 
-    if (loginPassword !== expectedPass) {
+    const expectedPass = ACCOUNTS[trimmedUser];
+
+    // If it's one of the preset accounts and password was entered, check it. If empty or custom user, allow flexible entry!
+    if (expectedPass && loginPassword && loginPassword !== expectedPass) {
       setLoginError('كلمة المرور غير صحيحة!');
       return;
     }

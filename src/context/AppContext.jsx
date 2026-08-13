@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { translations } from '../data/translations';
 import { DEFAULT_GEMINI_KEY } from '../services/geminiService';
 import { VOICE_PRESETS } from '../services/audioService';
+import { playTabSwitchSound, playSuccessChime } from '../services/soundEffects';
 
 const AppContext = createContext(null);
 
@@ -14,6 +15,8 @@ const STORAGE_KEYS = {
   VOICE_PRESET: 'oxford3000_voice_preset',
   THEME: 'oxford3000_theme',
   MODE: 'oxford3000_mode',
+  XP: 'oxford3000_xp',
+  STREAK: 'oxford3000_streak',
 };
 
 const loadFromStorage = (key, fallback) => {
@@ -38,7 +41,32 @@ export const THEMES = [
 ];
 
 export const AppProvider = ({ children }) => {
-  const [activeTab, setActiveTab] = useState('grid');
+  const [activeTab, setActiveTabState] = useState('grid');
+  const [xp, setXp] = useState(() => loadFromStorage(STORAGE_KEYS.XP, 120));
+  const [dailyStreak, setDailyStreak] = useState(() => loadFromStorage(STORAGE_KEYS.STREAK, 1));
+  const [lastXpBurst, setLastXpBurst] = useState(null);
+
+  const setActiveTab = useCallback((newTab) => {
+    setActiveTabState((current) => {
+      if (current !== newTab) {
+        playTabSwitchSound();
+      }
+      return newTab;
+    });
+  }, []);
+
+  const addXp = useCallback((amount, reason) => {
+    setXp((prev) => {
+      const next = prev + amount;
+      saveToStorage(STORAGE_KEYS.XP, next);
+      playSuccessChime();
+      setLastXpBurst({ amount, reason, id: Date.now() });
+      if (reason) {
+        addNotification(`+${amount} XP: ${reason} 🌟`, 'success', 2500);
+      }
+      return next;
+    });
+  }, [addNotification]);
 
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('uqu_theme') || localStorage.getItem(STORAGE_KEYS.THEME);
@@ -172,6 +200,13 @@ export const AppProvider = ({ children }) => {
     addNotification(`Added custom word: "${wordObj.word}"`, 'success');
   }, [addNotification]);
 
+  const level = Math.floor(xp / 100) + 1;
+
+  const clearSelectedWords = useCallback(() => {
+    setSelectedWords([]);
+    addNotification('Cleared selected words', 'info', 2000);
+  }, [addNotification]);
+
   const toggleSelectWord = useCallback((wordObj) => {
     setSelectedWords((prev) => {
       const exists = prev.some((w) => w.word === wordObj.word);
@@ -206,17 +241,26 @@ export const AppProvider = ({ children }) => {
     audioSpeed,
     setAudioSpeed,
     favorites,
+    favoritesCount: favorites.length,
     toggleFavorite,
     isFavorite,
     mastered,
+    masteredCount: mastered.length,
     toggleMastered,
     isMastered,
     customWords,
     addCustomWord,
     selectedWords,
     toggleSelectWord,
+    clearSelectedWords,
     isSelectedWord,
     selectedWordsCount: selectedWords.length,
+    xp,
+    addXp,
+    lastXpBurst,
+    setLastXpBurst,
+    level,
+    dailyStreak,
     apiKey,
     setApiKey,
     isApiKeyModalOpen,

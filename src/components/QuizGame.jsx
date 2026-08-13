@@ -253,13 +253,13 @@ export default function QuizGame() {
 
         {/* Score & Streak Counters */}
         <div className="flex items-center gap-2">
-          <div className="text-center px-3 py-2 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-            <span className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider block">{t('score')}</span>
+          <div className="text-center px-3.5 py-2 card-theme-target rounded-2xl border shadow-sm">
+            <span className="text-[9px] opacity-75 font-black uppercase tracking-wider block">{t('score')}</span>
             <span className="text-lg font-black text-cyan-600 dark:text-cyan-400">{score}</span>
           </div>
 
-          <div className="text-center px-3 py-2 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center">
-            <span className="text-[9px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider flex items-center gap-1">
+          <div className="text-center px-3.5 py-2 card-theme-target rounded-2xl border shadow-sm flex flex-col items-center">
+            <span className="text-[9px] opacity-75 font-black uppercase tracking-wider flex items-center gap-1">
               <Flame className="w-3 h-3 text-orange-500" /> {t('streak')}
             </span>
             <span className="text-lg font-black text-orange-500">{streak}</span>
@@ -268,19 +268,19 @@ export default function QuizGame() {
       </div>
 
       {!quizFinished && currentItem ? (
-        <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 bg-[var(--bg-card)] text-[var(--text-main)] shadow-xl">
+        <div className="card-theme-target p-6 sm:p-8 rounded-3xl border space-y-6 shadow-xl">
           {/* Top Progress & Timer Bar */}
-          <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300 font-black">
+          <div className="flex items-center justify-between text-xs font-black">
             <span>سؤال {questionIndex + 1} من {quizItems.length}</span>
             {timeLimit > 0 && (
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-950 dark:text-amber-300 border border-amber-500/40 font-black">
-                <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> {timeLeft} ثانية متبقية
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 font-black">
+                <Clock className="w-3.5 h-3.5 text-amber-500" /> {timeLeft} ثانية متبقية
               </div>
             )}
             <span>CEFR Level: {currentItem.wordObj.cefr}</span>
           </div>
 
-          <div className="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-2.5 overflow-hidden">
+          <div className="w-full bg-black/10 rounded-full h-2.5 overflow-hidden">
             <div
               className="bg-cyan-500 h-2.5 rounded-full transition-all duration-300"
               style={{ width: `${((questionIndex + 1) / quizItems.length) * 100}%` }}
@@ -288,24 +288,24 @@ export default function QuizGame() {
           </div>
 
           {/* Question Card Hero Box */}
-          <div className="p-8 rounded-3xl bg-slate-950 text-white border border-slate-800 text-center space-y-3 shadow-2xl">
-            <span className="text-xs text-slate-400 uppercase tracking-widest font-black block">
+          <div className="p-7 sm:p-9 rounded-3xl border bg-black/5 text-center space-y-3 shadow-md">
+            <span className="text-xs uppercase tracking-widest font-black block opacity-75">
               {t('selectArabic')}
             </span>
 
             <div className="flex items-center justify-center gap-3">
-              <h3 className="text-4xl sm:text-5xl font-black text-white tracking-tight ltr-token">
+              <h3 className="text-3xl sm:text-5xl font-black tracking-tight ltr-token">
                 {currentItem.wordObj.word}
               </h3>
               <button
                 onClick={() => playAudio(currentItem.wordObj.word, { presetId: voicePreset })}
-                className="p-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl transition-all shadow-md active:scale-90"
+                className="p-2.5 theme-btn-primary rounded-2xl transition-all shadow-md active:scale-90"
               >
                 <Volume2 className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-cyan-300 font-mono text-sm ltr-token font-black">
+            <p className="font-mono text-sm ltr-token font-black opacity-80 text-cyan-600 dark:text-cyan-400">
               /{currentItem.wordObj.ipa}/ ({currentItem.wordObj.pos})
             </p>
           </div>

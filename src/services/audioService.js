@@ -301,3 +301,15 @@ export const stopAudio = () => {
     currentResolve = null;
   }
 };
+
+export const isAudioPlaying = () => isPlaying;
+
+export default {
+  playAudio,
+  stopAudio,
+  buildGoogleTtsUrl,
+  buildYoudaoTtsUrl,
+  getAvailableVoices,
+  isAudioPlaying,
+  VOICE_PRESETS,
+};

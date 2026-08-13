@@ -3,7 +3,7 @@
  * Powered by Groq Whisper AI Speech-to-Text (whisper-large-v3-turbo), MediaRecorder API, and Web Speech Fallback.
  */
 
-import { DEFAULT_GROQ_KEY } from './geminiService';
+import { DEFAULT_GROQ_KEY } from './geminiService.js';
 
 let activeMediaRecorder = null;
 let activeAudioChunks = [];
@@ -312,4 +312,14 @@ export const recordAndEvaluateSpeech = (targetText, onEvaluationComplete, onErro
     },
     (interim) => {}
   );
+};
+
+export default {
+  isSpeechRecognitionSupported,
+  tokenizeText,
+  evaluateSpeech,
+  startListening,
+  stopListening,
+  recordAndEvaluateSpeech,
+  isListening: () => Boolean(activeMediaRecorder || activeWebSpeechInstance),
 };

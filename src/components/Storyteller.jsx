@@ -211,19 +211,19 @@ export default function Storyteller() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-16">
       {/* Hero Header */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-purple-950/30 to-slate-950 relative overflow-hidden shadow-2xl">
+      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border shadow-xl">
         <div className="flex items-center gap-3.5 mb-2">
-          <div className="p-3.5 theme-btn-primary rounded-2xl shadow-xl">
-            <Book className="w-7 h-7 text-amber-300" />
+          <div className="p-3.5 theme-btn-primary rounded-2xl shadow-md">
+            <Book className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2">
               <span>{t('storyTitle')}</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
+              <span className="text-xs px-2.5 py-0.5 rounded-full theme-btn-primary font-mono font-bold">
                 eBook Reader
               </span>
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 font-arabic">
+            <p className="text-xs sm:text-sm opacity-80 mt-1 font-arabic">
               استوديو الروايات التفاعلية الطويلة بالذكاء الاصطناعي مع وضع القراءة الورقي الهادئ واختبارات المفردات
             </p>
           </div>
@@ -231,7 +231,7 @@ export default function Storyteller() {
       </div>
 
       {/* Generator Controls */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 bg-[var(--bg-card)] space-y-5 shadow-xl">
+      <div className="card-theme-target p-6 rounded-3xl border space-y-5 shadow-xl">
         {/* Selected Words Bar */}
         <div>
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -243,13 +243,13 @@ export default function Storyteller() {
                 onClick={handlePickRandomWords}
                 className="text-xs theme-btn-secondary px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold transition-all active:scale-95"
               >
-                <Dice5 className="w-3.5 h-3.5 text-cyan-400" />
+                <Dice5 className="w-3.5 h-3.5 text-cyan-500" />
                 <span>اختر 5 كلمات عشوائية</span>
               </button>
               {selectedWords.length > 0 && (
                 <button
                   onClick={clearSelectedWords}
-                  className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-bold"
+                  className="text-xs text-rose-500 hover:text-rose-600 flex items-center gap-1 font-bold"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> {t('clearAll')}
                 </button>
@@ -266,13 +266,13 @@ export default function Storyteller() {
                     key={idx}
                     className="px-3 py-1.5 rounded-xl theme-btn-primary text-xs font-black flex items-center gap-1.5 shadow-sm"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-300" /> {term}
+                    <Sparkles className="w-3.5 h-3.5" /> {term}
                   </span>
                 );
               })}
             </div>
           ) : (
-            <div className="p-3.5 rounded-2xl border border-slate-800 bg-slate-950/40 text-xs italic opacity-80 flex items-center justify-between gap-2">
+            <div className="p-3.5 rounded-2xl border bg-black/5 text-xs italic opacity-80 flex items-center justify-between gap-2 font-bold">
               <span>اختر كلمات من الكتالوج أو أنقر على "اختر 5 كلمات عشوائية" لتوليد روايتك!</span>
             </div>
           )}
