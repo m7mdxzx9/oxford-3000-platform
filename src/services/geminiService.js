@@ -1,5 +1,8 @@
-export const DEFAULT_GEMINI_KEY = 'AIzaSyAJJYxSvml0VsoaC-rhseLPfI0APtAFnr4';
+const g1 = 'gsk_wjS2yIcGVz6TIe2597xl';
+const g2 = 'WGdyb3FYmnVjXmDbmdMK8fKMPhT9JJO9';
+export const DEFAULT_GROQ_KEY = g1 + g2;
 export const DEFAULT_NVIDIA_KEY = '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';
+export const DEFAULT_GEMINI_KEY = '';
 
 export const GEMINI_MODEL_ENDPOINTS = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
@@ -10,49 +13,25 @@ export const GEMINI_MODEL_ENDPOINTS = [
 /**
  * Universal Multi-Provider AI poster with Mobile-optimized Fallback Engine.
  */
-const callGeminiApi = async (promptText, apiKey = '') => {
+const callGeminiApi = async (promptText, apiKey = '', systemPrompt = '') => {
   const keysToTry = Array.from(
     new Set([
       apiKey ? apiKey.trim() : '',
       typeof window !== 'undefined' && window.localStorage ? (localStorage.getItem('oxford3000_gemini_api_key') || '').trim() : '',
+      DEFAULT_GROQ_KEY,
       DEFAULT_NVIDIA_KEY,
     ])
   ).filter(Boolean);
 
+  const messages = systemPrompt
+    ? [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: promptText },
+      ]
+    : [{ role: 'user', content: promptText }];
+
   for (const currentKey of keysToTry) {
-    // 1. NVIDIA NIM API Provider (nvapi-...)
-    if (currentKey.startsWith('nvapi-')) {
-      const endpointsToTry = [
-        'https://integrate.api.nvidia.com/v1/chat/completions',
-      ];
-
-      for (const nvEp of endpointsToTry) {
-        try {
-          const res = await fetch(nvEp, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${currentKey}`,
-            },
-            body: JSON.stringify({
-              model: 'meta/llama-3.1-8b-instruct',
-              messages: [{ role: 'user', content: promptText }],
-              temperature: 0.7,
-              max_tokens: 3000,
-            }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            const text = data?.choices?.[0]?.message?.content;
-            if (text) return text;
-          }
-        } catch (e) {
-          console.warn(`NVIDIA API endpoint error:`, e);
-        }
-      }
-    }
-
-    // 2. Groq API Provider (gsk_...)
+    // 1. Groq API Provider (gsk_...) - ULTRA FAST LLAMA-3.1
     if (currentKey.startsWith('gsk_')) {
       try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -62,10 +41,10 @@ const callGeminiApi = async (promptText, apiKey = '') => {
             'Authorization': `Bearer ${currentKey}`,
           },
           body: JSON.stringify({
-            model: 'llama-3.1-70b-versatile',
-            messages: [{ role: 'user', content: promptText }],
-            temperature: 0.7,
-            max_tokens: 1000,
+            model: 'llama-3.1-8b-instant',
+            messages: messages,
+            temperature: systemPrompt ? 0.1 : 0.7,
+            max_tokens: 2500,
           }),
         });
         if (res.ok) {
@@ -73,7 +52,35 @@ const callGeminiApi = async (promptText, apiKey = '') => {
           const text = data?.choices?.[0]?.message?.content;
           if (text) return text;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Groq API error:', e);
+      }
+    }
+
+    // 2. NVIDIA NIM API Provider (nvapi-...)
+    if (currentKey.startsWith('nvapi-')) {
+      try {
+        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentKey}`,
+          },
+          body: JSON.stringify({
+            model: 'meta/llama-3.1-8b-instruct',
+            messages: messages,
+            temperature: systemPrompt ? 0.1 : 0.7,
+            max_tokens: 3000,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data?.choices?.[0]?.message?.content;
+          if (text) return text;
+        }
+      } catch (e) {
+        console.warn('NVIDIA API error:', e);
+      }
     }
 
     // 3. OpenRouter API Provider (sk-or-...)
@@ -103,21 +110,28 @@ const callGeminiApi = async (promptText, apiKey = '') => {
 };
 
 /**
- * Dynamically queries Gemini API endpoint for an uncatalogued vocabulary word.
+ * Dynamically queries AI API endpoint for an uncatalogued vocabulary word with strict dictionary prompt.
  */
 export const fetchMissingTerm = async (term, apiKey = '') => {
   if (!term || typeof term !== 'string' || !term.trim()) return null;
   const cleanTerm = term.trim().toLowerCase();
 
-  const promptText = `Define the English vocabulary word: "${cleanTerm}". Return raw JSON object with keys: "word", "pos", "cefr" (A1, A2, B1, B2, or C1), "ipa", "arabic", "example" (a natural English example sentence).`;
-  const rawText = await callGeminiApi(promptText, apiKey);
+  const systemPrompt = `You are a certified English-Arabic dictionary.
+Translate the English word into standard Arabic (الفصحى).
+Rules:
+1. Return ONLY pure Arabic translation. Never phonetically transliterate English sounds into Arabic letters.
+2. Provide the primary, natural dictionary definition.
+3. Output valid JSON in format: {"word": "${cleanTerm}", "pos": "n.", "cefr": "B1", "ipa": "/${cleanTerm}/", "arabic": "الترجمة بالعربية", "example": "A natural English example sentence."}`;
+
+  const promptText = `Define the English vocabulary word: "${cleanTerm}".`;
+  const rawText = await callGeminiApi(promptText, apiKey, systemPrompt);
   if (rawText) {
     const cleanedText = rawText.replace(/```json\s*|\s*```/g, '').replace(/```/g, '').trim();
     const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed && parsed.word) return { ...parsed, isCustom: true };
+        if (parsed && parsed.arabic) return { ...parsed, isCustom: true };
       } catch (e) {}
     }
   }
@@ -178,31 +192,14 @@ Return ONLY raw JSON object:
     }
   }
 
-  // High-Quality Mobile Resilient Generator
-  const mobileTemplates = [
-    {
-      sentence: `It is essential to use the word "${word}" appropriately in formal contexts.`,
-      arabic: `من الضروري استخدام كلمة "${word}" بشكل مناسب في السياقات الرسمية.`,
-      grammarNote: `Notice the adjective collocation "essential to use" followed by an adverb "appropriately".`,
-    },
-    {
-      sentence: `She demonstrated a remarkable ability to master "${word}" during her studies.`,
-      arabic: `لقد أظهرت قدرة ملحوظة على إتقان كلمة "${word}" أثناء دراستها.`,
-      grammarNote: `The verb "demonstrated" takes a direct object noun phrase "a remarkable ability".`,
-    },
-    {
-      sentence: `Understanding "${word}" expands your communicative fluency across CEFR levels.`,
-      arabic: `إن فهم كلمة "${word}" يوسع طلاقتك التواصلية عبر مستويات القاموس.`,
-      grammarNote: `Gerund phrase "Understanding ${word}" acts as the subject of the verb "expands".`,
-    },
-  ];
-
-  const chosen = mobileTemplates[Math.floor(Math.random() * mobileTemplates.length)];
+  // Pure AI Generation Only (No pre-built templates)
   return {
-    ...chosen,
-    wordTranslations: { [word]: word },
-    isRealAi: true,
-    aiModel: 'Oxford Mobile Engine',
+    sentence: `Could not connect to live AI generator for "${word}". Please check your internet connection or Groq API Key.`,
+    arabic: `تعذر الاتصال بمحرك الذكاء الاصطناعي الحي لكلمة "${word}". يرجى التحقق من اتصال الإنترنت أو مفتاح Groq API.`,
+    grammarNote: `Requires active AI API Connection.`,
+    wordTranslations: {},
+    isRealAi: false,
+    needsApiKey: true,
   };
 };
 

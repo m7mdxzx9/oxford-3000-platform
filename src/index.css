@@ -13,6 +13,10 @@
    1. NEO-BRUTALISM LIGHT & DARK (data-theme="brutalism")
    Mobile-scaled hard offset shadows (4px mobile vs 6px desktop)
    --------------------------------------------------------- */
+/* ---------------------------------------------------------
+   1. NEO-BRUTALISM LIGHT & DARK (data-theme="brutalism")
+   Original Neo-Brutalist Palette with Ultra-Readable Contrast
+   --------------------------------------------------------- */
 :root,
 [data-theme="brutalism"][data-mode="light"] {
   --bg-page: #FEF08A;
@@ -21,7 +25,7 @@
   --bg-accent: #FF0055;
   --bg-accent-hover: #E6004C;
   --text-main: #000000;
-  --text-muted: #333333;
+  --text-muted: #1E293B;
   --text-accent: #FFFFFF;
   --border-card: 3px solid #000000;
   --border-input: 2.5px solid #000000;
@@ -40,7 +44,7 @@
   --bg-accent: #FF0055;
   --bg-accent-hover: #E6004C;
   --text-main: #FFFFFF;
-  --text-muted: #A1A1AA;
+  --text-muted: #E2E8F0;
   --text-accent: #FFFFFF;
   --border-card: 3px solid #00F0FF;
   --border-input: 2.5px solid #00F0FF;
@@ -74,8 +78,8 @@
   --bg-surface: #EADBC8;
   --bg-accent: #D96B43;
   --bg-accent-hover: #C25A34;
-  --text-main: #2C221E;
-  --text-muted: #6B584C;
+  --text-main: #1C120C;
+  --text-muted: #4A3728;
   --text-accent: #FFFFFF;
   --border-card: 1px solid #E6DCCF;
   --border-input: 1px solid #D8C8B8;
@@ -93,8 +97,8 @@
   --bg-surface: #3D322B;
   --bg-accent: #D96B43;
   --bg-accent-hover: #C25A34;
-  --text-main: #F2E8E1;
-  --text-muted: #B8A89C;
+  --text-main: #FFF8F2;
+  --text-muted: #E0D3C7;
   --text-accent: #FFFFFF;
   --border-card: 1px solid #3D322B;
   --border-input: 1px solid #4E4037;
@@ -124,7 +128,7 @@
   --bg-accent: #DC2626;
   --bg-accent-hover: #B91C1C;
   --text-main: #000000;
-  --text-muted: #52525B;
+  --text-muted: #3F3F46;
   --text-accent: #FFFFFF;
   --border-card: 1px solid #E4E4E7;
   --border-input: 1px solid #D4D4D8;
@@ -143,7 +147,7 @@
   --bg-accent: #DC2626;
   --bg-accent-hover: #EF4444;
   --text-main: #FFFFFF;
-  --text-muted: #A1A1AA;
+  --text-muted: #E4E4E7;
   --text-accent: #FFFFFF;
   --border-card: 1px solid #27272A;
   --border-input: 1px solid #3F3F46;

@@ -84,22 +84,20 @@ export default function Navbar() {
     <>
       <header className={`sticky top-0 z-40 w-full glass-panel border-b transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-1.5 overflow-hidden">
             {/* Brand Logo & Title */}
-            <div className="flex items-center gap-2 cursor-pointer group shrink-0" onClick={() => setActiveTab('grid')}>
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center font-bold text-sm sm:text-base theme-btn-secondary shrink-0">
+            <div className="flex items-center gap-1.5 cursor-pointer group shrink-0" onClick={() => setActiveTab('grid')}>
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center font-bold text-xs sm:text-base theme-btn-secondary shrink-0">
                 ⚡
               </div>
               <div className="shrink-0">
                 <h1 className="text-xs sm:text-base font-extrabold tracking-tight flex items-center gap-1">
-                  <span>Oxford 3000™</span>
-                  <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full border font-bold font-mono opacity-80">
+                  <span>Oxford</span>
+                  <span className="hidden xs:inline">3000™</span>
+                  <span className="text-[9px] sm:text-[10px] px-1 py-0.2 rounded-full border font-bold font-mono opacity-80">
                     PRO
                   </span>
                 </h1>
-                <p className="hidden xs:block text-[9px] sm:text-[10px] opacity-75 font-semibold">
-                  Multi-Theme CEFR Platform
-                </p>
               </div>
             </div>
 
@@ -127,15 +125,15 @@ export default function Navbar() {
             </nav>
 
             {/* Controls Bar */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 shrink min-w-0">
               {/* Dynamic Theme Switcher Pills - ALWAYS VISIBLE ON MOBILE & DESKTOP */}
-              <div className="flex items-center gap-1 p-1 rounded-xl border bg-[var(--bg-card)] shrink-0" title="اختر الهوية البصرية">
-                <Palette className="w-3.5 h-3.5 opacity-70 ml-0.5 shrink-0 text-amber-500" />
+              <div className="flex items-center gap-0.5 p-0.5 sm:p-1 rounded-xl border bg-[var(--bg-card)] shrink overflow-x-auto max-w-[130px] sm:max-w-none no-scrollbar" title="اختر الهوية البصرية">
+                <Palette className="w-3 h-3 opacity-70 ml-0.5 shrink-0 text-amber-500 hidden sm:block" />
                 {THEMES.map((th) => (
                   <button
                     key={th.id}
                     onClick={() => setTheme(th.id)}
-                    className={`flex items-center justify-center w-7 h-6 sm:w-auto sm:px-2 py-0.5 rounded-lg text-xs font-black transition-all ${
+                    className={`flex items-center justify-center w-6 h-6 sm:w-auto sm:px-2 py-0.5 rounded-lg text-[11px] sm:text-xs font-black transition-all shrink-0 ${
                       theme === th.id
                         ? 'theme-btn-primary shadow-sm scale-105'
                         : 'opacity-75 hover:opacity-100'

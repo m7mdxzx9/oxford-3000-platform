@@ -14,6 +14,7 @@ import IpaSyllableVisualizer from './IpaSyllableVisualizer';
 import AudioSpeedControl from './AudioSpeedControl';
 import EmptyState from './EmptyState';
 import { getWordExample } from '../utils/exampleSentenceService';
+import { normalizeArabicText } from '../utils/arabicTranslationDictionary';
 
 // CEFR Level Color Badge Mapping
 const CEFR_BADGES = {
@@ -444,11 +445,18 @@ export const LexiconGrid = () => {
   // Filtered dataset calculation
   const filteredWords = useMemo(() => {
     return fullDataset.filter((item) => {
-      // 1. Search Query Filter (English word or Arabic translation)
+      // 1. Search Query Filter (English word or Arabic translation with diacritics ignored)
       if (searchQuery.trim()) {
         const query = searchQuery.trim().toLowerCase();
+        const normQuery = normalizeArabicText(query);
         const matchesWord = item.word.toLowerCase().includes(query);
-        const matchesArabic = item.arabic && item.arabic.toLowerCase().includes(query);
+
+        const itemArabicNorm = item.arabic ? normalizeArabicText(item.arabic) : '';
+        const matchesArabic = item.arabic && (
+          item.arabic.toLowerCase().includes(query) ||
+          (normQuery && itemArabicNorm.includes(normQuery))
+        );
+
         if (!matchesWord && !matchesArabic) return false;
       }
 
@@ -536,25 +544,25 @@ export const LexiconGrid = () => {
           </div>
 
           {/* Actions Bar: Export Deck & Items Per Page */}
-          <div className="flex items-center space-x-3 space-x-reverse">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 w-full md:w-auto">
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl theme-btn-primary text-xs font-black transition-all shadow-sm hover:brightness-110 shrink-0"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl theme-btn-primary text-xs font-black transition-all shadow-sm hover:brightness-110 shrink-0"
               title="Export vocabulary deck to PDF, Anki, Markdown, or JSON"
             >
               <Download className="w-3.5 h-3.5" />
               <span>📥 تصدير الكلمات (Export)</span>
             </button>
 
-            <div className="flex items-center space-x-2 text-xs text-zinc-400">
-              <span>Show:</span>
+            <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-bold shrink-0">
+              <span className="opacity-80">Show:</span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="glass-input px-2.5 py-1.5 rounded-lg text-zinc-200 bg-zinc-900 border border-white/[0.08] focus:border-indigo-500"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-subtle)] focus:outline-none focus:ring-2 focus:ring-cyan-500/30 max-w-[130px] truncate"
               >
                 <option value={16}>16 per page</option>
                 <option value={20}>20 per page</option>
@@ -566,8 +574,8 @@ export const LexiconGrid = () => {
         </div>
 
         {/* Interactive Search Bar & Clear Action */}
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+        <div className="relative w-full">
+          <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-zinc-400">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -577,7 +585,7 @@ export const LexiconGrid = () => {
             value={searchQuery}
             onChange={handleSearchChange}
             placeholder="Search word in English or translation in Arabic..."
-            className="w-full pl-10 pr-24 py-3 rounded-xl glass-input text-sm text-zinc-100 placeholder-zinc-500 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            className="w-full ps-10 pe-24 py-3 rounded-xl glass-input text-sm text-[var(--text-main)] placeholder:opacity-60 focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all font-medium"
           />
           {searchQuery && (
             <button

@@ -42,16 +42,16 @@ export const IpaSyllableVisualizer = ({ ipa = '' }) => {
 
   return (
     <div dir="ltr" className="ltr-isolate inline-flex items-center gap-1 font-mono text-xs my-1 select-none">
-      <span className="opacity-50 text-[11px]">/</span>
+      <span className="text-slate-900 dark:text-slate-200 font-black text-[13px]">/</span>
       {syllables.map((syl, idx) => {
         if (syl.isPrimary) {
           return (
             <span
               key={idx}
-              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 font-extrabold shadow-[0_0_8px_rgba(6,182,212,0.25)] tracking-wider"
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-cyan-500 text-slate-950 dark:bg-cyan-400 dark:text-slate-950 border border-cyan-600 font-black shadow-sm tracking-wider"
               title="Primary Stress (ˈ)"
             >
-              <span className="text-cyan-400 font-black text-[13px]">ˈ</span>
+              <span className="text-slate-950 font-black text-[13px]">ˈ</span>
               <span>{syl.text}</span>
             </span>
           );
@@ -61,22 +61,22 @@ export const IpaSyllableVisualizer = ({ ipa = '' }) => {
           return (
             <span
               key={idx}
-              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/40 font-bold tracking-wide"
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500 text-slate-950 dark:bg-amber-400 dark:text-slate-950 border border-amber-600 font-extrabold tracking-wide"
               title="Secondary Stress (ˌ)"
             >
-              <span className="text-amber-400 font-black text-[13px]">ˌ</span>
+              <span className="text-slate-950 font-black text-[13px]">ˌ</span>
               <span>{syl.text}</span>
             </span>
           );
         }
 
         return (
-          <span key={idx} className="opacity-75 px-0.5 text-slate-300 font-medium">
+          <span key={idx} className="px-0.5 text-slate-900 dark:text-slate-100 font-black">
             {syl.text}
           </span>
         );
       })}
-      <span className="opacity-50 text-[11px]">/</span>
+      <span className="text-slate-900 dark:text-slate-200 font-black text-[13px]">/</span>
     </div>
   );
 };

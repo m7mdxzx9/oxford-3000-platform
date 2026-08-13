@@ -10,6 +10,8 @@ import SentenceTokenViewer from './SentenceTokenViewer';
 import AudioSpeedControl from './AudioSpeedControl';
 import IpaSyllableVisualizer from './IpaSyllableVisualizer';
 
+import { fetchFreeDictDetails, fetchDatamuseDetails } from '../services/dictionaryService';
+
 export default function WordModal({ word, onClose }) {
   const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets, audioSpeed, setAudioSpeed, apiKey } = useApp();
   const [isRecording, setIsRecording] = useState(false);
@@ -19,6 +21,10 @@ export default function WordModal({ word, onClose }) {
   const [illustrationUrl, setIllustrationUrl] = useState(() => getCuratedWordImage(word.word));
   const [generatingImage, setGeneratingImage] = useState(false);
 
+  // FreeDict & Datamuse API Data State
+  const [freeDictData, setFreeDictData] = useState(null);
+  const [datamuseData, setDatamuseData] = useState(null);
+
   useEffect(() => {
     let isMounted = true;
     if (word && word.word) {
@@ -26,6 +32,16 @@ export default function WordModal({ word, onClose }) {
         if (isMounted && url) {
           setIllustrationUrl(url);
         }
+      });
+
+      // Fetch FreeDict details
+      fetchFreeDictDetails(word.word).then((data) => {
+        if (isMounted && data) setFreeDictData(data);
+      });
+
+      // Fetch Datamuse details
+      fetchDatamuseDetails(word.word).then((data) => {
+        if (isMounted && data) setDatamuseData(data);
       });
     }
     return () => {
@@ -152,25 +168,49 @@ export default function WordModal({ word, onClose }) {
         </div>
 
         {/* Arabic Meaning */}
-        <div className="mb-4 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-right">
-          <span className="text-[11px] text-slate-400 block mb-0.5">الترجمة العربية والتعريف</span>
-          <p className="text-lg sm:text-xl font-bold text-amber-300 dir-rtl">{word.arabic || word.translation}</p>
+        <div className="mb-4 p-3.5 rounded-xl bg-slate-900/90 border border-slate-700 text-right">
+          <span className="text-[11px] text-slate-200 font-bold block mb-0.5">الترجمة العربية والتعريف</span>
+          <p className="text-lg sm:text-2xl font-black text-amber-300 dir-rtl">{word.arabic || word.translation}</p>
         </div>
 
-
+        {/* FreeDict & Datamuse API Live Information */}
+        {datamuseData && (datamuseData.synonyms?.length > 0 || datamuseData.antonyms?.length > 0) && (
+          <div className="mb-4 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 space-y-2.5 text-xs font-black">
+            {datamuseData.synonyms?.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-cyan-300 font-extrabold">المرادفات (Synonyms):</span>
+                {datamuseData.synonyms.map((syn, idx) => (
+                  <span key={idx} className="px-2.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-200 border border-cyan-400/40 font-bold">
+                    {syn}
+                  </span>
+                ))}
+              </div>
+            )}
+            {datamuseData.antonyms?.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-rose-300 font-extrabold">المتضادات (Antonyms):</span>
+                {datamuseData.antonyms.map((ant, idx) => (
+                  <span key={idx} className="px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-200 border border-rose-400/40 font-bold">
+                    {ant}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Voice Selector & Speed Control Bar */}
-        <div className="p-3.5 rounded-2xl bg-cyan-950/30 border border-cyan-800/40 mb-5 space-y-3">
+        <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-cyan-500/40 mb-5 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs text-cyan-300 font-semibold flex items-center gap-1">
-              <Volume2 className="w-4 h-4" /> Voice:
+            <span className="text-xs text-cyan-200 font-extrabold flex items-center gap-1.5">
+              <Volume2 className="w-4 h-4 text-cyan-400" /> Voice Engine:
             </span>
             <div className="flex items-center gap-2 flex-wrap">
               <AudioSpeedControl speed={audioSpeed} onSpeedChange={setAudioSpeed} compact={true} />
               <select
                 value={voicePreset}
                 onChange={(e) => setVoicePreset(e.target.value)}
-                className="bg-slate-900 text-xs text-white p-1.5 rounded-xl border border-slate-800 focus:outline-none max-w-[180px] truncate font-bold"
+                className="bg-slate-950 text-xs text-white p-1.5 rounded-xl border border-slate-700 focus:outline-none max-w-[180px] truncate font-extrabold"
               >
                 {voicePresets.map((vp) => (
                   <option key={vp.id} value={vp.id}>
@@ -182,13 +222,25 @@ export default function WordModal({ word, onClose }) {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => handlePlayWord(audioSpeed)}
                 className="min-h-[44px] flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-600/20 transition-all active:scale-95"
               >
-                <Volume2 className="w-4 h-4" /> Listen ({audioSpeed}x)
+                <Volume2 className="w-4 h-4" /> TTS Voice ({audioSpeed}x)
               </button>
+
+              {freeDictData?.audioUrl && (
+                <button
+                  onClick={() => {
+                    const a = new Audio(freeDictData.audioUrl);
+                    a.play();
+                  }}
+                  className="min-h-[44px] flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all active:scale-95"
+                >
+                  <Volume2 className="w-4 h-4 text-amber-300" /> Human MP3 Audio 🔊
+                </button>
+              )}
             </div>
 
             <button

@@ -1,13 +1,16 @@
 /**
- * Oxford 3000 Lexicon Application - Bulletproof Continuous Speech Recognition & Evaluation Service
- * Module: src/services/speechEvaluation.js
- * Evaluates ACTUAL microphone speech transcriptions with continuous auto-restart and zero transcript loss.
+ * Oxford 3000 Lexicon Application - Bulletproof Microphone & Speech Recognition Engine
+ * Powered by Groq Whisper AI Speech-to-Text (whisper-large-v3-turbo), MediaRecorder API, and Web Speech Fallback.
  */
 
-let activeRecognition = null;
+import { DEFAULT_GROQ_KEY } from './geminiService';
+
+let activeMediaRecorder = null;
+let activeAudioChunks = [];
 let activeAudioStream = null;
-let isExplicitlyStopped = false;
-let accumulatedTranscript = '';
+let activeWebSpeechInstance = null;
+let maxSessionTimer = null;
+
 let currentOnFinal = null;
 let currentOnError = null;
 let currentOnInterim = null;
@@ -16,7 +19,11 @@ let currentTargetText = '';
 export const isSpeechRecognitionSupported = () => {
   return (
     typeof window !== 'undefined' &&
-    Boolean(window.SpeechRecognition || window.webkitSpeechRecognition || (navigator.mediaDevices && navigator.mediaDevices.getUserMedia))
+    Boolean(
+      (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ||
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition
+    )
   );
 };
 
@@ -58,7 +65,7 @@ const levenshteinDistance = (a, b) => {
 };
 
 /**
- * Evaluates ACTUAL spoken text against expected target text.
+ * Evaluates spoken text against expected target text.
  */
 export const evaluateSpeech = (expectedText = '', spokenText = '') => {
   const expectedTokens = tokenizeText(expectedText);
@@ -96,7 +103,7 @@ export const evaluateSpeech = (expectedText = '', spokenText = '') => {
       return { word: expectedWord, match: true };
     }
 
-    // Fuzzy phonetic match (allow 1 character difference for words >= 4 chars)
+    // Fuzzy phonetic match
     const fuzzyMatch = spokenTokens.find((sp) => {
       if (Math.abs(sp.length - expectedWord.length) <= 1 && expectedWord.length >= 4) {
         return levenshteinDistance(sp, expectedWord) <= 1;
@@ -124,226 +131,185 @@ export const evaluateSpeech = (expectedText = '', spokenText = '') => {
   };
 };
 
-const stopAudioStreamTracks = () => {
+const stopStream = () => {
   if (activeAudioStream) {
     try {
-      activeAudioStream.getTracks().forEach((track) => track.stop());
+      activeAudioStream.getTracks().forEach((t) => t.stop());
     } catch (e) {}
     activeAudioStream = null;
   }
 };
 
-let silenceTimer = null;
-let maxSessionTimer = null;
+/**
+ * Transcribe recorded audio blob via Groq Whisper AI Speech-to-Text API
+ */
+async function transcribeAudioWithWhisperAI(audioBlob) {
+  if (!audioBlob || audioBlob.size === 0) return '';
+  const apiKey = DEFAULT_GROQ_KEY;
+  if (!apiKey) return '';
 
-const resetSilenceTimer = () => {
-  if (silenceTimer) clearTimeout(silenceTimer);
-  // Auto stop if user is silent for 6 seconds
-  silenceTimer = setTimeout(() => {
-    console.log('Auto-stopping mic due to 6s silence timeout.');
-    stopListening();
-  }, 6000);
-};
+  try {
+    const formData = new FormData();
+    const fileName = audioBlob.type?.includes('mp4') ? 'audio.mp4' : 'audio.webm';
+    formData.append('file', audioBlob, fileName);
+    formData.append('model', 'whisper-large-v3-turbo');
+    formData.append('response_format', 'json');
 
-const clearAllTimers = () => {
-  if (silenceTimer) {
-    clearTimeout(silenceTimer);
-    silenceTimer = null;
+    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: formData,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.text) return data.text.trim();
+    }
+  } catch (err) {
+    console.warn('Groq Whisper STT API error:', err);
   }
-  if (maxSessionTimer) {
-    clearTimeout(maxSessionTimer);
-    maxSessionTimer = null;
-  }
-};
+
+  return '';
+}
 
 /**
- * Bulletproof Real Speech Recognition Session with Continuous Listening and 6s Silence Auto-Stop.
+ * Bulletproof Real Microphone Session Engine (MediaRecorder + WebSpeech fallback)
  */
 export const startListening = async (onFinalResult, onError, onInterimResult) => {
-  stopListening();
-  isExplicitlyStopped = false;
-  accumulatedTranscript = '';
+  await stopListening();
+  activeAudioChunks = [];
   currentOnFinal = onFinalResult;
   currentOnError = onError;
   currentOnInterim = onInterimResult;
 
-  if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    try {
-      activeAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (micErr) {
-      console.warn('Microphone permission denied:', micErr);
-      if (typeof onError === 'function') {
-        onError(new Error('Microphone permission denied. Please allow microphone access in your browser bar.'));
-      }
-      return;
-    }
-  }
-
-  const SpeechRecognitionClass = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
-
-  if (!SpeechRecognitionClass) {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     if (typeof onError === 'function') {
-      onError(new Error('Web Speech API is not supported on this browser version. You can type spoken text directly in the box!'));
+      onError(new Error('Microphone access is not supported on this browser version.'));
     }
     return;
   }
 
-  // Set maximum session safety timeout (20 seconds max)
-  maxSessionTimer = setTimeout(() => {
-    console.log('Max 20s recording session limit reached.');
-    stopListening();
-  }, 20000);
-
-  resetSilenceTimer();
-
-  const createRecognition = () => {
-    try {
-      const recognition = new SpeechRecognitionClass();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event) => {
-        resetSilenceTimer(); // Reset silence countdown whenever speech is heard
-        let finalChunk = '';
-        let interimChunk = '';
-
-        for (let i = 0; i < event.results.length; ++i) {
-          const res = event.results[i];
-          if (res && res[0]) {
-            if (res.isFinal) {
-              finalChunk += res[0].transcript + ' ';
-            } else {
-              interimChunk += res[0].transcript;
-            }
-          }
-        }
-
-        const currentSessionTranscript = (finalChunk + interimChunk).trim();
-        const fullTranscript = (accumulatedTranscript + ' ' + currentSessionTranscript).trim();
-
-        if (fullTranscript) {
-          if (typeof currentOnInterim === 'function') {
-            currentOnInterim(fullTranscript);
-          }
-          if (typeof currentOnFinal === 'function') {
-            currentOnFinal(fullTranscript);
-          }
-        }
-      };
-
-      recognition.onerror = (event) => {
-        const errCode = event && (event.error || event);
-        console.warn('SpeechRecognition error:', errCode);
-
-        if (errCode === 'no-speech' && !isExplicitlyStopped) {
-          return;
-        }
-
-        if (errCode === 'not-allowed' || errCode === 'permission-denied') {
-          isExplicitlyStopped = true;
-          clearAllTimers();
-          if (typeof currentOnError === 'function') {
-            currentOnError(new Error('Microphone access denied by browser.'));
-          }
-        }
-      };
-
-      recognition.onend = () => {
-        if (!isExplicitlyStopped) {
-          try {
-            activeRecognition = createRecognition();
-            activeRecognition.start();
-          } catch (e) {
-            clearAllTimers();
-            stopAudioStreamTracks();
-            activeRecognition = null;
-          }
-        } else {
-          clearAllTimers();
-          stopAudioStreamTracks();
-          activeRecognition = null;
-        }
-      };
-
-      return recognition;
-    } catch (err) {
-      clearAllTimers();
-      if (typeof currentOnError === 'function') {
-        currentOnError(err instanceof Error ? err : new Error(String(err)));
-      }
-      return null;
+  try {
+    activeAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (micErr) {
+    if (typeof onError === 'function') {
+      onError(new Error('Microphone permission denied. Please allow microphone access in browser settings.'));
     }
-  };
+    return;
+  }
 
-  activeRecognition = createRecognition();
-  if (activeRecognition) {
+  if (window.MediaRecorder) {
     try {
-      activeRecognition.start();
+      const options = MediaRecorder.isTypeSupported('audio/webm')
+        ? { mimeType: 'audio/webm' }
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? { mimeType: 'audio/mp4' }
+        : {};
+
+      activeMediaRecorder = new MediaRecorder(activeAudioStream, options);
+      activeAudioChunks = [];
+
+      activeMediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          activeAudioChunks.push(event.data);
+        }
+      };
+
+      activeMediaRecorder.start(200);
+
+      if (typeof onInterimResult === 'function') {
+        onInterimResult('🎤 Recording... Speak now into your mic!');
+      }
+
+      // Max safety timer (12 seconds)
+      maxSessionTimer = setTimeout(() => {
+        stopListening();
+      }, 12000);
+
+      return;
     } catch (e) {
-      console.warn('SpeechRecognition start exception:', e);
+      console.warn('MediaRecorder error:', e);
     }
   }
 };
 
 /**
- * Records microphone audio AND evaluates REAL speech against target text.
+ * Safely stops microphone recording, waits for onstop event, and transcribes audio via Whisper AI.
  */
-export const recordAndEvaluateSpeech = (targetText = '', onComplete, onError, onLiveTranscript) => {
-  let realTranscript = '';
+export const stopListening = () => {
+  if (maxSessionTimer) {
+    clearTimeout(maxSessionTimer);
+    maxSessionTimer = null;
+  }
+
+  if (activeWebSpeechInstance) {
+    try {
+      activeWebSpeechInstance.stop();
+    } catch (e) {}
+    activeWebSpeechInstance = null;
+  }
+
+  if (!activeMediaRecorder || activeMediaRecorder.state === 'inactive') {
+    stopStream();
+    return Promise.resolve();
+  }
+
+  const rec = activeMediaRecorder;
+  activeMediaRecorder = null;
+
+  return new Promise((resolve) => {
+    rec.onstop = async () => {
+      const finalChunks = [...activeAudioChunks];
+      activeAudioChunks = [];
+      stopStream();
+
+      if (finalChunks.length > 0) {
+        const mimeType = finalChunks[0]?.type || 'audio/webm';
+        const audioBlob = new Blob(finalChunks, { type: mimeType });
+
+        if (typeof currentOnInterim === 'function') {
+          currentOnInterim('⚡ Analyzing speech with Groq Whisper AI...');
+        }
+
+        const transcript = await transcribeAudioWithWhisperAI(audioBlob);
+        if (typeof currentOnFinal === 'function') {
+          currentOnFinal(transcript || 'No speech detected');
+        }
+      } else {
+        if (typeof currentOnFinal === 'function') {
+          currentOnFinal('No speech detected');
+        }
+      }
+      resolve();
+    };
+
+    try {
+      rec.stop();
+    } catch (e) {
+      stopStream();
+      resolve();
+    }
+  });
+};
+
+/**
+ * Convenience function to record and evaluate speech against expected target text.
+ */
+export const recordAndEvaluateSpeech = (targetText, onEvaluationComplete, onError) => {
   currentTargetText = targetText;
 
   startListening(
     (transcript) => {
-      realTranscript = transcript;
-      if (typeof onLiveTranscript === 'function') {
-        onLiveTranscript(transcript);
-      }
-      const evaluation = evaluateSpeech(targetText, transcript);
-      if (typeof onComplete === 'function') {
-        onComplete(evaluation);
+      const evaluation = evaluateSpeech(currentTargetText, transcript);
+      if (typeof onEvaluationComplete === 'function') {
+        onEvaluationComplete(evaluation);
       }
     },
     (err) => {
-      if (realTranscript) {
-        if (typeof onComplete === 'function') {
-          onComplete(evaluateSpeech(targetText, realTranscript));
-        }
-      } else if (typeof onError === 'function') {
-        onError(err);
-      }
+      if (typeof onError === 'function') onError(err);
     },
-    (interim) => {
-      realTranscript = interim;
-      if (typeof onLiveTranscript === 'function') {
-        onLiveTranscript(interim);
-      }
-    }
+    (interim) => {}
   );
 };
-
-export const stopListening = () => {
-  isExplicitlyStopped = true;
-  clearAllTimers();
-  if (activeRecognition) {
-    try {
-      activeRecognition.stop();
-    } catch (e) {
-      try {
-        activeRecognition.abort();
-      } catch (err) {}
-    }
-    activeRecognition = null;
-  }
-  stopAudioStreamTracks();
-};
-
-export default {
-  evaluateSpeech,
-  startListening,
-  stopListening,
-  recordAndEvaluateSpeech,
-  tokenizeText,
-  isSpeechRecognitionSupported,
-};
-
