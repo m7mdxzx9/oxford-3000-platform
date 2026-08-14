@@ -1,15 +1,33 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Layers, RotateCw, Volume2, Star, CheckCircle, ArrowLeft, ArrowRight, Shuffle, Sparkles, Trophy } from 'lucide-react';
+import { Layers, RotateCw, Volume2, Star, CheckCircle, ArrowLeft, ArrowRight, Shuffle, Sparkles, Trophy, Lightbulb, Clock } from 'lucide-react';
 import { OXFORD_3000 } from '../data/oxford3000';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
+import { analyzeSilentLetters } from '../utils/phoneticsUtils';
+import { getMnemonicForWord } from '../utils/mnemonicsData';
+import { SRS_RATINGS, formatSRSInterval } from '../utils/srsUtils';
+import LiveEqualizer from './LiveEqualizer';
 
 export default function Flashcards() {
-  const { isFavorite, toggleFavorite, isMastered, toggleMastered, customWords, t, voicePreset, addXp } = useApp();
+  const {
+    isFavorite,
+    toggleFavorite,
+    isMastered,
+    toggleMastered,
+    customWords,
+    t,
+    voicePreset,
+    audioSpeed,
+    rateWordSRS,
+    srsRecords,
+    addNotification,
+  } = useApp();
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const dataset = useMemo(() => {
     const combined = [...customWords, ...OXFORD_3000];
@@ -43,18 +61,30 @@ export default function Flashcards() {
     setCurrentIndex(randomIndex);
   };
 
-  const handlePlayTTS = (e, text) => {
+  const handlePlayTTS = async (e, text) => {
     if (e) e.stopPropagation();
-    playAudio(text, { presetId: voicePreset });
+    setIsPlaying(true);
+    await playAudio(text, { presetId: voicePreset, speed: audioSpeed });
+    setIsPlaying(false);
   };
 
   const handleToggleMastered = (e, wordTerm) => {
     if (e) e.stopPropagation();
-    const wasMastered = isMastered(wordTerm);
     toggleMastered(wordTerm);
-    if (!wasMastered && addXp) {
-      addXp(15, `إتقان كلمة "${wordTerm}"`);
-    }
+  };
+
+  const handleSRSRating = (e, rating) => {
+    if (e) e.stopPropagation();
+    if (!currentWord) return;
+    rateWordSRS(currentWord.word, rating);
+    const ratingLabels = {
+      [SRS_RATINGS.AGAIN]: 'إعادة المراجعة غداً 🔁',
+      [SRS_RATINGS.HARD]: 'صعبة (مراجعة بعد 3 أيام) ⏱️',
+      [SRS_RATINGS.GOOD]: 'جيدة (مراجعة بعد 6 أيام) 👍',
+      [SRS_RATINGS.EASY]: 'سهلة ومتقنة تماماً 🌟',
+    };
+    addNotification(`تم تحديث جدول التكرار المتباعد: ${ratingLabels[rating]}`, 'success');
+    handleNext();
   };
 
   // Keyboard navigation shortcuts listener
@@ -78,6 +108,9 @@ export default function Flashcards() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleNext, handlePrev]);
 
+  const wordSRS = currentWord ? srsRecords[currentWord.word] : null;
+  const mnemonic = currentWord ? getMnemonicForWord(currentWord.word, currentWord.arabic, currentWord.example) : null;
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Header */}
@@ -88,13 +121,15 @@ export default function Flashcards() {
           </div>
           <h2 className="text-2xl sm:text-3xl font-black">{t('flashcardsTitle')}</h2>
         </div>
-        <p className="text-xs sm:text-sm font-medium opacity-80 max-w-xl mx-auto">{t('flashcardsSubtitle')}</p>
+        <p className="text-xs sm:text-sm font-medium opacity-80 max-w-xl mx-auto font-arabic">
+          بطاقات استذكار ثلاثية الأبعاد مدعومة بخوارزمية التكرار المتباعد الفائقة (SuperMemo SM-2)
+        </p>
 
         {/* Keyboard shortcut hint pills */}
         <div className="flex items-center justify-center gap-3 mt-4 text-[11px] font-mono flex-wrap">
-          <span className="px-2.5 py-1 rounded-xl border theme-btn-secondary">← Left: Prev</span>
-          <span className="px-2.5 py-1 rounded-xl border theme-btn-primary">Space: Flip Card 🔄</span>
-          <span className="px-2.5 py-1 rounded-xl border theme-btn-secondary">Right: Next →</span>
+          <span className="px-2.5 py-1 rounded-xl border theme-btn-secondary">← Left: السابق</span>
+          <span className="px-2.5 py-1 rounded-xl border theme-btn-primary">Space: قلب البطاقة 🔄</span>
+          <span className="px-2.5 py-1 rounded-xl border theme-btn-secondary">Right: التالي →</span>
         </div>
       </div>
 
@@ -146,12 +181,12 @@ export default function Flashcards() {
         <div className="perspective-1000 my-8">
           <div
             onClick={() => setIsFlipped(!isFlipped)}
-            className={`w-full min-h-[350px] rounded-3xl cursor-pointer transition-transform duration-500 transform-style-3d relative shadow-2xl ${
+            className={`w-full min-h-[380px] rounded-3xl cursor-pointer transition-transform duration-500 transform-style-3d relative shadow-2xl ${
               isFlipped ? 'rotate-y-180' : ''
             }`}
           >
             {/* Front Card */}
-            <div className="absolute inset-0 backface-hidden card-theme-target rounded-3xl p-8 flex flex-col items-center justify-between text-center border-2 shadow-2xl">
+            <div className="absolute inset-0 backface-hidden card-theme-target rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-between text-center border-2 shadow-2xl">
               <div className="w-full flex items-center justify-between">
                 <span className="px-3 py-1 rounded-full text-xs font-black border theme-btn-primary">
                   CEFR {currentWord.cefr || 'B1'}
@@ -160,29 +195,40 @@ export default function Flashcards() {
               </div>
 
               <div className="my-auto space-y-3">
+                {/* Word with Silent Letters Highlight (Feature 23) */}
                 <h3 dir="ltr" className="ltr-isolate text-4xl sm:text-5xl font-black tracking-tight">
-                  {currentWord.word}
+                  {analyzeSilentLetters(currentWord.word).map((ch, idx) => (
+                    <span key={idx} className={ch.isSilent ? 'silent-letter text-rose-500' : ''} title={ch.note || ''}>
+                      {ch.char}
+                    </span>
+                  ))}
                 </h3>
                 <p dir="ltr" className="ltr-isolate text-cyan-600 dark:text-cyan-400 text-lg font-mono font-bold">
                   {currentWord.ipa || `/${currentWord.word}/`}
                 </p>
-                <button
-                  onClick={(e) => handlePlayTTS(e, currentWord.word)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 theme-btn-primary rounded-xl text-xs font-black shadow-lg transition-all"
-                >
-                  <Volume2 className="w-4 h-4" /> {t('listenAudio')}
-                </button>
+
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <button
+                    onClick={(e) => handlePlayTTS(e, currentWord.word)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 theme-btn-primary rounded-xl text-xs font-black shadow-lg transition-all"
+                  >
+                    <Volume2 className="w-4 h-4" /> {t('listenAudio')}
+                  </button>
+                  <LiveEqualizer isPlaying={isPlaying} />
+                </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs opacity-75 font-bold">
-                <RotateCw className="w-4 h-4" /> انقر أو اضغط مسافة للقلب (Click or Space to flip)
+              <div className="flex items-center gap-2 text-xs opacity-75 font-bold font-arabic">
+                <RotateCw className="w-4 h-4" /> انقر أو اضغط مسافة للقلب وكشف المعنى
               </div>
             </div>
 
             {/* Back Card */}
-            <div className="absolute inset-0 backface-hidden rotate-y-180 card-theme-target rounded-3xl p-8 flex flex-col items-center justify-between text-center border-2 shadow-2xl">
+            <div className="absolute inset-0 backface-hidden rotate-y-180 card-theme-target rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-between text-center border-2 shadow-2xl">
               <div className="w-full flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-amber-500">الترجمة والسياق (Meaning & Context)</span>
+                <span className="text-xs font-black uppercase tracking-wider text-amber-500 font-arabic">
+                  الترجمة والسياق والذاكرة
+                </span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(currentWord.word); }}
@@ -199,45 +245,87 @@ export default function Flashcards() {
                 </div>
               </div>
 
-              <div className="my-auto space-y-4 max-w-lg">
+              <div className="my-auto space-y-3 max-w-lg">
                 <h4 dir="rtl" className="rtl-text text-3xl font-black text-amber-600 dark:text-amber-300 font-arabic">
                   {currentWord.arabic}
                 </h4>
-                {currentWord.example && (
-                  <div dir="ltr" className="ltr-isolate p-4 rounded-2xl border text-sm font-bold bg-black/5 leading-relaxed">
-                    "{currentWord.example}"
+                <p dir="ltr" className="ltr-isolate text-sm italic font-medium opacity-90 p-2.5 rounded-xl bg-black/5 border">
+                  "{currentWord.example}"
+                </p>
+
+                {/* Visual Mnemonic Hook (Feature 33) */}
+                {mnemonic && (
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-xs text-right font-arabic">
+                    <div className="flex items-center gap-1 font-bold mb-0.5">
+                      <Lightbulb className="w-3.5 h-3.5" />
+                      <span>الصورة الذهنية للذاكرة:</span>
+                    </div>
+                    <p>{mnemonic.hook}</p>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 text-xs opacity-75 font-bold">
-                <RotateCw className="w-4 h-4" /> انقر للعودة للوجه الأول (Click to flip back)
+              {/* Spaced Repetition (SRS) Rating Buttons (Feature 31) */}
+              <div className="w-full pt-3 border-t space-y-1.5 font-arabic">
+                <span className="text-[10px] font-bold opacity-70 block">
+                  تقييم استقرار الكلمة في الذاكرة (SRS Schedule):
+                </span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  <button
+                    onClick={(e) => handleSRSRating(e, SRS_RATINGS.AGAIN)}
+                    className="p-2 rounded-xl bg-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white border border-rose-500/30 text-xs font-bold transition-all"
+                  >
+                    إعادة 🔁
+                  </button>
+                  <button
+                    onClick={(e) => handleSRSRating(e, SRS_RATINGS.HARD)}
+                    className="p-2 rounded-xl bg-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-white border border-amber-500/30 text-xs font-bold transition-all"
+                  >
+                    صعبة ⏱️
+                  </button>
+                  <button
+                    onClick={(e) => handleSRSRating(e, SRS_RATINGS.GOOD)}
+                    className="p-2 rounded-xl bg-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white border border-blue-500/30 text-xs font-bold transition-all"
+                  >
+                    جيدة 👍
+                  </button>
+                  <button
+                    onClick={(e) => handleSRSRating(e, SRS_RATINGS.EASY)}
+                    className="p-2 rounded-xl bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white border border-emerald-500/30 text-xs font-bold transition-all"
+                  >
+                    سهلة 🌟
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-12 text-center opacity-70 card-theme-target rounded-3xl border">No words match selected filters.</div>
+        <div className="card-theme-target p-12 rounded-3xl border text-center font-arabic">
+          <p className="text-lg font-bold opacity-70">لا توجد كلمات مطابقة للفلاتر المحددة.</p>
+        </div>
       )}
 
-      {/* Navigation Footer */}
-      <div className="flex items-center justify-between pt-4">
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-between gap-4">
         <button
           onClick={handlePrev}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs theme-btn-secondary transition-all"
+          className="flex-1 py-3.5 rounded-2xl border theme-btn-secondary font-black text-sm flex items-center justify-center gap-2 active:scale-95 shadow-md font-arabic"
         >
-          <ArrowLeft className="w-4 h-4" /> {t('previous')}
+          <ArrowLeft className="w-4 h-4 rtl:rotate-180" />
+          <span>السابق</span>
         </button>
 
-        <span className="text-xs sm:text-sm font-black opacity-80">
-          {t('card')} {currentIndex + 1} {t('of')} {dataset.length}
+        <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-xl border bg-black/5 dark:bg-white/5">
+          {currentIndex + 1} / {dataset.length}
         </span>
 
         <button
           onClick={handleNext}
-          className="flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs theme-btn-primary shadow-lg transition-all"
+          className="flex-1 py-3.5 rounded-2xl theme-btn-primary font-black text-sm flex items-center justify-center gap-2 active:scale-95 shadow-md font-arabic"
         >
-          {t('next')} <ArrowRight className="w-4 h-4" />
+          <span>التالي</span>
+          <ArrowRight className="w-4 h-4 rtl:rotate-180" />
         </button>
       </div>
     </div>

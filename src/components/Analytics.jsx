@@ -4,7 +4,7 @@ import { OXFORD_3000 } from '../data/oxford3000';
 import { useApp } from '../context/AppContext';
 
 export default function Analytics() {
-  const { mastered, favorites, customWords, masteredCount, favoritesCount, xp, level, dailyStreak, t } = useApp();
+  const { mastered, favorites, customWords, masteredCount, favoritesCount, t } = useApp();
 
   const allWords = [...customWords, ...OXFORD_3000];
   const totalWordsCount = allWords.length;
@@ -27,75 +27,30 @@ export default function Analytics() {
 
   const overallPercentage = totalWordsCount > 0 ? Math.round((countMastered / totalWordsCount) * 100) : 0;
 
-  // XP progress to next level
-  const currentLevelXp = (xp || 0) % 100;
-  const nextLevelXp = 100;
-
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header Banner */}
-      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-cyan-500/30 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
+      <div className="card-theme-target p-5 sm:p-8 rounded-3xl border relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
+        <div className="space-y-2 text-center sm:text-start">
+          <div className="flex items-center justify-center sm:justify-start gap-2.5">
             <div className="p-2.5 theme-btn-primary rounded-2xl shadow-md">
               <BarChart3 className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black">{t('analyticsTitle')}</h2>
+            <h2 className="text-xl sm:text-3xl font-black">{t('analyticsTitle')}</h2>
           </div>
-          <p className="text-xs sm:text-sm font-medium opacity-80 max-w-lg">{t('analyticsSubtitle')}</p>
+          <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 max-w-lg">{t('analyticsSubtitle')}</p>
         </div>
 
-        <div className="flex items-center justify-center p-6 rounded-3xl border theme-btn-secondary shrink-0 text-center min-w-[150px] shadow-lg">
+        <div className="flex items-center justify-center p-5 sm:p-6 rounded-3xl border theme-btn-secondary shrink-0 text-center min-w-[150px] shadow-lg">
           <div>
-            <span className="text-[10px] font-black uppercase tracking-wider block opacity-75">{t('overallMastery')}</span>
-            <span className="text-3xl sm:text-4xl font-black text-emerald-500">{overallPercentage}%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Gamification & XP Progress Banner */}
-      <div className="card-theme-target p-6 rounded-3xl border space-y-4 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl theme-btn-primary flex items-center justify-center font-black text-lg shadow-md">
-              <Trophy className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-xs font-bold opacity-75">الملف الأكاديمي للمتعلم (Learner Profile)</span>
-              <h3 className="text-lg font-black flex items-center gap-2">
-                <span>المستوى {level || 1} (Level {level || 1})</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full theme-btn-primary font-mono font-bold">
-                  {xp || 0} XP
-                </span>
-              </h3>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="px-4 py-2 rounded-2xl border flex items-center gap-2 font-black text-xs theme-btn-secondary">
-              <Flame className="w-4 h-4 text-amber-500" />
-              <span>السلسلة اليومية: {dailyStreak || 1} أيام 🔥</span>
-            </div>
-          </div>
-        </div>
-
-        {/* XP Progress Bar */}
-        <div className="space-y-1.5 pt-1">
-          <div className="flex justify-between text-xs font-bold opacity-80">
-            <span>التقدم نحو المستوى التالي ({level ? level + 1 : 2})</span>
-            <span>{currentLevelXp} / {nextLevelXp} XP</span>
-          </div>
-          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-3.5 p-0.5 border">
-            <div
-              className="bg-gradient-to-r from-amber-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500 shadow-sm"
-              style={{ width: `${Math.min(100, Math.max(5, (currentLevelXp / nextLevelXp) * 100))}%` }}
-            />
+            <span className="text-[11px] font-black uppercase tracking-wider block opacity-75">{t('overallMastery')}</span>
+            <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400">{overallPercentage}%</span>
           </div>
         </div>
       </div>
 
       {/* Stats 4-Grid Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="card-theme-target p-5 rounded-3xl border space-y-1 shadow-md">
           <div className="p-2 bg-cyan-500/10 text-cyan-500 rounded-xl w-fit mb-2">
             <BookOpen className="w-5 h-5" />

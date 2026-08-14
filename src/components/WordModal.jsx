@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, RefreshCw, Layers, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, RefreshCw, Layers, ExternalLink, Lightbulb, Eye } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening, isSpeechRecognitionSupported } from '../services/speechEvaluation';
@@ -9,6 +9,8 @@ import SentenceTokenViewer from './SentenceTokenViewer';
 import AudioSpeedControl from './AudioSpeedControl';
 import IpaSyllableVisualizer from './IpaSyllableVisualizer';
 import { fetchFreeDictDetails, fetchDatamuseDetails } from '../services/dictionaryService';
+import { analyzeSilentLetters } from '../utils/phoneticsUtils';
+import { getMnemonicForWord } from '../utils/mnemonicsData';
 
 export default function WordModal({ word, onClose }) {
   const { isFavorite, toggleFavorite, isMastered, toggleMastered, addNotification, voicePreset, setVoicePreset, voicePresets, audioSpeed, setAudioSpeed, apiKey, addXp } = useApp();
@@ -93,7 +95,6 @@ export default function WordModal({ word, onClose }) {
         setSpeechResult(res);
         if (res.score >= 80) {
           addNotification(`Outstanding pronunciation! Score: ${res.score}%`, 'success');
-          if (addXp) addXp(25, `إتقان نطق "${word.word}"`);
         } else {
           addNotification(`Score: ${res.score}%. Listen to audio and try again.`, 'info');
         }
@@ -111,14 +112,14 @@ export default function WordModal({ word, onClose }) {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-xl theme-btn-secondary opacity-70 hover:opacity-100 transition-all"
+          className="absolute top-4 end-4 p-2 rounded-xl theme-btn-secondary opacity-70 hover:opacity-100 transition-all z-10"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header Badges */}
-        <div className="flex items-center gap-2 flex-wrap mb-3 pr-8">
+        <div className="flex items-center gap-2 flex-wrap mb-3 pe-8">
           <span className="px-2.5 py-0.5 text-xs font-black rounded-lg theme-btn-primary">
             CEFR {word.cefr || word.level || 'B1'}
           </span>
@@ -132,10 +133,14 @@ export default function WordModal({ word, onClose }) {
           )}
         </div>
 
-        {/* Word Title & IPA Visualizer */}
+        {/* Word Title & IPA Visualizer with Silent Letters */}
         <div className="flex items-baseline justify-between gap-2 mb-3 flex-wrap">
           <h2 dir="ltr" className="ltr-isolate text-3xl sm:text-4xl font-black tracking-tight">
-            {word.word}
+            {analyzeSilentLetters(word.word).map((ch, i) => (
+              <span key={i} className={ch.isSilent ? 'silent-letter text-rose-500' : ''} title={ch.note || ''}>
+                {ch.char}
+              </span>
+            ))}
           </h2>
           <IpaSyllableVisualizer ipa={word.ipa || word.phonetic || `/${word.word}/`} />
         </div>
@@ -145,6 +150,17 @@ export default function WordModal({ word, onClose }) {
           <span className="text-[11px] opacity-75 font-bold block mb-0.5">الترجمة العربية والسياق</span>
           <p className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-300">
             {word.arabic || word.translation}
+          </p>
+        </div>
+
+        {/* Visual Mnemonic Hook (Feature 33) */}
+        <div className="mb-4 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-xs font-medium space-y-1 font-arabic">
+          <div className="flex items-center gap-1.5 font-bold">
+            <Lightbulb className="w-4 h-4 text-amber-500" />
+            <span>الربط بالصورة الذهنية (Visual Mnemonic):</span>
+          </div>
+          <p className="leading-relaxed">
+            {getMnemonicForWord(word.word, word.arabic, word.example).hook}
           </p>
         </div>
 

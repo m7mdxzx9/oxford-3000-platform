@@ -1,10 +1,17 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
+import LoginScreen from './components/LoginScreen';
 import ApiKeyModal from './components/ApiKeyModal';
 import ToastNotifications from './components/ToastNotifications';
-import FloatingXpBurst from './components/FloatingXpBurst';
 import LexiconGrid from './components/LexiconGrid';
+import KickstartZeroSection from './components/KickstartZeroSection';
+import B1BridgeSection from './components/B1BridgeSection';
+import SpeedListeningDrill from './components/SpeedListeningDrill';
+import MinimalPairsTrainer from './components/MinimalPairsTrainer';
+import SpellingBee from './components/SpellingBee';
+import ActiveRecallTrainer from './components/ActiveRecallTrainer';
+import VoiceArchiveStudio from './components/VoiceArchiveStudio';
 import SentenceGenerator from './components/SentenceGenerator';
 import Storyteller from './components/Storyteller';
 import PersonalTutor from './components/PersonalTutor';
@@ -20,18 +27,29 @@ function AmbientBackgroundMesh({ activeTab }) {
   const orbColors = useMemo(() => {
     switch (activeTab) {
       case 'grid':
+      case 'kickstart':
+      case 'bridge':
       case 'flashcards':
         return {
           orb1: 'bg-cyan-500/20',
           orb2: 'bg-emerald-500/20',
         };
-      case 'sentence':
-      case 'story':
-      case 'tutor':
+      case 'speed-drill':
+      case 'minimal-pairs':
+      case 'spelling-bee':
+      case 'active-recall':
+      case 'voice-archive':
       case 'pronunciation':
         return {
           orb1: 'bg-purple-500/20',
-          orb2: 'bg-indigo-500/20',
+          orb2: 'bg-rose-500/20',
+        };
+      case 'sentence':
+      case 'story':
+      case 'tutor':
+        return {
+          orb1: 'bg-indigo-500/20',
+          orb2: 'bg-cyan-500/20',
         };
       case 'quiz':
       case 'chain':
@@ -39,7 +57,7 @@ function AmbientBackgroundMesh({ activeTab }) {
       case 'dual':
         return {
           orb1: 'bg-amber-500/20',
-          orb2: 'bg-rose-500/20',
+          orb2: 'bg-orange-500/20',
         };
       case 'analytics':
       default:
@@ -95,16 +113,30 @@ function MainContent() {
   return (
     <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24 xl:pb-8 relative z-10">
       <div key={activeTab} className="section-enter-animation">
+        {/* Vocab & Sections */}
         {activeTab === 'grid' && <LexiconGrid />}
+        {activeTab === 'kickstart' && <KickstartZeroSection />}
+        {activeTab === 'bridge' && <B1BridgeSection />}
         {activeTab === 'flashcards' && <Flashcards />}
+
+        {/* Skill Laboratories */}
+        {activeTab === 'speed-drill' && <SpeedListeningDrill />}
+        {activeTab === 'minimal-pairs' && <MinimalPairsTrainer />}
+        {activeTab === 'spelling-bee' && <SpellingBee />}
+        {activeTab === 'active-recall' && <ActiveRecallTrainer />}
+        {activeTab === 'voice-archive' && <VoiceArchiveStudio />}
+        {activeTab === 'pronunciation' && <PronunciationStudio />}
+
+        {/* AI & Games */}
         {activeTab === 'sentence' && <SentenceGenerator />}
         {activeTab === 'story' && <Storyteller />}
-        {activeTab === 'dual' && <DualPlayerHub />}
-        {activeTab === 'detective' && <WordDetectiveGame />}
         {activeTab === 'tutor' && <PersonalTutor />}
-        {activeTab === 'pronunciation' && <PronunciationStudio />}
-        {activeTab === 'chain' && <WordChainGame />}
         {activeTab === 'quiz' && <QuizGame />}
+        {activeTab === 'chain' && <WordChainGame />}
+        {activeTab === 'detective' && <WordDetectiveGame />}
+        {activeTab === 'dual' && <DualPlayerHub />}
+
+        {/* Growth Analytics */}
         {activeTab === 'analytics' && <Analytics />}
       </div>
     </main>
@@ -112,7 +144,12 @@ function MainContent() {
 }
 
 function AppContainer() {
-  const { activeTab } = useApp();
+  const { authUser, loginUser, activeTab } = useApp();
+
+  // Authentication Gate: if user is not logged in, show LoginScreen
+  if (!authUser) {
+    return <LoginScreen onLoginSuccess={loginUser} />;
+  }
 
   return (
     <div
@@ -122,11 +159,10 @@ function AppContainer() {
     >
       <AmbientBackgroundMesh activeTab={activeTab} />
       <PageTransitionBar activeTab={activeTab} />
-      <FloatingXpBurst />
       <Navbar />
       <MainContent />
-      <footer className="glass-panel border-t py-4 px-4 text-center text-xs opacity-75 mt-auto relative z-10">
-        <p>Oxford 3000™ CEFR Lexicon Application &copy; 2026. Built with React 18, Vite & Tailwind CSS.</p>
+      <footer className="glass-panel border-t py-4 px-4 text-center text-xs opacity-75 mt-auto relative z-10 font-arabic">
+        <p>منصة أكسفورد 3000™ لتعلم الإنجليزية &copy; 2026. مهيأة ومطورة بأحدث معايير CEFR.</p>
       </footer>
       <ApiKeyModal />
       <ToastNotifications />

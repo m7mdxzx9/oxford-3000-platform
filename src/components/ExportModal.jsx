@@ -194,7 +194,7 @@ export const ExportModal = ({ isOpen, onClose, filteredWords = [] }) => {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-xl theme-btn-secondary opacity-70 hover:opacity-100 transition-all"
+          className="absolute top-4 end-4 p-2 rounded-xl theme-btn-secondary opacity-70 hover:opacity-100 transition-all z-10"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />

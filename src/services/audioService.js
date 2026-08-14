@@ -304,8 +304,18 @@ export const stopAudio = () => {
 
 export const isAudioPlaying = () => isPlaying;
 
+/**
+ * Universal helper alias for playing single word or sentence audio
+ */
+export const playWordAudio = (text, options = {}) => {
+  const presetId = options.preset || options.presetId || 'us-female';
+  const speed = options.speed !== undefined ? options.speed : 1.0;
+  return playAudio(text, { presetId, speed });
+};
+
 export default {
   playAudio,
+  playWordAudio,
   stopAudio,
   buildGoogleTtsUrl,
   buildYoudaoTtsUrl,

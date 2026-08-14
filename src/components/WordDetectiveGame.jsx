@@ -54,9 +54,8 @@ export default function WordDetectiveGame() {
       setScore((prev) => prev + earned);
       setStreak((prev) => prev + 1);
       setCasesSolved((prev) => prev + 1);
-      if (addXp) addXp(earned, `حل لغز "${currentCase.wordObj.word}"`);
       setCurrentCase((prev) => ({ ...prev, solved: true }));
-      setFeedback({ type: 'success', text: `🎉 استنتاج عبقري! الكلمة السرية هي "${currentCase.wordObj.word}" (+${earned} نقطة)` });
+      setFeedback({ type: 'success', text: `🎉 استنتاج عبقري! الكلمة السرية هي "${currentCase.wordObj.word}"` });
       playAudio(currentCase.wordObj.word, { presetId: voicePreset });
     } else {
       setStreak(0);

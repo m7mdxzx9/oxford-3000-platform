@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Check, Star, Volume2, Sparkles, RefreshCw, Mic, BookOpen, Download } from 'lucide-react';
+import { Plus, Check, Star, Volume2, Sparkles, RefreshCw, Mic, BookOpen, Download, Flame, Compass, Zap } from 'lucide-react';
 import { oxford3000Data } from '../data/oxford3000';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
@@ -13,45 +13,46 @@ import ExportModal from './ExportModal';
 import IpaSyllableVisualizer from './IpaSyllableVisualizer';
 import AudioSpeedControl from './AudioSpeedControl';
 import EmptyState from './EmptyState';
+import WordOfTheDayWidget from './WordOfTheDayWidget';
 import { getWordExample } from '../utils/exampleSentenceService';
 import { normalizeArabicText } from '../utils/arabicTranslationDictionary';
 
-// CEFR Level Color Badge Mapping
+// CEFR Level Color Badge Mapping with High-Contrast Dual-Mode Support
 const CEFR_BADGES = {
   A1: {
-    bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    bg: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30',
     label: 'A1 Beginner',
   },
   A2: {
-    bg: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
+    bg: 'bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30',
     label: 'A2 Elementary',
   },
   B1: {
-    bg: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    bg: 'bg-cyan-500/15 text-cyan-800 dark:text-cyan-300 border-cyan-500/30',
     label: 'B1 Intermediate',
   },
   B2: {
-    bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    bg: 'bg-indigo-500/15 text-indigo-800 dark:text-indigo-300 border-indigo-500/30',
     label: 'B2 Upper-Int',
   },
   C1: {
-    bg: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    bg: 'bg-purple-500/15 text-purple-800 dark:text-purple-300 border-purple-500/30',
     label: 'C1 Advanced',
   },
 };
 
-// Part of Speech Badge Styling
+// Part of Speech Badge Styling with High-Contrast Dual-Mode Support
 const POS_STYLES = {
-  n: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  noun: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  v: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-  verb: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-  adj: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  adjective: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  adv: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  adverb: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  prep: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  preposition: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  n: 'bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-500/30',
+  noun: 'bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-500/30',
+  v: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30',
+  verb: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30',
+  adj: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
+  adjective: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
+  adv: 'bg-purple-500/15 text-purple-800 dark:text-purple-300 border-purple-500/30',
+  adverb: 'bg-purple-500/15 text-purple-800 dark:text-purple-300 border-purple-500/30',
+  prep: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30',
+  preposition: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30',
 };
 
 // Individual Interactive Lexicon Card Component
@@ -68,6 +69,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
     voicePreset,
     apiKey,
     setIsApiKeyModalOpen,
+    t,
   } = useApp();
 
   const [isPlayingWord, setIsPlayingWord] = useState(false);
@@ -193,7 +195,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
   return (
     <div
       onClick={() => onCardClick && onCardClick(wordObj)}
-      className={`card-theme-target group relative flex flex-col justify-between p-5 pb-6 rounded-2xl cursor-pointer transition-all duration-300 glass-card-interactive ${
+      className={`card-theme-target group relative flex flex-col justify-between p-4 sm:p-5 pb-5 rounded-2xl cursor-pointer transition-all duration-300 glass-card-interactive ${
         selected
           ? 'ring-2 ring-indigo-500/80 border-indigo-500/60 shadow-lg'
           : mastered
@@ -205,7 +207,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
       <div className="flex items-center justify-between gap-2 mb-3">
         {/* Word Title & POS/CEFR Badges */}
         <div>
-          <h3 dir="ltr" className="ltr-isolate text-2xl font-black tracking-tight text-[var(--text-main)] leading-none mb-1">
+          <h3 dir="ltr" className="ltr-isolate text-xl sm:text-2xl font-black tracking-tight text-[var(--text-main)] leading-none mb-1">
             {wordObj.word}
           </h3>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -230,7 +232,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
             title={selected ? 'Remove from Storyteller' : 'Select for AI Storyteller'}
           >
             <Plus className="w-3.5 h-3.5 inline mr-0.5" />
-            <span>Story</span>
+            <span>{t('storyBtn')}</span>
           </button>
 
           <button
@@ -240,12 +242,12 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
             }}
             className={`p-1.5 rounded-lg border transition-all active:scale-90 flex items-center justify-center ${
               mastered
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
+                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 shadow-sm'
                 : 'theme-btn-secondary opacity-70 hover:opacity-100'
             }`}
-            title={mastered ? 'Marked as Mastered' : 'Mark as Mastered'}
+            title={mastered ? t('markMastered') : t('markMastered')}
           >
-            <Check className={`w-3.5 h-3.5 ${mastered ? 'text-emerald-400' : ''}`} />
+            <Check className={`w-3.5 h-3.5 ${mastered ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
           </button>
 
           <button
@@ -255,12 +257,12 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
             }}
             className={`p-1.5 rounded-lg border transition-all active:scale-90 flex items-center justify-center ${
               favorited
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
+                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/40 shadow-sm'
                 : 'theme-btn-secondary opacity-70 hover:opacity-100'
             }`}
-            title={favorited ? 'Remove from Favorites' : 'Add to Favorites'}
+            title={favorited ? t('addFavorite') : t('addFavorite')}
           >
-            <Star className={`w-3.5 h-3.5 ${favorited ? 'fill-amber-400 text-amber-400' : ''}`} />
+            <Star className={`w-3.5 h-3.5 ${favorited ? 'fill-amber-400 text-amber-500' : ''}`} />
           </button>
         </div>
       </div>
@@ -280,12 +282,12 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
               disabled={isPlayingWord}
               className={`p-1.5 rounded-lg border transition-all active:scale-90 flex items-center justify-center ${
                 isPlayingWord
-                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md animate-pulse'
+                  ? 'bg-indigo-600 text-white border-indigo-500 shadow-md animate-pulse'
                   : 'theme-btn-secondary opacity-90 hover:opacity-100'
               }`}
-              title="Listen to pronunciation (TTS)"
+              title={t('listenAudio')}
             >
-              <Volume2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <Volume2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </button>
           </div>
         </div>
@@ -300,8 +302,8 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
         {/* AI Sentence Generator & Interactive Tokens Block */}
         <div dir="ltr" className="ltr-isolate bg-slate-100 dark:bg-slate-950/60 p-3.5 rounded-2xl border border-slate-300 dark:border-slate-800/60 text-xs text-slate-950 dark:text-slate-200 space-y-2.5 font-extrabold">
           <div className="flex items-center justify-between text-[11px] text-slate-700 dark:text-slate-400 font-bold flex-wrap gap-1.5">
-            <span className="font-black flex items-center gap-1.5 text-cyan-800 dark:text-cyan-400">
-              {customAiSentence ? '✨ AI Sentence' : 'Example Sentence'}
+            <span className="font-black flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400">
+              {customAiSentence ? t('aiSentenceBtn') : t('exampleSentence')}
             </span>
 
             <div className="flex items-center gap-1.5">
@@ -312,7 +314,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
                 className="px-2.5 py-1 rounded-xl text-xs font-black transition-all border flex items-center gap-1 bg-purple-500/20 text-purple-950 dark:text-purple-300 border-purple-500/40 hover:bg-purple-500/30 active:scale-95 shadow-sm"
                 title="Generate new custom AI sentence for this word"
               >
-                <span>{isGeneratingAiSentence ? 'Generating...' : customAiSentence ? '🔄 Change' : '✨ AI Sentence'}</span>
+                <span>{isGeneratingAiSentence ? t('generating') : customAiSentence ? t('changeSentence') : t('aiSentenceBtn')}</span>
               </button>
 
               {activeSentence && (
@@ -321,24 +323,23 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
                     type="button"
                     onClick={handlePlayExample}
                     disabled={isPlayingExample}
-                    className="px-2 py-1 rounded-lg text-[11px] font-black text-cyan-900 dark:text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 hover:bg-cyan-500/30 transition-all flex items-center gap-1 active:scale-95"
-                    title="Listen to full example sentence"
+                    className="px-2 py-1 rounded-lg text-[11px] font-black text-indigo-900 dark:text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 hover:bg-indigo-500/30 transition-all flex items-center gap-1 active:scale-95"
+                    title={t('listenSentence')}
                   >
-                    <span>{isPlayingExample ? 'Playing...' : 'Play'}</span>
+                    <span>{isPlayingExample ? t('generating') : t('playBtn')}</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleStartPractice}
                     className="px-2 py-1 rounded-lg text-[11px] font-black text-amber-950 dark:text-amber-300 bg-amber-500/20 border border-amber-500/30 hover:bg-amber-500/30 transition-all flex items-center gap-1 active:scale-95"
-                    title="Practice speaking sentence with mic"
+                    title={t('practiceVoice')}
                   >
-                    <span>Mic</span>
+                    <span>{t('micBtn')}</span>
                   </button>
                 </>
               )}
             </div>
           </div>
-
 
           {/* Interactive Word Tokens */}
           {activeSentence && (
@@ -355,13 +356,13 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           {/* AI Generated Arabic Sentence Translation */}
           {activeArabic && (
             <div dir="rtl" className="mt-2 pt-2 border-t border-slate-800/60 text-right font-arabic">
-              <span className="text-[10px] opacity-75 font-semibold block mb-0.5 text-amber-500">الترجمة العربية للجملة:</span>
-              <p className="text-xs font-extrabold text-amber-300">{activeArabic}</p>
+              <span className="text-[10px] opacity-75 font-semibold block mb-0.5 text-amber-500">{t('arabicSentenceTranslation')}</span>
+              <p className="text-xs font-extrabold text-amber-700 dark:text-amber-300">{activeArabic}</p>
             </div>
           )}
 
           {customAiSentence?.needsApiKey && (
-            <div className="mt-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-[11px] space-y-1.5 dir-rtl font-arabic">
+            <div className="mt-2 p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 text-[11px] space-y-1.5 dir-rtl font-arabic">
               <p className="font-bold">⚠️ انتهت حصة المفتاح الافتراضي لليوم (HTTP 429). أضف مفتاحك المجاني لتوليد الجمل حية 100%:</p>
               <button
                 type="button"
@@ -377,19 +378,19 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
           {isPracticing && (
             <div className="mt-3 pt-3 border-t border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-slate-400">Speech Practice</span>
+                <span className="text-[11px] font-semibold text-slate-400">{t('speechPractice')}</span>
                 <button
                   type="button"
                   onClick={handleClosePractice}
                   className="text-[10px] text-slate-500 hover:text-slate-300"
                 >
-                  Close
+                  {t('close')}
                 </button>
               </div>
               {isListening && (
-                <div className="flex items-center space-x-2 text-xs text-cyan-400 animate-pulse bg-cyan-950/30 p-2 rounded-lg border border-cyan-800/40">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                  <span>Listening... Speak the example sentence now.</span>
+                <div className="flex items-center space-x-2 text-xs text-indigo-400 animate-pulse bg-indigo-950/30 p-2 rounded-lg border border-indigo-800/40">
+                  <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
+                  <span>{t('listening')}</span>
                 </div>
               )}
               {evalResult && (
@@ -410,7 +411,7 @@ const LexiconCard = React.memo(({ wordObj, onCardClick }) => {
 });
 
 export const LexiconGrid = () => {
-  const { customWords, addCustomWord, apiKey, selectedWords, setActiveTab, addNotification } = useApp();
+  const { customWords, addCustomWord, apiKey, selectedWords, setActiveTab, addNotification, t, language } = useApp();
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -528,46 +529,49 @@ export const LexiconGrid = () => {
 
   return (
     <div className="space-y-6">
+      {/* Feature 39: Smart Word of the Day Widget */}
+      <WordOfTheDayWidget onOpenWordDetails={(w) => setActiveModalWord(w)} />
+
       {/* Header & Search Bar Section */}
-      <div className="card-theme-target p-6 rounded-3xl border space-y-6 shadow-xl">
+      <div className="card-theme-target p-4 sm:p-6 rounded-3xl border space-y-5 shadow-xl">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
-              <span>Oxford 3000™ Lexicon Catalog</span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2 flex-wrap">
+              <span>{t('gridTitle')}</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full theme-btn-primary font-mono font-bold">
-                {totalFilteredItems} Words
+                {totalFilteredItems} {t('words')}
               </span>
             </h1>
-            <p className="text-xs opacity-75 mt-1 font-medium">
-              Explore the complete Oxford 3000 CEFR vocabulary (A1-B2) with audio TTS, IPA phonetics, and Arabic translations.
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+              {t('gridSubtitle')}
             </p>
           </div>
 
           {/* Actions Bar: Export Deck & Items Per Page */}
-          <div className="flex flex-wrap items-center justify-between gap-2.5 w-full md:w-auto">
+          <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full md:w-auto flex-wrap">
             <button
               onClick={() => setIsExportModalOpen(true)}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl theme-btn-primary text-xs font-black transition-all shadow-sm hover:brightness-110 shrink-0"
-              title="Export vocabulary deck to PDF, Anki, Markdown, or JSON"
+              title="Export vocabulary deck"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>📥 تصدير الكلمات (Export)</span>
+              <span>{t('exportWords')}</span>
             </button>
 
-            <div className="flex items-center gap-1.5 text-xs opacity-80 font-bold shrink-0">
-              <span>Show:</span>
+            <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-bold shrink-0">
+              <span className="opacity-80">{t('showLabel')}</span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold glass-input max-w-[130px] truncate"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold glass-input max-w-[130px]"
               >
-                <option value={16}>16 per page</option>
-                <option value={20}>20 per page</option>
-                <option value={24}>24 per page</option>
-                <option value={32}>32 per page</option>
+                <option value={16}>16 {t('itemsPerPage')}</option>
+                <option value={20}>20 {t('itemsPerPage')}</option>
+                <option value={24}>24 {t('itemsPerPage')}</option>
+                <option value={32}>32 {t('itemsPerPage')}</option>
               </select>
             </div>
           </div>
@@ -575,17 +579,17 @@ export const LexiconGrid = () => {
 
         {/* Interactive Search Bar & Clear Action */}
         <div className="relative w-full">
-          <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none opacity-60">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none text-slate-500">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
           <input
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}
-            placeholder="Search word in English or translation in Arabic..."
-            className="w-full ps-10 pe-24 py-3 rounded-2xl glass-input text-sm font-bold placeholder:opacity-60"
+            placeholder={t('searchPlaceholder')}
+            className="w-full ps-10 pe-20 py-2.5 sm:py-3 rounded-2xl glass-input text-xs sm:text-sm font-bold placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
           {searchQuery && (
             <button
@@ -595,38 +599,38 @@ export const LexiconGrid = () => {
               }}
               className="absolute inset-y-0 right-3 flex items-center px-2 text-xs font-black opacity-70 hover:opacity-100"
             >
-              Clear
+              {t('clearSearch')}
             </button>
           )}
         </div>
 
-        {/* CEFR Level Filter Buttons */}
+        {/* CEFR Level Filter Buttons - Mobile Perfect 5-Col Grid */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black uppercase tracking-wider opacity-75">CEFR Level Filter</span>
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">{t('cefrFilter')}</span>
             {(selectedCefr !== 'ALL' || selectedLetter !== 'ALL' || searchQuery) && (
               <button
                 onClick={clearFilters}
-                className="text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
+                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                Reset All Filters
+                {t('resetFilters')}
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-5 gap-1.5 sm:flex sm:flex-wrap sm:gap-2">
             {['ALL', 'A1', 'A2', 'B1', 'B2'].map((cefr) => {
               const isActive = selectedCefr === cefr;
               return (
                 <button
                   key={cefr}
                   onClick={() => handleCefrSelect(cefr)}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${
+                  className={`py-2 px-1 sm:px-4 rounded-xl text-xs font-black transition-all border text-center ${
                     isActive
-                      ? 'theme-btn-primary shadow-md scale-105'
-                      : 'theme-btn-secondary opacity-75 hover:opacity-100'
+                      ? 'theme-btn-primary shadow-md scale-102 font-black'
+                      : 'theme-btn-secondary opacity-80 hover:opacity-100'
                   }`}
                 >
-                  {cefr === 'ALL' ? 'ALL LEVELS' : cefr}
+                  {cefr === 'ALL' ? (language === 'ar' ? 'الكل' : 'ALL') : cefr}
                 </button>
               );
             })}
@@ -635,18 +639,18 @@ export const LexiconGrid = () => {
 
         {/* A-Z Letter Filter Bar (Smooth Touch Scrollable Strip) */}
         <div className="space-y-2">
-          <span className="text-xs font-black uppercase tracking-wider opacity-75">A-Z Alphabet Filter</span>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">{t('alphabetFilter')}</span>
+          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-1.5 no-scrollbar" dir="ltr">
             {alphabet.map((letter) => {
               const isActive = selectedLetter === letter;
               return (
                 <button
                   key={letter}
                   onClick={() => handleLetterSelect(letter)}
-                  className={`min-w-[34px] h-[34px] sm:min-w-[36px] sm:h-[36px] px-1.5 flex items-center justify-center rounded-xl text-xs font-black transition-all border shrink-0 ${
+                  className={`min-w-[34px] h-[34px] sm:min-w-[36px] sm:h-[36px] px-1 flex items-center justify-center rounded-xl text-xs font-black transition-all border shrink-0 ${
                     isActive
-                      ? 'theme-btn-primary shadow-sm scale-105'
-                      : 'theme-btn-secondary opacity-70 hover:opacity-100'
+                      ? 'theme-btn-primary shadow-sm scale-105 font-black'
+                      : 'theme-btn-secondary opacity-75 hover:opacity-100'
                   }`}
                 >
                   {letter}
@@ -659,45 +663,45 @@ export const LexiconGrid = () => {
 
       {/* Storyteller Selection Quick Floating Bar */}
       {selectedWords.length > 0 && (
-        <div className="glass-panel p-4 rounded-xl border border-cyan-500/30 flex items-center justify-between gap-4 bg-cyan-950/30 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
-          <div className="flex items-center space-x-3">
-            <span className="w-8 h-8 rounded-lg bg-cyan-500 text-slate-950 flex items-center justify-center font-bold text-sm">
+        <div className="glass-panel p-4 rounded-xl border border-indigo-500/30 flex items-center justify-between gap-4 shadow-md">
+          <div className="flex items-center space-x-3 gap-2">
+            <span className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
               {selectedWords.length}
             </span>
             <div>
-              <p className="text-xs font-semibold text-cyan-200">
-                Words selected for AI Storyteller ({selectedWords.length}/5 max):
+              <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                {t('selectedForStory')} ({selectedWords.length}/5):
               </p>
-              <p dir="ltr" className="ltr-isolate text-xs text-slate-300 font-medium">
+              <p dir="ltr" className="ltr-isolate text-xs text-slate-600 dark:text-slate-300 font-medium">
                 {selectedWords.map((w) => (typeof w === 'string' ? w : w.word)).join(', ')}
               </p>
             </div>
           </div>
           <button
             onClick={() => setActiveTab('story')}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all shadow-md"
+            className="px-4 py-2 rounded-xl text-xs font-bold theme-btn-primary transition-all shadow-md"
           >
-            Generate Story →
+            {t('generateStoryAction')}
           </button>
         </div>
       )}
 
       {/* Grid Summary Info */}
-      <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
         <div>
-          Showing <span className="font-semibold text-slate-200">{paginatedWords.length ? (safeCurrentPage - 1) * itemsPerPage + 1 : 0}</span> to{' '}
-          <span className="font-semibold text-slate-200">{Math.min(safeCurrentPage * itemsPerPage, totalFilteredItems)}</span> of{' '}
-          <span className="font-semibold text-slate-200">{totalFilteredItems}</span> words
+          {t('showing')} <span className="font-semibold text-slate-900 dark:text-slate-200">{paginatedWords.length ? (safeCurrentPage - 1) * itemsPerPage + 1 : 0}</span> {t('to')}{' '}
+          <span className="font-semibold text-slate-900 dark:text-slate-200">{Math.min(safeCurrentPage * itemsPerPage, totalFilteredItems)}</span> {t('of')}{' '}
+          <span className="font-semibold text-slate-900 dark:text-slate-200">{totalFilteredItems}</span> {t('words')}
         </div>
         <div>
-          Page <span className="font-semibold text-cyan-400">{safeCurrentPage}</span> of{' '}
-          <span className="font-semibold text-slate-200">{totalPages}</span>
+          {t('page')} <span className="font-semibold text-indigo-600 dark:text-indigo-400">{safeCurrentPage}</span> {t('of')}{' '}
+          <span className="font-semibold text-slate-900 dark:text-slate-200">{totalPages}</span>
         </div>
       </div>
 
       {/* Catalog Grid Cards Rendering */}
       {paginatedWords.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
           {paginatedWords.map((wordObj) => (
             <LexiconCard
               key={`${wordObj.word}-${wordObj.id}`}
@@ -724,16 +728,16 @@ export const LexiconGrid = () => {
             disabled={safeCurrentPage === 1}
             className="px-3.5 py-2 rounded-xl text-xs font-black theme-btn-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
-            « First
+            {t('firstPage')}
           </button>
 
-          <div className="flex items-center space-x-1.5 overflow-x-auto max-w-full no-scrollbar">
+          <div className="flex items-center space-x-1.5 gap-1 overflow-x-auto max-w-full no-scrollbar">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={safeCurrentPage === 1}
               className="px-3.5 py-2 rounded-xl text-xs font-black theme-btn-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
-              ‹ Prev
+              {t('prevPage')}
             </button>
 
             {/* Page number buttons window */}
@@ -764,7 +768,7 @@ export const LexiconGrid = () => {
               disabled={safeCurrentPage === totalPages}
               className="px-3.5 py-2 rounded-xl text-xs font-black theme-btn-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
-              Next ›
+              {t('nextPage')}
             </button>
           </div>
 
@@ -773,7 +777,7 @@ export const LexiconGrid = () => {
             disabled={safeCurrentPage === totalPages}
             className="px-3.5 py-2 rounded-xl text-xs font-black theme-btn-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
-            Last »
+            {t('lastPage')}
           </button>
         </div>
       )}

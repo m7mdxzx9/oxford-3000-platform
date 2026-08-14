@@ -22,11 +22,23 @@ import {
   Palette,
   Flame,
   Trophy,
+  Zap,
+  Radio,
+  Mic,
+  Brain,
+  Wifi,
+  WifiOff,
+  LogOut,
+  User,
+  Compass,
+  CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Navbar() {
   const {
+    authUser,
+    logoutUser,
     activeTab,
     setActiveTab,
     theme,
@@ -35,20 +47,17 @@ export default function Navbar() {
     toggleMode,
     THEMES,
     setIsApiKeyModalOpen,
+    language,
     toggleLanguage,
     t,
-    voicePreset,
-    setVoicePreset,
-    voicePresets,
+    isOffline,
+    streak,
     xp,
-    level,
-    dailyStreak,
+    dueSRSCount,
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeCategoryDropdown, setActiveCategoryDropdown] = useState(null);
-
-  // Smart Collapsible Mobile Header Scroll Listener
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -57,7 +66,6 @@ export default function Navbar() {
       const currentScrollY = window.scrollY;
       if (currentScrollY > 80 && currentScrollY > lastScrollY) {
         setIsHeaderVisible(false);
-        setActiveCategoryDropdown(null);
       } else {
         setIsHeaderVisible(true);
       }
@@ -68,62 +76,66 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Structured Categories Definition
+  // Structured Categories Definition with all requested sections & skills
   const categories = useMemo(() => [
     {
-      id: 'vocab',
-      label: t('catVocab'),
+      id: 'vocab-hub',
+      label: language === 'ar' ? 'المفردات والأقسام' : 'Vocab & Tracks',
       icon: BookOpen,
       items: [
-        { id: 'grid', label: t('navCatalog'), icon: BookOpen, badge: '3000 Words' },
-        { id: 'flashcards', label: t('navFlashcards'), icon: Layers, badge: '3D SRS' },
+        { id: 'grid', label: language === 'ar' ? 'المعجم الكامل (3000)' : 'Oxford 3000', icon: BookOpen, badge: '3000' },
+        { id: 'kickstart', label: language === 'ar' ? 'قفزة المبتدئين الصفر (A0)' : 'Kickstart A0', icon: Compass, badge: 'Zero' },
+        { id: 'bridge', label: language === 'ar' ? 'جسر الانتقال (A2➔B1)' : 'B1 Bridge', icon: Zap, badge: 'Bridge' },
+        { id: 'flashcards', label: language === 'ar' ? 'بطاقات 3D والتكرار الذكي' : '3D Flashcards', icon: Layers, badge: dueSRSCount > 0 ? `${dueSRSCount} Due` : 'SRS' },
       ],
     },
     {
-      id: 'ai',
-      label: t('catAi'),
+      id: 'skills-lab',
+      label: language === 'ar' ? 'مختبرات المهارات' : 'Skill Labs',
+      icon: Activity,
+      items: [
+        { id: 'speed-drill', label: language === 'ar' ? 'تحدي سرعة الاستماع' : 'Speed Listening', icon: Zap, badge: '0.7x-1.5x' },
+        { id: 'minimal-pairs', label: language === 'ar' ? 'الأصوات المشوشة' : 'Minimal Pairs', icon: Radio, badge: 'Phonetics' },
+        { id: 'spelling-bee', label: language === 'ar' ? 'اختبار الإملاء الذكي' : 'Spelling Bee', icon: Award, badge: 'Bee' },
+        { id: 'active-recall', label: language === 'ar' ? 'الاستدعاء النشط' : 'Active Recall', icon: Brain, badge: 'Memory' },
+        { id: 'voice-archive', label: language === 'ar' ? 'أرشيف التطور الصوتي' : 'Voice Archive', icon: Mic, badge: 'Compare' },
+        { id: 'pronunciation', label: language === 'ar' ? 'استوديو النطق المتقدم' : 'Speech Studio', icon: Activity, badge: 'AI' },
+      ],
+    },
+    {
+      id: 'ai-tools',
+      label: language === 'ar' ? 'الذكاء الاصطناعي والألعاب' : 'AI & Games',
       icon: Sparkles,
       items: [
-        { id: 'sentence', label: t('navSentence'), icon: Sparkles, badge: 'Builder' },
-        { id: 'story', label: t('navStory'), icon: MessageSquare, badge: 'Epic Novel' },
-        { id: 'tutor', label: t('navTutor'), icon: UserCheck, badge: 'Roleplay' },
-        { id: 'pronunciation', label: t('navPronunciation'), icon: Activity, badge: 'Speech' },
-      ],
-    },
-    {
-      id: 'games',
-      label: t('catGames'),
-      icon: Gamepad2,
-      items: [
-        { id: 'quiz', label: t('navQuiz'), icon: Award, badge: 'Quiz' },
-        { id: 'chain', label: t('navChain'), icon: Gamepad2, badge: 'Chain' },
-        { id: 'detective', label: t('navDetective'), icon: Search, badge: 'Mystery' },
-        { id: 'dual', label: t('navDual'), icon: Users, badge: '1v1 Hub' },
+        { id: 'sentence', label: language === 'ar' ? 'مولد الجمل والسياقات' : 'AI Sentences', icon: Sparkles, badge: 'AI' },
+        { id: 'story', label: language === 'ar' ? 'الحكواتي التفاعلي' : 'AI Storyteller', icon: MessageSquare, badge: 'Story' },
+        { id: 'tutor', label: language === 'ar' ? 'المعلم الشخصي الذكي' : 'Personal Tutor', icon: UserCheck, badge: 'Tutor' },
+        { id: 'quiz', label: language === 'ar' ? 'اختبار المعرفة' : 'Quiz Game', icon: Award, badge: 'Quiz' },
+        { id: 'chain', label: language === 'ar' ? 'سلسلة الكلمات' : 'Word Chain', icon: Gamepad2, badge: 'Game' },
+        { id: 'detective', label: language === 'ar' ? 'المحقق اللغوي' : 'Word Detective', icon: Search, badge: 'Mystery' },
+        { id: 'dual', label: language === 'ar' ? 'مبارزة 1 ضد 1' : '1v1 Arena', icon: Users, badge: 'PvP' },
       ],
     },
     {
       id: 'progress',
-      label: t('catProgress'),
+      label: language === 'ar' ? 'التحليلات والنمو' : 'Growth & Stats',
       icon: BarChart3,
       items: [
-        { id: 'analytics', label: t('navAnalytics'), icon: BarChart3, badge: 'Stats' },
+        { id: 'analytics', label: language === 'ar' ? 'لوحة التحليلات والإحصائيات' : 'Analytics Hub', icon: BarChart3, badge: 'Stats' },
       ],
     },
-  ], [t]);
+  ], [language, dueSRSCount]);
 
-  // Flat list of all available tabs
-  const allTabs = useMemo(() => {
-    return categories.flatMap((cat) => cat.items);
-  }, [categories]);
+  const allTabs = useMemo(() => categories.flatMap((cat) => cat.items), [categories]);
 
-  // Primary quick tabs featured in mobile bottom navigation bar
-  const mobileBottomItems = [
-    { id: 'grid', label: 'Catalog', icon: BookOpen },
-    { id: 'flashcards', label: 'Cards', icon: Layers },
-    { id: 'story', label: 'Story', icon: MessageSquare },
-    { id: 'quiz', label: 'Quiz', icon: Award },
-    { id: 'analytics', label: 'Stats', icon: BarChart3 },
-  ];
+  // Bottom Navigation Mobile items
+  const mobileBottomItems = useMemo(() => [
+    { id: 'grid', label: language === 'ar' ? 'المعجم' : 'Catalog', icon: BookOpen },
+    { id: 'flashcards', label: language === 'ar' ? 'البطاقات' : 'Cards', icon: Layers },
+    { id: 'speed-drill', label: language === 'ar' ? 'الاستماع' : 'Listen', icon: Zap },
+    { id: 'minimal-pairs', label: language === 'ar' ? 'الأصوات' : 'Pairs', icon: Radio },
+    { id: 'analytics', label: language === 'ar' ? 'التقدم' : 'Stats', icon: BarChart3 },
+  ], [language]);
 
   return (
     <>
@@ -133,28 +145,27 @@ export default function Navbar() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16 gap-1.5 overflow-hidden">
-            {/* Brand Logo & Title */}
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
+            {/* Brand Logo with 3D Micro-animated Icon (Feature 5 & 8) */}
             <div
               className="flex items-center gap-2 cursor-pointer group shrink-0"
               onClick={() => setActiveTab('grid')}
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center font-black text-xs sm:text-base theme-btn-primary shadow-sm shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center font-black text-sm sm:text-base theme-btn-primary shadow-md shrink-0 tab-active-bounce">
                 ⚡
               </div>
-              <div className="shrink-0">
-                <h1 className="text-xs sm:text-base font-black tracking-tight flex items-center gap-1">
-                  <span>Oxford</span>
-                  <span className="hidden xs:inline">3000™</span>
-                  <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full border font-black font-mono opacity-90 theme-btn-secondary">
-                    PRO
-                  </span>
-                </h1>
+              <div className="shrink-0 flex items-center gap-1.5">
+                <span className="text-sm sm:text-base font-black tracking-tight">
+                  Oxford <span className="text-cyan-500">3000™</span>
+                </span>
+                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full border font-black font-mono theme-btn-secondary">
+                  CEFR
+                </span>
               </div>
             </div>
 
-            {/* Desktop Navigation Categories & Tabs Bar */}
-            <nav className="hidden lg:flex items-center gap-1.5 p-1 rounded-2xl border bg-[var(--bg-card)] shrink min-w-0 max-w-full overflow-x-auto no-scrollbar shadow-sm">
+            {/* Desktop Navigation Tabs (Horizontal Scrollable Pill Bar) */}
+            <nav className="hidden xl:flex items-center gap-1 p-1 rounded-2xl border bg-[var(--bg-card)] shrink min-w-0 max-w-full overflow-x-auto no-scrollbar shadow-sm">
               {allTabs.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -163,111 +174,134 @@ export default function Navbar() {
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 whitespace-nowrap shrink-0 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap shrink-0 ${
                       isActive
                         ? 'theme-btn-primary shadow-md scale-105 tab-active-bounce'
-                        : 'opacity-75 hover:opacity-100 hover:bg-black/5 hover:scale-102'
+                        : 'opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                     }`}
                     title={item.label}
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0" />
                     <span>{item.label}</span>
+                    {item.badge && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-black/10 dark:bg-white/10 opacity-90">
+                        {item.badge}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </nav>
 
             {/* Right Controls Bar */}
-            <div className="flex items-center gap-1 sm:gap-2 shrink min-w-0">
-              {/* Learner Level & XP Badge */}
-              <button
-                onClick={() => setActiveTab('analytics')}
-                className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black theme-btn-secondary shrink-0 shadow-sm hover:scale-105 active:scale-95 transition-transform"
-                title={`Level ${level || 1} • ${xp || 0} XP • Streak: ${dailyStreak || 1} days`}
-              >
-                <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span>Lv.{level || 1}</span>
-                <span className="opacity-60">•</span>
-                <span className="text-amber-600 dark:text-amber-400">{xp || 0} XP</span>
-              </button>
-
-              {/* Theme Switcher Pills */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {/* Daily Streak Flame Counter (Feature 71) */}
               <div
-                className="flex items-center gap-0.5 p-0.5 sm:p-1 rounded-xl border bg-[var(--bg-card)] shrink overflow-x-auto max-w-[110px] sm:max-w-none no-scrollbar"
-                title="اختر الهوية البصرية (Theme)"
+                className="flex items-center gap-1 px-2 py-1 rounded-xl border bg-black/5 dark:bg-white/5 text-xs font-bold font-mono cursor-pointer"
+                title={`سلسلة الأيام الدراسية: ${streak} أيام متواصلة!`}
               >
-                <Palette className="w-3 h-3 opacity-70 ml-0.5 shrink-0 text-amber-500 hidden sm:block" />
-                {THEMES.map((th) => (
-                  <button
-                    key={th.id}
-                    onClick={() => setTheme(th.id)}
-                    className={`flex items-center justify-center w-6 h-6 sm:w-auto sm:px-2 py-0.5 rounded-lg text-[11px] sm:text-xs font-black transition-all shrink-0 active:scale-90 ${
-                      theme === th.id
-                        ? 'theme-btn-primary shadow-sm scale-105'
-                        : 'opacity-75 hover:opacity-100 hover:scale-105'
-                    }`}
-                    title={th.name}
-                  >
-                    <span>{th.emoji}</span>
-                  </button>
-                ))}
+                <Flame className={`w-4 h-4 text-amber-500 ${streak > 0 ? 'flame-streak-active' : ''}`} />
+                <span className="text-amber-500">{streak}d</span>
+              </div>
+
+              {/* 3 Themes Switcher Dropdown (Royal, Emerald, Sunset) */}
+              <div className="relative">
+                <button
+                  onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border theme-btn-secondary text-xs font-black transition-all active:scale-95 shadow-sm"
+                  title="تغيير الهوية البصرية والخطوط (3 Themes)"
+                >
+                  <Palette className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="hidden sm:inline">
+                    {THEMES.find((th) => th.id === theme)?.name.split(' ')[0] || 'الهوية'}
+                  </span>
+                  <ChevronDown className="w-3 h-3 opacity-70" />
+                </button>
+
+                {themeDropdownOpen && (
+                  <div className="absolute top-full mt-2 right-0 rtl:left-0 rtl:right-auto w-64 glass-panel p-2 rounded-2xl border shadow-2xl z-50 dropdown-animate space-y-1 font-arabic">
+                    <span className="text-[10px] font-black uppercase tracking-wider opacity-70 px-2 py-1 block">
+                      اختر الهوية البصرية والخطوط:
+                    </span>
+                    {THEMES.map((th) => (
+                      <button
+                        key={th.id}
+                        onClick={() => {
+                          setTheme(th.id);
+                          setThemeDropdownOpen(false);
+                        }}
+                        className={`w-full p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition-all ${
+                          theme === th.id
+                            ? 'theme-btn-primary shadow-sm'
+                            : 'theme-btn-secondary hover:scale-101'
+                        }`}
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span>{th.emoji}</span>
+                            <span>{th.name}</span>
+                          </div>
+                          <div className="text-[10px] opacity-75 font-mono">{th.fonts}</div>
+                        </div>
+                        {theme === th.id && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Light / Dark Mode Toggle */}
               <button
                 onClick={toggleMode}
-                className="flex items-center justify-center p-2 rounded-xl border text-xs font-black transition-all theme-btn-secondary shrink-0 active:scale-90"
-                title={`Switch Light / Dark Mode`}
+                className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl border text-xs font-black transition-all theme-btn-secondary shrink-0 active:scale-90"
+                title={`التبديل بين الوضع الليلي والنهاري`}
+                aria-label="Toggle dark/light mode"
               >
                 {mode === 'light' ? (
-                  <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <Sun className="w-4 h-4 text-amber-500 shrink-0" />
                 ) : (
-                  <Moon className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <Moon className="w-4 h-4 text-cyan-400 shrink-0" />
                 )}
               </button>
 
-              {/* Voice Selector */}
-              <div className="hidden 2xl:flex items-center gap-1 border px-2 py-1 rounded-xl text-xs font-black shrink-0">
-                <Volume2 className="w-3.5 h-3.5 shrink-0 text-cyan-500" />
-                <select
-                  value={voicePreset}
-                  onChange={(e) => setVoicePreset(e.target.value)}
-                  className="bg-transparent font-black focus:outline-none cursor-pointer text-xs max-w-[90px] truncate"
-                >
-                  {voicePresets.map((vp) => (
-                    <option
-                      key={vp.id}
-                      value={vp.id}
-                      className="bg-[var(--bg-card)] text-[var(--text-main)] font-bold"
-                    >
-                      {vp.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Language Switcher */}
+              {/* Language Switcher (AR / EN) */}
               <button
                 onClick={toggleLanguage}
-                className="flex items-center gap-1 px-2.5 py-1.5 theme-btn-secondary text-xs font-black transition-all whitespace-nowrap shrink-0 active:scale-95 hover:scale-105"
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl theme-btn-secondary text-xs font-black transition-all whitespace-nowrap shrink-0 active:scale-95 border shadow-sm"
+                title={language === 'en' ? 'التحويل إلى اللغة العربية' : 'Switch to English'}
               >
-                <Globe className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden sm:inline">{t('langToggle')}</span>
+                <Globe className="w-3.5 h-3.5 shrink-0 text-cyan-500" />
+                <span className="font-mono font-bold text-[11px]">
+                  {language === 'en' ? 'عربي' : 'EN'}
+                </span>
               </button>
 
-              {/* API Key Modal Button */}
-              <button
-                onClick={() => setIsApiKeyModalOpen(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 theme-btn-primary text-xs font-black transition-all whitespace-nowrap shrink-0 shadow-sm active:scale-95 hover:scale-105"
-              >
-                <Key className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden sm:inline">AI Key</span>
-              </button>
+              {/* Authenticated User Avatar & Logout */}
+              {authUser && (
+                <div className="flex items-center gap-1 pl-1 border-l rtl:pr-1 rtl:border-r rtl:border-l-0">
+                  <div
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold font-arabic"
+                    title={`الحساب النشط: ${authUser.name}`}
+                  >
+                    <span>{authUser.avatar || '👨‍🎓'}</span>
+                    <span className="hidden md:inline">{authUser.name}</span>
+                  </div>
+
+                  <button
+                    onClick={logoutUser}
+                    className="p-1.5 rounded-xl hover:bg-rose-500/10 text-rose-500 border border-rose-500/20 active:scale-90 transition-all"
+                    title="تسجيل الخروج"
+                    aria-label="Logout"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
 
               {/* Mobile Drawer Menu Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-1.5 border rounded-xl lg:hidden text-xs font-black shrink-0 theme-btn-secondary active:scale-90"
+                className="p-1.5 sm:p-2 border rounded-xl xl:hidden text-xs font-black shrink-0 theme-btn-secondary active:scale-90"
                 aria-label="Toggle Navigation Menu"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -276,26 +310,42 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Drawer Navigation Menu Organized By Categories */}
+        {/* Mobile Full Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden p-3 border-b space-y-3 bg-[var(--bg-card)] shadow-2xl max-h-[80vh] overflow-y-auto dropdown-animate">
-            {/* Quick User Stats in Drawer */}
-            <div className="p-2.5 border rounded-2xl flex items-center justify-between gap-2 theme-btn-secondary shadow-sm">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-amber-500" />
-                <span className="text-xs font-black">المستوى {level || 1} ({xp || 0} XP)</span>
+          <div className="xl:hidden p-4 border-b space-y-4 bg-[var(--bg-card)] shadow-2xl max-h-[85vh] overflow-y-auto dropdown-animate font-arabic">
+            {/* User Profile Bar inside drawer */}
+            {authUser && (
+              <div className="p-3 rounded-2xl border bg-black/5 dark:bg-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{authUser.avatar}</span>
+                  <div>
+                    <span className="text-xs font-bold block">{authUser.name}</span>
+                    <span className="text-[10px] opacity-60 font-mono">سلسلة: {streak} أيام &bull; {xp} XP</span>
+                  </div>
+                </div>
+                <button
+                  onClick={logoutUser}
+                  className="px-3 py-1 rounded-xl border border-rose-500/30 text-rose-500 text-xs font-bold flex items-center gap-1"
+                >
+                  <LogOut className="w-3 h-3" />
+                  <span>خروج</span>
+                </button>
               </div>
-              <div className="flex items-center gap-1 text-xs font-black text-amber-500">
-                <Flame className="w-3.5 h-3.5" />
-                <span>{dailyStreak || 1} أيام</span>
+            )}
+
+            {/* Offline Status */}
+            {isOffline && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-xs font-bold flex items-center gap-2">
+                <WifiOff className="w-4 h-4" />
+                <span>وضع عدم الاتصال مفعل - جميع الكلمات متاحة محلياً</span>
               </div>
-            </div>
+            )}
 
             {/* Categorized Links Grid */}
             {categories.map((cat) => (
               <div key={cat.id} className="space-y-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wider opacity-70 flex items-center gap-1">
-                  <cat.icon className="w-3 h-3 text-cyan-500" />
+                <span className="text-[11px] font-black uppercase tracking-wider opacity-80 flex items-center gap-1.5 text-cyan-500">
+                  <cat.icon className="w-3.5 h-3.5" />
                   <span>{cat.label}</span>
                 </span>
                 <div className="grid grid-cols-2 gap-2">
@@ -309,12 +359,19 @@ export default function Navbar() {
                           setActiveTab(item.id);
                           setMobileMenuOpen(false);
                         }}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black transition-all active:scale-95 ${
-                          isActive ? 'theme-btn-primary shadow-md scale-102' : 'theme-btn-secondary'
+                        className={`flex items-center justify-between gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                          isActive ? 'theme-btn-primary shadow-md' : 'theme-btn-secondary'
                         }`}
                       >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        <span className="truncate">{item.label}</span>
+                        <div className="flex items-center gap-1.5 truncate">
+                          <Icon className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-black/10 dark:bg-white/10 opacity-90">
+                            {item.badge}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -325,8 +382,8 @@ export default function Navbar() {
         )}
       </header>
 
-      {/* Mobile Fixed Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden glass-panel border-t p-1.5 flex items-center justify-around shadow-2xl">
+      {/* Mobile Bottom Bar for Rapid Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden glass-panel border-t px-1.5 pt-1.5 pb-2.5 flex items-center justify-around shadow-2xl backdrop-blur-xl">
         {mobileBottomItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -334,14 +391,14 @@ export default function Navbar() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all duration-200 ${
+              className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-2xl transition-all duration-200 flex-1 max-w-[70px] ${
                 isActive
-                  ? 'theme-btn-primary scale-108 shadow-md tab-active-bounce'
-                  : 'opacity-70 hover:opacity-100 hover:scale-105 active:scale-90'
+                  ? 'theme-btn-primary shadow-md scale-105 font-black'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-[var(--text-main)] active:scale-90 font-bold'
               }`}
             >
-              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-[10px] font-black mt-0.5">{item.label}</span>
+              <Icon className="w-4 h-4 mb-0.5 shrink-0" />
+              <span className="text-[9px] leading-tight truncate max-w-full font-arabic">{item.label}</span>
             </button>
           );
         })}

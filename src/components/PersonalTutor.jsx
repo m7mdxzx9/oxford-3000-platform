@@ -79,7 +79,6 @@ export default function PersonalTutor() {
       };
       setMessages((prev) => [...prev, tutorMsg]);
       playAudio(res.reply, { presetId: voicePreset });
-      if (addXp) addXp(20, 'جلسة محادثة مع المدرب الذكي');
     } catch (err) {
       addNotification('Error receiving tutor response.', 'error');
     } finally {

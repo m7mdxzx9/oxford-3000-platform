@@ -33,14 +33,14 @@ export const ApiKeyModal = () => {
         {/* Close Button */}
         <button
           onClick={() => setIsApiKeyModalOpen(false)}
-          className="absolute top-4 right-4 p-2 rounded-xl theme-btn-secondary opacity-70 hover:opacity-100 transition-all"
+          className="absolute top-4 end-4 p-2 rounded-xl theme-btn-secondary opacity-70 hover:opacity-100 transition-all z-10"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-3 mb-5 pr-8">
+        <div className="flex items-center gap-3 mb-5 pe-8">
           <div className="p-2.5 rounded-2xl theme-btn-primary shadow-md shrink-0">
             <Key className="w-5 h-5" />
           </div>

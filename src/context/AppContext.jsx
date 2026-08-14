@@ -3,10 +3,12 @@ import { translations } from '../data/translations';
 import { DEFAULT_GEMINI_KEY } from '../services/geminiService';
 import { VOICE_PRESETS } from '../services/audioService';
 import { playTabSwitchSound, playSuccessChime } from '../services/soundEffects';
+import { calculateNextSRS, isWordDueForReview, SRS_RATINGS } from '../utils/srsUtils';
 
 const AppContext = createContext(null);
 
 const STORAGE_KEYS = {
+  AUTH_USER: 'oxford3000_auth_user',
   FAVORITES: 'oxford3000_favorites',
   MASTERED: 'oxford3000_mastered',
   API_KEY: 'oxford3000_gemini_api_key',
@@ -17,6 +19,7 @@ const STORAGE_KEYS = {
   MODE: 'oxford3000_mode',
   XP: 'oxford3000_xp',
   STREAK: 'oxford3000_streak',
+  SRS: 'oxford3000_srs_records',
 };
 
 const loadFromStorage = (key, fallback) => {
@@ -35,20 +38,50 @@ const saveToStorage = (key, value) => {
 };
 
 export const THEMES = [
-  { id: 'brutalism', name: 'Neo-Brutalism', emoji: '⚡', label: 'Neo-Brutalism' },
-  { id: 'organic', name: 'Organic Terracotta', emoji: '🌿', label: 'Terracotta' },
-  { id: 'swiss', name: 'Swiss Minimalist', emoji: '🇨🇭', label: 'Swiss Red' },
+  {
+    id: 'royal',
+    name: 'أكسفورد الملكي (Royal Oxford)',
+    emoji: '👑',
+    fonts: 'Plus Jakarta Sans + Readex Pro',
+    palette: 'Midnight Navy & Sapphire Blue',
+    colors: ['#060D21', '#1D4ED8', '#00D2FF', '#F59E0B'],
+  },
+  {
+    id: 'emerald',
+    name: 'الزمرد الأكاديمي (Cyber Emerald)',
+    emoji: '🌿',
+    fonts: 'Space Grotesk + Cairo',
+    palette: 'Pine Forest & Mint Emerald',
+    colors: ['#031A14', '#059669', '#10B981', '#34D399'],
+  },
+  {
+    id: 'sunset',
+    name: 'نيون الغروب (Sunset Crimson)',
+    emoji: '🌅',
+    fonts: 'Syne + Tajawal',
+    palette: 'Obsidian Violet & Sunset Coral',
+    colors: ['#0D0B18', '#EA580C', '#FF4B4B', '#FBBF24'],
+  },
 ];
 
 export const AppProvider = ({ children }) => {
-  // 1. Core Navigation & State
+  // 1. Authentication State
+  const [authUser, setAuthUser] = useState(() => loadFromStorage(STORAGE_KEYS.AUTH_USER, null));
+
+  const loginUser = useCallback((userObj) => {
+    setAuthUser(userObj);
+    saveToStorage(STORAGE_KEYS.AUTH_USER, userObj);
+  }, []);
+
+  const logoutUser = useCallback(() => {
+    setAuthUser(null);
+    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+  }, []);
+
+  // 2. Navigation & Notifications
   const [activeTab, setActiveTabState] = useState('grid');
   const [notifications, setNotifications] = useState([]);
-  const [lastXpBurst, setLastXpBurst] = useState(null);
-  const [xp, setXp] = useState(() => loadFromStorage(STORAGE_KEYS.XP, 120));
-  const [dailyStreak, setDailyStreak] = useState(() => loadFromStorage(STORAGE_KEYS.STREAK, 1));
 
-  // 2. Notification Handlers (Declared early so all downstream callbacks can safely use them)
   const removeNotification = useCallback((id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
@@ -63,7 +96,6 @@ export const AppProvider = ({ children }) => {
     }
   }, [removeNotification]);
 
-  // 3. Navigation with Sound
   const setActiveTab = useCallback((newTab) => {
     try {
       playTabSwitchSound();
@@ -71,41 +103,20 @@ export const AppProvider = ({ children }) => {
     setActiveTabState(newTab);
   }, []);
 
-  // 4. Gamification Handlers
-  const addXp = useCallback((amount, reason) => {
-    setXp((prev) => {
-      const next = prev + amount;
-      saveToStorage(STORAGE_KEYS.XP, next);
-      return next;
-    });
-
-    try {
-      playSuccessChime();
-    } catch (e) {}
-
-    setLastXpBurst({ amount, reason, id: Date.now() });
-
-    if (reason) {
-      addNotification(`+${amount} XP: ${reason} 🌟`, 'success', 2500);
-    }
-  }, [addNotification]);
-
-  const level = Math.floor(xp / 100) + 1;
-
-  // 5. Theme & Appearance
+  // 3. Theme & Appearance
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('uqu_theme') || localStorage.getItem(STORAGE_KEYS.THEME);
-    return stored || 'brutalism';
+    return stored || 'royal';
   });
 
   const [mode, setMode] = useState(() => {
     const stored = localStorage.getItem('uqu_mode') || localStorage.getItem(STORAGE_KEYS.MODE);
-    return stored || 'light';
+    return stored || 'dark';
   });
 
   const [language, setLanguage] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
-    return stored || 'en';
+    return stored || 'ar';
   });
 
   const [voicePreset, setVoicePreset] = useState(() => {
@@ -115,16 +126,65 @@ export const AppProvider = ({ children }) => {
 
   const [audioSpeed, setAudioSpeed] = useState(() => {
     const stored = localStorage.getItem('oxford3000_audio_speed');
-    return stored ? parseFloat(stored) : 0.9;
+    return stored ? parseFloat(stored) : 1.0;
   });
 
-  // 6. Lexicon & Collections
+  // 4. Offline State (Feature 63)
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      addNotification('تمت استعادة الاتصال بالإنترنت 🟢', 'success', 3000);
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      addNotification('وضع عدم الاتصال مفعل - جميع المفردات والبطاقات متاحة محلياً 💾', 'info', 4000);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [addNotification]);
+
+  // 5. XP & Streak Tracking (Feature 71)
+  const [xp, setXp] = useState(() => loadFromStorage(STORAGE_KEYS.XP, 120));
+  const [streak, setStreak] = useState(() => loadFromStorage(STORAGE_KEYS.STREAK, 3));
+
+  const addXp = useCallback((amount = 10) => {
+    setXp((prev) => {
+      const next = prev + amount;
+      saveToStorage(STORAGE_KEYS.XP, next);
+      return next;
+    });
+  }, []);
+
+  // 6. Lexicon, Favorites, Mastered & Custom
   const [favorites, setFavorites] = useState(() => loadFromStorage(STORAGE_KEYS.FAVORITES, []));
   const [mastered, setMastered] = useState(() => loadFromStorage(STORAGE_KEYS.MASTERED, []));
   const [customWords, setCustomWords] = useState(() => loadFromStorage(STORAGE_KEYS.CUSTOM_WORDS, []));
   const [selectedWords, setSelectedWords] = useState([]);
 
-  // 7. API Keys & Modals
+  // 7. Spaced Repetition (SRS) Records (Feature 31)
+  const [srsRecords, setSrsRecords] = useState(() => loadFromStorage(STORAGE_KEYS.SRS, {}));
+
+  const rateWordSRS = useCallback((wordTerm, rating = SRS_RATINGS.GOOD) => {
+    setSrsRecords((prev) => {
+      const current = prev[wordTerm] || {};
+      const updated = calculateNextSRS(current, rating);
+      const nextRecords = { ...prev, [wordTerm]: updated };
+      saveToStorage(STORAGE_KEYS.SRS, nextRecords);
+      return nextRecords;
+    });
+  }, []);
+
+  // Calculate Due Reviews Count
+  const dueSRSCount = Object.values(srsRecords).filter(isWordDueForReview).length;
+
+  // 8. API Keys & Modals
   const [apiKey, setApiKey] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.API_KEY);
     return stored !== null && stored.trim() !== '' ? stored : DEFAULT_GEMINI_KEY;
@@ -160,7 +220,7 @@ export const AppProvider = ({ children }) => {
   }, [voicePreset]);
 
   const t = useCallback((key) => {
-    const langDict = translations[language] || translations.en;
+    const langDict = translations[language] || translations.ar || translations.en;
     return langDict[key] || translations.en[key] || key;
   }, [language]);
 
@@ -185,7 +245,7 @@ export const AppProvider = ({ children }) => {
       const exists = prev.includes(wordTerm);
       const updated = exists ? prev.filter((w) => w !== wordTerm) : [...prev, wordTerm];
       addNotification(
-        exists ? `Removed "${wordTerm}" from favorites` : `Added "${wordTerm}" to favorites`,
+        exists ? `تمت إزالة "${wordTerm}" من المفضلة` : `تمت إضافة "${wordTerm}" إلى المفضلة ⭐`,
         exists ? 'info' : 'success'
       );
       return updated;
@@ -199,7 +259,7 @@ export const AppProvider = ({ children }) => {
       const exists = prev.includes(wordTerm);
       const updated = exists ? prev.filter((w) => w !== wordTerm) : [...prev, wordTerm];
       addNotification(
-        exists ? `Unmarked "${wordTerm}" as mastered` : `Marked "${wordTerm}" as mastered`,
+        exists ? `تم إلغاء تمييز "${wordTerm}" كمتقن` : `تم تمييز "${wordTerm}" كـ كلمة متقنة 🎯`,
         exists ? 'info' : 'success'
       );
       return updated;
@@ -210,12 +270,12 @@ export const AppProvider = ({ children }) => {
 
   const addCustomWord = useCallback((wordObj) => {
     setCustomWords((prev) => [wordObj, ...prev]);
-    addNotification(`Added custom word: "${wordObj.word}"`, 'success');
+    addNotification(`تمت إضافة كلمة مخصصة: "${wordObj.word}"`, 'success');
   }, [addNotification]);
 
   const clearSelectedWords = useCallback(() => {
     setSelectedWords([]);
-    addNotification('Cleared selected words', 'info', 2000);
+    addNotification('تم تفريغ الكلمات المحددة', 'info', 2000);
   }, [addNotification]);
 
   const toggleSelectWord = useCallback((wordObj) => {
@@ -236,6 +296,9 @@ export const AppProvider = ({ children }) => {
   );
 
   const value = {
+    authUser,
+    loginUser,
+    logoutUser,
     theme,
     setTheme,
     mode,
@@ -251,6 +314,10 @@ export const AppProvider = ({ children }) => {
     voicePresets: VOICE_PRESETS,
     audioSpeed,
     setAudioSpeed,
+    isOffline,
+    xp,
+    addXp,
+    streak,
     favorites,
     favoritesCount: favorites.length,
     toggleFavorite,
@@ -259,6 +326,9 @@ export const AppProvider = ({ children }) => {
     masteredCount: mastered.length,
     toggleMastered,
     isMastered,
+    srsRecords,
+    rateWordSRS,
+    dueSRSCount,
     customWords,
     addCustomWord,
     selectedWords,
@@ -266,12 +336,6 @@ export const AppProvider = ({ children }) => {
     clearSelectedWords,
     isSelectedWord,
     selectedWordsCount: selectedWords.length,
-    xp,
-    addXp,
-    lastXpBurst,
-    setLastXpBurst,
-    level,
-    dailyStreak,
     apiKey,
     setApiKey,
     isApiKeyModalOpen,

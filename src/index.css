@@ -5,166 +5,161 @@
 @tailwind utilities;
 
 /* =========================================================
-   MOBILE-FIRST & TABLET RESPONSIVE MULTI-THEME ENGINE
-   (Brutalism, Organic, Swiss)
+   3 DISTINCT VISUAL IDENTITY THEMES WITH CUSTOM FONTS & PALETTES
+   1. Royal Oxford (أكسفورد الملكي) -> Fonts: Plus Jakarta Sans / Outfit + Readex Pro
+   2. Cyber Emerald (الزمرد الأكاديمي) -> Fonts: Space Grotesk / Inter + Cairo
+   3. Sunset Crimson (نيون الغروب العصري) -> Fonts: Syne / Outfit + Tajawal
    ========================================================= */
 
 /* ---------------------------------------------------------
-   1. NEO-BRUTALISM LIGHT & DARK (data-theme="brutalism")
-   Mobile-scaled hard offset shadows (4px mobile vs 6px desktop)
-   --------------------------------------------------------- */
-/* ---------------------------------------------------------
-   1. NEO-BRUTALISM LIGHT & DARK (data-theme="brutalism")
-   Original Neo-Brutalist Palette with Ultra-Readable Contrast
+   1. ROYAL OXFORD (data-theme="royal" / default "brutalism")
+   Deep Oxford Midnight Navy & Sapphire with Gold / Cyan Accents
    --------------------------------------------------------- */
 :root,
+[data-theme="royal"][data-mode="light"],
 [data-theme="brutalism"][data-mode="light"] {
-  --bg-page: #FFFBEB;
+  --bg-page: #F0F4F8;
   --bg-card: #FFFFFF;
-  --bg-surface: #FEF3C7;
-  --bg-accent: #FF0055;
-  --bg-accent-hover: #E6004C;
+  --bg-surface: #E2E8F0;
+  --bg-accent: #1D4ED8;
+  --bg-accent-hover: #1E40AF;
   --text-main: #0F172A;
-  --text-muted: #334155;
+  --text-muted: #475569;
   --text-accent: #FFFFFF;
-  --border-card: 3px solid #000000;
-  --border-input: 2.5px solid #000000;
-  --shadow-card: 4px 4px 0px #000000;
-  --shadow-btn: 3px 3px 0px #000000;
-  --radius-card: 0.75rem;
-  --radius-btn: 0.5rem;
-  --font-family: 'Cairo', 'Tajawal', sans-serif;
-  --font-arabic: 'Cairo', sans-serif;
+  --border-card: 1.5px solid #CBD5E1;
+  --border-input: 1.5px solid #94A3B8;
+  --shadow-card: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --shadow-btn: 0 4px 14px rgba(29, 78, 216, 0.2);
+  --radius-card: 1rem;
+  --radius-btn: 0.75rem;
+  --font-family: 'Plus Jakarta Sans', 'Readex Pro', sans-serif;
+  --font-arabic: 'Readex Pro', sans-serif;
+  --brand-primary: #1D4ED8;
+  --brand-secondary: #00D2FF;
+  --brand-gold: #F59E0B;
 }
 
+[data-theme="royal"][data-mode="dark"],
 [data-theme="brutalism"][data-mode="dark"] {
-  --bg-page: #09090B;
-  --bg-card: #18181B;
-  --bg-surface: #27272A;
-  --bg-accent: #FF0055;
-  --bg-accent-hover: #E6004C;
-  --text-main: #FFFFFF;
-  --text-muted: #E2E8F0;
-  --text-accent: #FFFFFF;
-  --border-card: 3px solid #00F0FF;
-  --border-input: 2.5px solid #00F0FF;
-  --shadow-card: 4px 4px 0px #FF0055;
-  --shadow-btn: 3px 3px 0px #FF0055;
-  --radius-card: 0.75rem;
-  --radius-btn: 0.5rem;
-  --font-family: 'Cairo', 'Tajawal', sans-serif;
-  --font-arabic: 'Cairo', sans-serif;
-}
-
-@media (min-width: 648px) {
-  [data-theme="brutalism"] {
-    --border-card: 3.5px solid #000000;
-    --shadow-card: 6px 6px 0px #000000;
-    --shadow-btn: 4px 4px 0px #000000;
-  }
-  [data-theme="brutalism"][data-mode="dark"] {
-    --border-card: 3.5px solid #00F0FF;
-    --shadow-card: 6px 6px 0px #FF0055;
-    --shadow-btn: 4px 4px 0px #FF0055;
-  }
+  --bg-page: #060D21;
+  --bg-card: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-accent: #00D2FF;
+  --bg-accent-hover: #0284C7;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-accent: #060D21;
+  --border-card: 1px solid rgba(0, 210, 255, 0.2);
+  --border-input: 1.5px solid #334155;
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --shadow-btn: 0 4px 16px rgba(0, 210, 255, 0.3);
+  --radius-card: 1rem;
+  --radius-btn: 0.75rem;
+  --font-family: 'Plus Jakarta Sans', 'Readex Pro', sans-serif;
+  --font-arabic: 'Readex Pro', sans-serif;
+  --brand-primary: #00D2FF;
+  --brand-secondary: #3B82F6;
+  --brand-gold: #F59E0B;
 }
 
 /* ---------------------------------------------------------
-   2. ORGANIC TERRACOTTA LIGHT & DARK (data-theme="organic")
+   2. CYBER EMERALD (data-theme="emerald" / "organic")
+   Oxford Forest Pine & Glowing Mint Academic Identity
    --------------------------------------------------------- */
+[data-theme="emerald"][data-mode="light"],
 [data-theme="organic"][data-mode="light"] {
-  --bg-page: #FDFBF7;
-  --bg-card: #F5EFE6;
-  --bg-surface: #EADBC8;
-  --bg-accent: #D96B43;
-  --bg-accent-hover: #C25A34;
-  --text-main: #1C120C;
-  --text-muted: #4A3728;
+  --bg-page: #F0FDF4;
+  --bg-card: #FFFFFF;
+  --bg-surface: #DCFCE7;
+  --bg-accent: #059669;
+  --bg-accent-hover: #047857;
+  --text-main: #064E3B;
+  --text-muted: #166534;
   --text-accent: #FFFFFF;
-  --border-card: 1px solid #E6DCCF;
-  --border-input: 1px solid #D8C8B8;
-  --shadow-card: 0 4px 16px rgba(184, 115, 51, 0.08);
-  --shadow-btn: 0 2px 8px rgba(217, 107, 67, 0.15);
-  --radius-card: 1.25rem 0.5rem 1.25rem 0.5rem;
-  --radius-btn: 1rem 0.35rem;
-  --font-family: 'Tajawal', 'Amiri', sans-serif;
-  --font-arabic: 'Amiri', serif;
+  --border-card: 1.5px solid #BBF7D0;
+  --border-input: 1.5px solid #86EFAC;
+  --shadow-card: 0 4px 20px rgba(6, 78, 59, 0.08);
+  --shadow-btn: 0 4px 14px rgba(5, 150, 105, 0.2);
+  --radius-card: 1.25rem;
+  --radius-btn: 0.85rem;
+  --font-family: 'Space Grotesk', 'Cairo', sans-serif;
+  --font-arabic: 'Cairo', sans-serif;
+  --brand-primary: #059669;
+  --brand-secondary: #10B981;
+  --brand-gold: #D97706;
 }
 
+[data-theme="emerald"][data-mode="dark"],
 [data-theme="organic"][data-mode="dark"] {
-  --bg-page: #1A1512;
-  --bg-card: #2A221D;
-  --bg-surface: #3D322B;
-  --bg-accent: #D96B43;
-  --bg-accent-hover: #C25A34;
-  --text-main: #FFF8F2;
-  --text-muted: #E0D3C7;
-  --text-accent: #FFFFFF;
-  --border-card: 1px solid #3D322B;
-  --border-input: 1px solid #4E4037;
-  --shadow-card: 0 4px 16px rgba(217, 107, 67, 0.12);
-  --shadow-btn: 0 4px 12px rgba(217, 107, 67, 0.25);
-  --radius-card: 1.25rem 0.5rem 1.25rem 0.5rem;
-  --radius-btn: 1rem 0.35rem;
-  --font-family: 'Tajawal', 'Amiri', sans-serif;
-  --font-arabic: 'Amiri', serif;
-}
-
-@media (min-width: 648px) {
-  [data-theme="organic"] {
-    --radius-card: 1.75rem 0.5rem 1.75rem 0.5rem;
-    --radius-btn: 1.25rem 0.5rem;
-    --shadow-card: 0 4px 20px rgba(184, 115, 51, 0.08);
-  }
+  --bg-page: #031A14;
+  --bg-card: #072C22;
+  --bg-surface: #0E3D30;
+  --bg-accent: #10B981;
+  --bg-accent-hover: #059669;
+  --text-main: #F0FDF4;
+  --text-muted: #6EE7B7;
+  --text-accent: #031A14;
+  --border-card: 1px solid rgba(16, 185, 129, 0.25);
+  --border-input: 1.5px solid #065F46;
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.55);
+  --shadow-btn: 0 4px 16px rgba(16, 185, 129, 0.35);
+  --radius-card: 1.25rem;
+  --radius-btn: 0.85rem;
+  --font-family: 'Space Grotesk', 'Cairo', sans-serif;
+  --font-arabic: 'Cairo', sans-serif;
+  --brand-primary: #10B981;
+  --brand-secondary: #34D399;
+  --brand-gold: #F59E0B;
 }
 
 /* ---------------------------------------------------------
-   3. SWISS MINIMALIST LIGHT & DARK (data-theme="swiss")
+   3. SUNSET CRIMSON (data-theme="sunset" / "swiss")
+   Obsidian Violet & Radiant Neon Sunset Coral / Gold Identity
    --------------------------------------------------------- */
+[data-theme="sunset"][data-mode="light"],
 [data-theme="swiss"][data-mode="light"] {
-  --bg-page: #FFFFFF;
-  --bg-card: #F4F4F5;
-  --bg-surface: #E4E4E7;
-  --bg-accent: #DC2626;
-  --bg-accent-hover: #B91C1C;
-  --text-main: #000000;
-  --text-muted: #3F3F46;
+  --bg-page: #FFF7ED;
+  --bg-card: #FFFFFF;
+  --bg-surface: #FFEDD5;
+  --bg-accent: #EA580C;
+  --bg-accent-hover: #C2410C;
+  --text-main: #431407;
+  --text-muted: #7C2D12;
   --text-accent: #FFFFFF;
-  --border-card: 1px solid #E4E4E7;
-  --border-input: 1px solid #D4D4D8;
-  --shadow-card: none;
-  --shadow-btn: none;
-  --radius-card: 0.25rem;
-  --radius-btn: 0.25rem;
-  --font-family: 'Cairo', 'Inter', sans-serif;
+  --border-card: 1.5px solid #FED7AA;
+  --border-input: 1.5px solid #FDBA74;
+  --shadow-card: 0 4px 20px rgba(234, 88, 12, 0.08);
+  --shadow-btn: 0 4px 14px rgba(234, 88, 12, 0.25);
+  --radius-card: 0.85rem;
+  --radius-btn: 0.65rem;
+  --font-family: 'Syne', 'Tajawal', sans-serif;
   --font-arabic: 'Tajawal', sans-serif;
+  --brand-primary: #EA580C;
+  --brand-secondary: #FF4B4B;
+  --brand-gold: #F59E0B;
 }
 
+[data-theme="sunset"][data-mode="dark"],
 [data-theme="swiss"][data-mode="dark"] {
-  --bg-page: #000000;
-  --bg-card: #121212;
-  --bg-surface: #1E1E1E;
-  --bg-accent: #DC2626;
-  --bg-accent-hover: #EF4444;
-  --text-main: #FFFFFF;
-  --text-muted: #E4E4E7;
+  --bg-page: #0D0B18;
+  --bg-card: #181429;
+  --bg-surface: #241D3B;
+  --bg-accent: #FF4B4B;
+  --bg-accent-hover: #E11D48;
+  --text-main: #FFF7ED;
+  --text-muted: #CBD5E1;
   --text-accent: #FFFFFF;
-  --border-card: 1px solid #27272A;
-  --border-input: 1px solid #3F3F46;
-  --shadow-card: none;
-  --shadow-btn: none;
-  --radius-card: 0.25rem;
-  --radius-btn: 0.25rem;
-  --font-family: 'Cairo', 'Inter', sans-serif;
+  --border-card: 1px solid rgba(255, 75, 75, 0.25);
+  --border-input: 1.5px solid #4C1D95;
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.6);
+  --shadow-btn: 0 4px 18px rgba(255, 75, 75, 0.35);
+  --radius-card: 0.85rem;
+  --radius-btn: 0.65rem;
+  --font-family: 'Syne', 'Tajawal', sans-serif;
   --font-arabic: 'Tajawal', sans-serif;
-}
-
-/* Swiss Card Special Accent Top Border */
-[data-theme="swiss"] .card-theme-target,
-[data-theme="swiss"] .glass-panel,
-[data-theme="swiss"] .glass-card,
-[data-theme="swiss"] .glass-card-interactive {
-  border-top: 4px solid var(--bg-accent) !important;
+  --brand-primary: #FF4B4B;
+  --brand-secondary: #8B5CF6;
+  --brand-gold: #FBBF24;
 }
 
 /* GLOBAL PAGE BACKGROUND SYNCHRONIZATION */
@@ -288,18 +283,20 @@ h1, h2, h3, h4, h5, h6 {
     [data-theme="brutalism"] .theme-btn-primary:hover,
     [data-theme="brutalism"] .theme-btn-secondary:hover,
     [data-theme="brutalism"] .glass-card-interactive:hover {
-      box-shadow: 6px 6px 0px #FF0055;
-      transform: translate(-2px, -2px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
     }
 
     [data-theme="swiss"][data-mode="light"] .glass-card-interactive:hover {
-      border-color: #000000;
+      border-color: #0F172A;
       background-color: #FFFFFF !important;
+      transform: translateY(-2px);
     }
 
     [data-theme="swiss"][data-mode="dark"] .glass-card-interactive:hover {
-      border-color: #DC2626;
-      background-color: #1A1A1A !important;
+      border-color: #E11D48;
+      background-color: #1E1E24 !important;
+      transform: translateY(-2px);
     }
   }
 }
@@ -564,3 +561,99 @@ h1, h2, h3, h4, h5, h6 {
 .glow-active-tab {
   animation: pulseGlowAccent 2.5s infinite ease-in-out;
 }
+
+/* =========================================================
+   FEATURE-SPECIFIC ANIMATIONS & UTILITIES
+   ========================================================= */
+
+/* Feature 63: Gentle Haptic / Error Shake */
+@keyframes gentleShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.animate-shake {
+  animation: gentleShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Feature 10: Electromagnetic Pulsing Mic Rings */
+@keyframes electromagneticRing {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.electromagnetic-pulse-ring {
+  animation: electromagneticRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+/* Feature 67: Live Equalizer Sound Waves */
+@keyframes eqBarPulse {
+  0%, 100% { height: 4px; }
+  50% { height: 22px; }
+}
+
+.eq-bar {
+  animation: eqBarPulse 0.8s ease-in-out infinite alternate;
+}
+.eq-bar-1 { animation-delay: 0.1s; }
+.eq-bar-2 { animation-delay: 0.35s; }
+.eq-bar-3 { animation-delay: 0.2s; }
+.eq-bar-4 { animation-delay: 0.5s; }
+.eq-bar-5 { animation-delay: 0.25s; }
+
+/* Feature 71: Flame Streak Animation */
+@keyframes flameFlicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6)); }
+  25% { transform: scale(1.08) rotate(3deg); filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.8)); }
+  50% { transform: scale(0.96) rotate(-3deg); filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.7)); }
+  75% { transform: scale(1.12) rotate(2deg); filter: drop-shadow(0 0 16px rgba(234, 88, 12, 0.9)); }
+}
+
+.flame-streak-active {
+  animation: flameFlicker 1.8s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: bottom center;
+}
+
+/* Feature 23: Silent Letter Highlighter */
+.silent-letter {
+  opacity: 0.45;
+  text-decoration: line-through;
+  text-decoration-color: rgba(239, 68, 68, 0.6);
+  text-decoration-thickness: 2px;
+  position: relative;
+}
+
+.silent-letter:hover {
+  opacity: 0.85;
+}
+
+/* Feature 25: CEFR Level Badges & Gradients */
+.cefr-gradient-a1 {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: #FFFFFF;
+}
+.cefr-gradient-a2 {
+  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+  color: #FFFFFF;
+}
+.cefr-gradient-b1 {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  color: #FFFFFF;
+}
+.cefr-gradient-b2 {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: #FFFFFF;
+}
+
