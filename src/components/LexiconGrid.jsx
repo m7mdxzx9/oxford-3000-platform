@@ -533,10 +533,10 @@ export const LexiconGrid = () => {
       <WordOfTheDayWidget onOpenWordDetails={(w) => setActiveModalWord(w)} />
 
       {/* Header & Search Bar Section */}
-      <div className="card-theme-target p-4 sm:p-6 rounded-3xl border space-y-5 shadow-xl">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="card-theme-target p-4 sm:p-6 rounded-3xl border space-y-4 shadow-xl">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
-            <h1 className="text-lg sm:text-2xl font-bold tracking-tight flex items-center gap-2 flex-wrap font-arabic">
+            <h1 className="text-lg sm:text-2xl font-bold tracking-tight flex items-center gap-2 flex-wrap text-slate-900 dark:text-slate-100 font-arabic">
               <span>{t('gridTitle')}</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full theme-btn-primary font-mono font-bold">
                 {totalFilteredItems} {t('words')}
@@ -547,31 +547,31 @@ export const LexiconGrid = () => {
             </p>
           </div>
 
-          {/* Actions Bar: Export Deck & Items Per Page */}
-          <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full md:w-auto flex-wrap">
+          {/* Actions Bar: Export Deck & Items Per Page (Clean Mobile Layout) */}
+          <div className="flex items-center gap-2 w-full md:w-auto justify-between">
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl theme-btn-primary text-xs font-black transition-all shadow-sm hover:brightness-110 shrink-0"
-              title="Export vocabulary deck"
+              className="flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl theme-btn-primary text-xs font-bold transition-all shadow-sm shrink-0"
+              title="تصدير قائمة الكلمات"
             >
               <Download className="w-3.5 h-3.5" />
               <span>{t('exportWords')}</span>
             </button>
 
-            <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-bold shrink-0">
-              <span className="opacity-80">{t('showLabel')}</span>
+            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border bg-black/5 dark:bg-white/5 text-xs font-bold shrink-0">
+              <span className="opacity-70 font-arabic text-[11px]">{t('showLabel')}</span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold glass-input max-w-[130px]"
+                className="bg-transparent border-0 text-xs font-bold text-[var(--text-main)] focus:outline-none cursor-pointer pe-1"
               >
-                <option value={16}>16 {t('itemsPerPage')}</option>
-                <option value={20}>20 {t('itemsPerPage')}</option>
-                <option value={24}>24 {t('itemsPerPage')}</option>
-                <option value={32}>32 {t('itemsPerPage')}</option>
+                <option value={16} className="bg-[var(--bg-card)] text-[var(--text-main)]">16</option>
+                <option value={20} className="bg-[var(--bg-card)] text-[var(--text-main)]">20</option>
+                <option value={24} className="bg-[var(--bg-card)] text-[var(--text-main)]">24</option>
+                <option value={32} className="bg-[var(--bg-card)] text-[var(--text-main)]">32</option>
               </select>
             </div>
           </div>

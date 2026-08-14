@@ -5,10 +5,10 @@
 @tailwind utilities;
 
 /* =========================================================
-   ORIGINAL HIGH-LEGIBILITY MULTI-THEME ENGINE
-   1. Neo-Brutalism (⚡) -> Blue & High Contrast
-   2. Organic Terracotta (🌿) -> Warm Terracotta
-   3. Swiss Minimalist (🇨🇭) -> Clean Crimson & Black
+   3 AUTHENTIC & PERFECTED VISUAL IDENTITY THEMES
+   1. Neo-Brutalism (⚡) -> Bold Black Borders, High Contrast & Pop Energy
+   2. Organic Terracotta (🌿) -> Warm Terracotta & Earthy Ivory Comfort
+   3. Swiss Minimalist (🇨🇭) -> Bold Swiss Red & Geometric Precision
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -16,18 +16,18 @@
    --------------------------------------------------------- */
 :root,
 [data-theme="brutalism"][data-mode="light"] {
-  --bg-page: #F8FAFC;
+  --bg-page: #FFFDF0;
   --bg-card: #FFFFFF;
-  --bg-surface: #F1F5F9;
+  --bg-surface: #F4EFE6;
   --bg-accent: #2563EB;
   --bg-accent-hover: #1D4ED8;
-  --text-main: #0F172A;
-  --text-muted: #475569;
+  --text-main: #111827;
+  --text-muted: #4B5563;
   --text-accent: #FFFFFF;
-  --border-card: 1.5px solid #E2E8F0;
-  --border-input: 1.5px solid #CBD5E1;
-  --shadow-card: 0 4px 16px rgba(15, 23, 42, 0.06);
-  --shadow-btn: 0 2px 6px rgba(37, 99, 235, 0.15);
+  --border-card: 2.5px solid #111827;
+  --border-input: 2px solid #111827;
+  --shadow-card: 4px 4px 0px #111827;
+  --shadow-btn: 3px 3px 0px #111827;
   --radius-card: 1rem;
   --radius-btn: 0.75rem;
   --font-family: 'Cairo', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -35,18 +35,18 @@
 }
 
 [data-theme="brutalism"][data-mode="dark"] {
-  --bg-page: #0B0F19;
-  --bg-card: #151D2C;
-  --bg-surface: #1E293B;
+  --bg-page: #0D1117;
+  --bg-card: #161B22;
+  --bg-surface: #21262D;
   --bg-accent: #3B82F6;
   --bg-accent-hover: #2563EB;
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
+  --text-main: #F0F6FC;
+  --text-muted: #8B949E;
   --text-accent: #FFFFFF;
-  --border-card: 1px solid #334155;
-  --border-input: 1.5px solid #475569;
-  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-btn: 0 4px 12px rgba(59, 130, 246, 0.25);
+  --border-card: 2px solid #30363D;
+  --border-input: 2px solid #484F58;
+  --shadow-card: 4px 4px 0px #3B82F6;
+  --shadow-btn: 3px 3px 0px #3B82F6;
   --radius-card: 1rem;
   --radius-btn: 0.75rem;
   --font-family: 'Cairo', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -62,15 +62,15 @@
   --bg-surface: #F5EFE6;
   --bg-accent: #D96B43;
   --bg-accent-hover: #C25A34;
-  --text-main: #1C120C;
-  --text-muted: #5C4434;
+  --text-main: #2D1A12;
+  --text-muted: #6B4E3D;
   --text-accent: #FFFFFF;
   --border-card: 1.5px solid #E6DCCF;
   --border-input: 1.5px solid #D8C8B8;
-  --shadow-card: 0 4px 16px rgba(184, 115, 51, 0.08);
-  --shadow-btn: 0 2px 8px rgba(217, 107, 67, 0.2);
+  --shadow-card: 0 4px 20px rgba(184, 115, 51, 0.08);
+  --shadow-btn: 0 3px 10px rgba(217, 107, 67, 0.25);
   --radius-card: 1.25rem;
-  --radius-btn: 0.75rem;
+  --radius-btn: 0.85rem;
   --font-family: 'Tajawal', 'Cairo', sans-serif;
   --font-arabic: 'Tajawal', sans-serif;
 }
@@ -86,10 +86,10 @@
   --text-accent: #FFFFFF;
   --border-card: 1px solid #3D322B;
   --border-input: 1.5px solid #4E4037;
-  --shadow-card: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --shadow-btn: 0 4px 12px rgba(224, 122, 95, 0.25);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-btn: 0 4px 14px rgba(224, 122, 95, 0.3);
   --radius-card: 1.25rem;
-  --radius-btn: 0.75rem;
+  --radius-btn: 0.85rem;
   --font-family: 'Tajawal', 'Cairo', sans-serif;
   --font-arabic: 'Tajawal', sans-serif;
 }
@@ -98,18 +98,18 @@
    3. SWISS MINIMALIST (data-theme="swiss")
    --------------------------------------------------------- */
 [data-theme="swiss"][data-mode="light"] {
-  --bg-page: #FAFAFA;
+  --bg-page: #F4F4F5;
   --bg-card: #FFFFFF;
-  --bg-surface: #F4F4F5;
-  --bg-accent: #E11D48;
-  --bg-accent-hover: #BE123C;
+  --bg-surface: #E4E4E7;
+  --bg-accent: #DC2626;
+  --bg-accent-hover: #B91C1C;
   --text-main: #09090B;
   --text-muted: #52525B;
   --text-accent: #FFFFFF;
-  --border-card: 1.5px solid #E4E4E7;
-  --border-input: 1.5px solid #D4D4D8;
-  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.04);
-  --shadow-btn: 0 2px 6px rgba(225, 29, 72, 0.15);
+  --border-card: 1.5px solid #D4D4D8;
+  --border-input: 1.5px solid #A1A1AA;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.05);
+  --shadow-btn: 0 2px 8px rgba(220, 38, 38, 0.25);
   --radius-card: 0.75rem;
   --radius-btn: 0.5rem;
   --font-family: 'Inter', 'Cairo', sans-serif;
@@ -120,15 +120,15 @@
   --bg-page: #09090B;
   --bg-card: #18181B;
   --bg-surface: #27272A;
-  --bg-accent: #F43F5E;
-  --bg-accent-hover: #E11D48;
+  --bg-accent: #EF4444;
+  --bg-accent-hover: #DC2626;
   --text-main: #FAFAFA;
   --text-muted: #A1A1AA;
   --text-accent: #FFFFFF;
   --border-card: 1px solid #27272A;
   --border-input: 1.5px solid #3F3F46;
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-btn: 0 2px 8px rgba(244, 63, 94, 0.25);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-btn: 0 4px 14px rgba(239, 68, 68, 0.35);
   --radius-card: 0.75rem;
   --radius-btn: 0.5rem;
   --font-family: 'Inter', 'Cairo', sans-serif;
