@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Sparkles, Lock, User, ArrowRight, ShieldCheck, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Lock, User, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { playSuccessChime } from '../services/soundEffects';
 
-const AUTH_USERS = [
-  { username: 'محمد', name: 'محمد', password: 'm7mdxzx9', avatar: '👨‍🎓', role: 'Oxford Scholar' },
-  { username: 'ريوف', name: 'ريوف', password: 'fahd1399', avatar: '👩‍🎓', role: 'Oxford Scholar' },
-];
+const VALID_ACCOUNTS = {
+  'محمد': { password: 'm7mdxzx9', name: 'محمد', avatar: '👨‍🎓', role: 'Oxford Scholar' },
+  'ريوف': { password: 'fahd1399', name: 'ريوف', avatar: '👩‍🎓', role: 'Oxford Scholar' },
+};
 
 export default function LoginScreen({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isShaking, setIsShaking] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,16 +22,19 @@ export default function LoginScreen({ onLoginSuccess }) {
     const cleanUser = username.trim();
     const cleanPass = password.trim();
 
-    if (!cleanUser || !cleanPass) {
-      triggerError('يرجى كتابة اسم المستخدم وكلمة المرور');
+    if (!cleanUser) {
+      triggerError('يرجى كتابة اسم المستخدم (محمد أو ريوف)');
       return;
     }
 
-    const matchedUser = AUTH_USERS.find(
-      (u) => u.username === cleanUser && u.password === cleanPass
-    );
+    if (!cleanPass) {
+      triggerError('يرجى إدخال كلمة المرور يدوياً للمتابعة');
+      return;
+    }
 
-    if (matchedUser) {
+    const account = VALID_ACCOUNTS[cleanUser];
+
+    if (account && account.password === cleanPass) {
       setLoading(true);
       try {
         playSuccessChime();
@@ -38,17 +42,17 @@ export default function LoginScreen({ onLoginSuccess }) {
 
       setTimeout(() => {
         const authData = {
-          username: matchedUser.username,
-          name: matchedUser.name,
-          avatar: matchedUser.avatar,
-          role: matchedUser.role,
+          username: cleanUser,
+          name: account.name,
+          avatar: account.avatar,
+          role: account.role,
           loginTime: Date.now(),
         };
         localStorage.setItem('oxford3000_auth_user', JSON.stringify(authData));
         onLoginSuccess(authData);
       }, 400);
     } else {
-      triggerError('بيانات الدخول غير صحيحة! يرجى التأكد من اسم المستخدم أو كلمة المرور');
+      triggerError('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى التحقق وإعادة المحاولة');
     }
   };
 
@@ -56,12 +60,6 @@ export default function LoginScreen({ onLoginSuccess }) {
     setErrorMsg(msg);
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 450);
-  };
-
-  const handleQuickFill = (userObj) => {
-    setUsername(userObj.username);
-    setPassword(userObj.password);
-    setErrorMsg('');
   };
 
   return (
@@ -91,27 +89,45 @@ export default function LoginScreen({ onLoginSuccess }) {
           </div>
         </div>
 
-        {/* Quick Select User Pills */}
+        {/* User Selection helper pills (fills only username, leaves password completely empty) */}
         <div className="mb-6 p-3 rounded-2xl border bg-black/5 dark:bg-white/5 space-y-2">
           <span className="text-[11px] font-black uppercase tracking-wider opacity-70 block text-center font-arabic">
-            اختر حسابك للدخول السريع 🚀
+            اختر الحساب لكتابة اسم المستخدم 👤
           </span>
           <div className="grid grid-cols-2 gap-2">
-            {AUTH_USERS.map((u) => (
-              <button
-                key={u.username}
-                type="button"
-                onClick={() => handleQuickFill(u)}
-                className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
-                  username === u.username
-                    ? 'theme-btn-primary shadow-md'
-                    : 'theme-btn-secondary hover:scale-102'
-                }`}
-              >
-                <span className="text-base">{u.avatar}</span>
-                <span>{u.name}</span>
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('محمد');
+                setPassword('');
+                setErrorMsg('');
+              }}
+              className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
+                username === 'محمد'
+                  ? 'theme-btn-primary shadow-md'
+                  : 'theme-btn-secondary hover:scale-102'
+              }`}
+            >
+              <span className="text-base">👨‍🎓</span>
+              <span>محمد</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('ريوف');
+                setPassword('');
+                setErrorMsg('');
+              }}
+              className={`p-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
+                username === 'ريوف'
+                  ? 'theme-btn-primary shadow-md'
+                  : 'theme-btn-secondary hover:scale-102'
+              }`}
+            >
+              <span className="text-base">👩‍🎓</span>
+              <span>ريوف</span>
+            </button>
           </div>
         </div>
 
@@ -121,35 +137,44 @@ export default function LoginScreen({ onLoginSuccess }) {
           <div className="space-y-1.5">
             <label className="text-xs font-bold flex items-center gap-1.5 opacity-80">
               <User className="w-3.5 h-3.5 text-cyan-500" />
-              <span>اسم المستخدم (محمد / ريوف)</span>
+              <span>اسم المستخدم</span>
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="أدخل اسم المستخدم..."
+                placeholder="أدخل اسم المستخدم (محمد أو ريوف)..."
                 className="w-full glass-input px-4 py-2.5 rounded-xl text-sm border font-medium focus:ring-2 focus:ring-cyan-500/50"
                 required
               />
             </div>
           </div>
 
-          {/* Password Input */}
+          {/* Password Input (Must be typed manually) */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold flex items-center gap-1.5 opacity-80">
               <Lock className="w-3.5 h-3.5 text-cyan-500" />
-              <span>كلمة المرور</span>
+              <span>كلمة المرور (أدخلها يدوياً)</span>
             </label>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="أدخل كلمة المرور..."
-                className="w-full glass-input px-4 py-2.5 rounded-xl text-sm border font-medium focus:ring-2 focus:ring-cyan-500/50"
+                placeholder="أدخل كلمة المرور الخاصة بك..."
+                className="w-full glass-input px-4 py-2.5 pe-10 rounded-xl text-sm border font-medium focus:ring-2 focus:ring-cyan-500/50"
+                autoComplete="new-password"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 end-0 pe-3 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
+                title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -170,7 +195,7 @@ export default function LoginScreen({ onLoginSuccess }) {
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>جاري تسجيل الدخول...</span>
+                <span>جاري التحقق...</span>
               </span>
             ) : (
               <>
