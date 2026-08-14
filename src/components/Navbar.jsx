@@ -5,13 +5,11 @@ import {
   Layers,
   Award,
   BarChart3,
-  Key,
   Globe,
   Menu,
   X,
   MessageSquare,
   UserCheck,
-  Volume2,
   Activity,
   Sun,
   Moon,
@@ -21,17 +19,14 @@ import {
   ChevronDown,
   Palette,
   Flame,
-  Trophy,
   Zap,
   Radio,
   Mic,
   Brain,
-  Wifi,
   WifiOff,
   LogOut,
-  User,
   Compass,
-  CheckCircle2,
+  Check,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -46,7 +41,6 @@ export default function Navbar() {
     mode,
     toggleMode,
     THEMES,
-    setIsApiKeyModalOpen,
     language,
     toggleLanguage,
     t,
@@ -76,7 +70,7 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Structured Categories Definition with all requested sections & skills
+  // Structured Categories Definition with all sections & skills
   const categories = useMemo(() => [
     {
       id: 'vocab-hub',
@@ -84,9 +78,9 @@ export default function Navbar() {
       icon: BookOpen,
       items: [
         { id: 'grid', label: language === 'ar' ? 'المعجم الكامل (3000)' : 'Oxford 3000', icon: BookOpen, badge: '3000' },
-        { id: 'kickstart', label: language === 'ar' ? 'قفزة المبتدئين الصفر (A0)' : 'Kickstart A0', icon: Compass, badge: 'Zero' },
+        { id: 'kickstart', label: language === 'ar' ? 'المبتدئين الصفر (A0)' : 'Kickstart A0', icon: Compass, badge: 'A0' },
         { id: 'bridge', label: language === 'ar' ? 'جسر الانتقال (A2➔B1)' : 'B1 Bridge', icon: Zap, badge: 'Bridge' },
-        { id: 'flashcards', label: language === 'ar' ? 'بطاقات 3D والتكرار الذكي' : '3D Flashcards', icon: Layers, badge: dueSRSCount > 0 ? `${dueSRSCount} Due` : 'SRS' },
+        { id: 'flashcards', label: language === 'ar' ? 'بطاقات الاستذكار 3D' : '3D Flashcards', icon: Layers, badge: dueSRSCount > 0 ? `${dueSRSCount}` : 'SRS' },
       ],
     },
     {
@@ -94,12 +88,12 @@ export default function Navbar() {
       label: language === 'ar' ? 'مختبرات المهارات' : 'Skill Labs',
       icon: Activity,
       items: [
-        { id: 'speed-drill', label: language === 'ar' ? 'تحدي سرعة الاستماع' : 'Speed Listening', icon: Zap, badge: '0.7x-1.5x' },
-        { id: 'minimal-pairs', label: language === 'ar' ? 'الأصوات المشوشة' : 'Minimal Pairs', icon: Radio, badge: 'Phonetics' },
-        { id: 'spelling-bee', label: language === 'ar' ? 'اختبار الإملاء الذكي' : 'Spelling Bee', icon: Award, badge: 'Bee' },
+        { id: 'speed-drill', label: language === 'ar' ? 'سرعة الاستماع' : 'Speed Listening', icon: Zap, badge: 'Drill' },
+        { id: 'minimal-pairs', label: language === 'ar' ? 'الأصوات المشوشة' : 'Minimal Pairs', icon: Radio, badge: 'Pairs' },
+        { id: 'spelling-bee', label: language === 'ar' ? 'اختبار الإملاء' : 'Spelling Bee', icon: Award, badge: 'Bee' },
         { id: 'active-recall', label: language === 'ar' ? 'الاستدعاء النشط' : 'Active Recall', icon: Brain, badge: 'Memory' },
-        { id: 'voice-archive', label: language === 'ar' ? 'أرشيف التطور الصوتي' : 'Voice Archive', icon: Mic, badge: 'Compare' },
-        { id: 'pronunciation', label: language === 'ar' ? 'استوديو النطق المتقدم' : 'Speech Studio', icon: Activity, badge: 'AI' },
+        { id: 'voice-archive', label: language === 'ar' ? 'أرشيف الصوت' : 'Voice Archive', icon: Mic, badge: 'Vault' },
+        { id: 'pronunciation', label: language === 'ar' ? 'استوديو النطق' : 'Speech Studio', icon: Activity, badge: 'AI' },
       ],
     },
     {
@@ -107,13 +101,13 @@ export default function Navbar() {
       label: language === 'ar' ? 'الذكاء الاصطناعي والألعاب' : 'AI & Games',
       icon: Sparkles,
       items: [
-        { id: 'sentence', label: language === 'ar' ? 'مولد الجمل والسياقات' : 'AI Sentences', icon: Sparkles, badge: 'AI' },
-        { id: 'story', label: language === 'ar' ? 'الحكواتي التفاعلي' : 'AI Storyteller', icon: MessageSquare, badge: 'Story' },
-        { id: 'tutor', label: language === 'ar' ? 'المعلم الشخصي الذكي' : 'Personal Tutor', icon: UserCheck, badge: 'Tutor' },
+        { id: 'sentence', label: language === 'ar' ? 'توليد الجمل' : 'AI Sentences', icon: Sparkles, badge: 'AI' },
+        { id: 'story', label: language === 'ar' ? 'الحكواتي الذكي' : 'AI Storyteller', icon: MessageSquare, badge: 'Story' },
+        { id: 'tutor', label: language === 'ar' ? 'المعلم الشخصي' : 'Personal Tutor', icon: UserCheck, badge: 'Tutor' },
         { id: 'quiz', label: language === 'ar' ? 'اختبار المعرفة' : 'Quiz Game', icon: Award, badge: 'Quiz' },
         { id: 'chain', label: language === 'ar' ? 'سلسلة الكلمات' : 'Word Chain', icon: Gamepad2, badge: 'Game' },
         { id: 'detective', label: language === 'ar' ? 'المحقق اللغوي' : 'Word Detective', icon: Search, badge: 'Mystery' },
-        { id: 'dual', label: language === 'ar' ? 'مبارزة 1 ضد 1' : '1v1 Arena', icon: Users, badge: 'PvP' },
+        { id: 'dual', label: language === 'ar' ? 'مبارزة 1v1' : '1v1 Arena', icon: Users, badge: 'PvP' },
       ],
     },
     {
@@ -121,14 +115,14 @@ export default function Navbar() {
       label: language === 'ar' ? 'التحليلات والنمو' : 'Growth & Stats',
       icon: BarChart3,
       items: [
-        { id: 'analytics', label: language === 'ar' ? 'لوحة التحليلات والإحصائيات' : 'Analytics Hub', icon: BarChart3, badge: 'Stats' },
+        { id: 'analytics', label: language === 'ar' ? 'لوحة الإحصائيات' : 'Analytics Hub', icon: BarChart3, badge: 'Stats' },
       ],
     },
   ], [language, dueSRSCount]);
 
   const allTabs = useMemo(() => categories.flatMap((cat) => cat.items), [categories]);
 
-  // Bottom Navigation Mobile items
+  // Bottom Navigation Mobile items (Clean, Compact, Touch-friendly)
   const mobileBottomItems = useMemo(() => [
     { id: 'grid', label: language === 'ar' ? 'المعجم' : 'Catalog', icon: BookOpen },
     { id: 'flashcards', label: language === 'ar' ? 'البطاقات' : 'Cards', icon: Layers },
@@ -144,22 +138,19 @@ export default function Navbar() {
           isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
-            {/* Brand Logo with 3D Micro-animated Icon (Feature 5 & 8) */}
+            {/* Brand Logo strictly isolated in LTR so TM is on the right side */}
             <div
               className="flex items-center gap-2 cursor-pointer group shrink-0"
               onClick={() => setActiveTab('grid')}
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center font-black text-sm sm:text-base theme-btn-primary shadow-md shrink-0 tab-active-bounce">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border flex items-center justify-center font-black text-sm sm:text-base theme-btn-primary shadow-sm shrink-0">
                 ⚡
               </div>
-              <div className="shrink-0 flex items-center gap-1.5">
-                <span className="text-sm sm:text-base font-black tracking-tight">
-                  Oxford <span className="text-cyan-500">3000™</span>
-                </span>
-                <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded-full border font-black font-mono theme-btn-secondary">
-                  CEFR
+              <div dir="ltr" className="ltr-token shrink-0 flex items-center gap-1.5">
+                <span className="text-sm sm:text-base font-black tracking-tight text-slate-900 dark:text-slate-100">
+                  Oxford <span className="text-blue-600 dark:text-blue-400">3000™</span>
                 </span>
               </div>
             </div>
@@ -176,15 +167,15 @@ export default function Navbar() {
                     onClick={() => setActiveTab(item.id)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap shrink-0 ${
                       isActive
-                        ? 'theme-btn-primary shadow-md scale-105 tab-active-bounce'
+                        ? 'theme-btn-primary shadow-sm scale-102'
                         : 'opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                     }`}
                     title={item.label}
                   >
                     <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.label}</span>
+                    <span className="font-arabic">{item.label}</span>
                     {item.badge && (
-                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-black/10 dark:bg-white/10 opacity-90">
+                      <span className="text-[9px] font-mono px-1 py-0.2 rounded-md bg-black/10 dark:bg-white/10 opacity-90">
                         {item.badge}
                       </span>
                     )}
@@ -195,33 +186,33 @@ export default function Navbar() {
 
             {/* Right Controls Bar */}
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-              {/* Daily Streak Flame Counter (Feature 71) */}
+              {/* Daily Streak Flame Counter */}
               <div
-                className="flex items-center gap-1 px-2 py-1 rounded-xl border bg-black/5 dark:bg-white/5 text-xs font-bold font-mono cursor-pointer"
+                className="flex items-center gap-1 px-2 py-1 rounded-xl border bg-black/5 dark:bg-white/5 text-xs font-bold font-mono"
                 title={`سلسلة الأيام الدراسية: ${streak} أيام متواصلة!`}
               >
-                <Flame className={`w-4 h-4 text-amber-500 ${streak > 0 ? 'flame-streak-active' : ''}`} />
-                <span className="text-amber-500">{streak}d</span>
+                <Flame className={`w-3.5 h-3.5 text-amber-500 ${streak > 0 ? 'flame-streak-active' : ''}`} />
+                <span className="text-amber-500 font-bold">{streak}d</span>
               </div>
 
-              {/* 3 Themes Switcher Dropdown (Royal, Emerald, Sunset) */}
+              {/* 3 Themes Switcher */}
               <div className="relative">
                 <button
                   onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border theme-btn-secondary text-xs font-black transition-all active:scale-95 shadow-sm"
-                  title="تغيير الهوية البصرية والخطوط (3 Themes)"
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-xl border theme-btn-secondary text-xs font-bold transition-all active:scale-95 shadow-sm"
+                  title="اختر الهوية البصرية"
                 >
-                  <Palette className="w-3.5 h-3.5 text-cyan-400" />
-                  <span className="hidden sm:inline">
+                  <Palette className="w-3.5 h-3.5 text-blue-500" />
+                  <span className="hidden sm:inline font-arabic">
                     {THEMES.find((th) => th.id === theme)?.name.split(' ')[0] || 'الهوية'}
                   </span>
-                  <ChevronDown className="w-3 h-3 opacity-70" />
+                  <ChevronDown className="w-3 h-3 opacity-60" />
                 </button>
 
                 {themeDropdownOpen && (
-                  <div className="absolute top-full mt-2 right-0 rtl:left-0 rtl:right-auto w-64 glass-panel p-2 rounded-2xl border shadow-2xl z-50 dropdown-animate space-y-1 font-arabic">
-                    <span className="text-[10px] font-black uppercase tracking-wider opacity-70 px-2 py-1 block">
-                      اختر الهوية البصرية والخطوط:
+                  <div className="absolute top-full mt-2 right-0 rtl:left-0 rtl:right-auto w-56 glass-panel p-2 rounded-2xl border shadow-xl z-50 dropdown-animate space-y-1 font-arabic">
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 px-2 py-1 block">
+                      الهويات البصرية المعتمدة:
                     </span>
                     {THEMES.map((th) => (
                       <button
@@ -236,14 +227,11 @@ export default function Navbar() {
                             : 'theme-btn-secondary hover:scale-101'
                         }`}
                       >
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span>{th.emoji}</span>
-                            <span>{th.name}</span>
-                          </div>
-                          <div className="text-[10px] opacity-75 font-mono">{th.fonts}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span>{th.emoji}</span>
+                          <span>{th.name}</span>
                         </div>
-                        {theme === th.id && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                        {theme === th.id && <Check className="w-3.5 h-3.5 shrink-0" />}
                       </button>
                     ))}
                   </div>
@@ -253,35 +241,35 @@ export default function Navbar() {
               {/* Light / Dark Mode Toggle */}
               <button
                 onClick={toggleMode}
-                className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl border text-xs font-black transition-all theme-btn-secondary shrink-0 active:scale-90"
-                title={`التبديل بين الوضع الليلي والنهاري`}
+                className="flex items-center justify-center w-8 h-8 rounded-xl border text-xs font-bold transition-all theme-btn-secondary shrink-0 active:scale-90"
+                title="التبديل بين الوضع الليلي والنهاري"
                 aria-label="Toggle dark/light mode"
               >
                 {mode === 'light' ? (
-                  <Sun className="w-4 h-4 text-amber-500 shrink-0" />
+                  <Sun className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 ) : (
-                  <Moon className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <Moon className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                 )}
               </button>
 
-              {/* Language Switcher (AR / EN) */}
+              {/* Language Switcher */}
               <button
                 onClick={toggleLanguage}
-                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl theme-btn-secondary text-xs font-black transition-all whitespace-nowrap shrink-0 active:scale-95 border shadow-sm"
-                title={language === 'en' ? 'التحويل إلى اللغة العربية' : 'Switch to English'}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-xl theme-btn-secondary text-xs font-bold transition-all whitespace-nowrap shrink-0 active:scale-95 border shadow-sm"
+                title={language === 'en' ? 'التحويل إلى العربية' : 'Switch to English'}
               >
-                <Globe className="w-3.5 h-3.5 shrink-0 text-cyan-500" />
+                <Globe className="w-3.5 h-3.5 shrink-0 text-blue-500" />
                 <span className="font-mono font-bold text-[11px]">
                   {language === 'en' ? 'عربي' : 'EN'}
                 </span>
               </button>
 
-              {/* Authenticated User Avatar & Logout */}
+              {/* Authenticated User & Logout */}
               {authUser && (
                 <div className="flex items-center gap-1 pl-1 border-l rtl:pr-1 rtl:border-r rtl:border-l-0">
                   <div
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs font-bold font-arabic"
-                    title={`الحساب النشط: ${authUser.name}`}
+                    className="flex items-center gap-1 px-2 py-1 rounded-xl bg-black/5 dark:bg-white/5 border text-xs font-bold font-arabic"
+                    title={`المستخدم: ${authUser.name}`}
                   >
                     <span>{authUser.avatar || '👨‍🎓'}</span>
                     <span className="hidden md:inline">{authUser.name}</span>
@@ -301,10 +289,10 @@ export default function Navbar() {
               {/* Mobile Drawer Menu Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-1.5 sm:p-2 border rounded-xl xl:hidden text-xs font-black shrink-0 theme-btn-secondary active:scale-90"
+                className="p-2 border rounded-xl xl:hidden text-xs font-bold shrink-0 theme-btn-secondary active:scale-90"
                 aria-label="Toggle Navigation Menu"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
             </div>
           </div>
@@ -344,7 +332,7 @@ export default function Navbar() {
             {/* Categorized Links Grid */}
             {categories.map((cat) => (
               <div key={cat.id} className="space-y-1.5">
-                <span className="text-[11px] font-black uppercase tracking-wider opacity-80 flex items-center gap-1.5 text-cyan-500">
+                <span className="text-[11px] font-black uppercase tracking-wider opacity-80 flex items-center gap-1.5 text-blue-500">
                   <cat.icon className="w-3.5 h-3.5" />
                   <span>{cat.label}</span>
                 </span>
@@ -360,7 +348,7 @@ export default function Navbar() {
                           setMobileMenuOpen(false);
                         }}
                         className={`flex items-center justify-between gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${
-                          isActive ? 'theme-btn-primary shadow-md' : 'theme-btn-secondary'
+                          isActive ? 'theme-btn-primary shadow-sm' : 'theme-btn-secondary'
                         }`}
                       >
                         <div className="flex items-center gap-1.5 truncate">
@@ -383,7 +371,7 @@ export default function Navbar() {
       </header>
 
       {/* Mobile Bottom Bar for Rapid Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden glass-panel border-t px-1.5 pt-1.5 pb-2.5 flex items-center justify-around shadow-2xl backdrop-blur-xl">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden glass-panel border-t px-2 py-1.5 flex items-center justify-around shadow-lg backdrop-blur-md">
         {mobileBottomItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -391,14 +379,14 @@ export default function Navbar() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-2xl transition-all duration-200 flex-1 max-w-[70px] ${
+              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all duration-150 flex-1 max-w-[65px] ${
                 isActive
-                  ? 'theme-btn-primary shadow-md scale-105 font-black'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-[var(--text-main)] active:scale-90 font-bold'
+                  ? 'theme-btn-primary font-bold shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-[var(--text-main)] active:scale-90 font-medium'
               }`}
             >
               <Icon className="w-4 h-4 mb-0.5 shrink-0" />
-              <span className="text-[9px] leading-tight truncate max-w-full font-arabic">{item.label}</span>
+              <span className="text-[10px] leading-tight truncate max-w-full font-arabic">{item.label}</span>
             </button>
           );
         })}

@@ -147,7 +147,7 @@ export const translations = {
     catGames: 'منطقة الألعاب والتحديات',
     catProgress: 'التقدم والتحليلات',
 
-    gridTitle: 'كتالوج مفردات Oxford 3000™ CEFR',
+    gridTitle: 'قاموس مفردات Oxford 3000™',
     gridSubtitle: 'استكشف قاموس أوكسفورد 3000 الكامل (A1-B2) مع النطق الصوتي ورموز IPA والترجمة العربية الدقيقة.',
     searchPlaceholder: 'ابحث عن كلمة بالإنجليزية أو الترجمة بالعربية...',
     cefrFilter: 'تصفية حسب مستوى CEFR',

@@ -38,30 +38,9 @@ const saveToStorage = (key, value) => {
 };
 
 export const THEMES = [
-  {
-    id: 'royal',
-    name: 'أكسفورد الملكي (Royal Oxford)',
-    emoji: '👑',
-    fonts: 'Plus Jakarta Sans + Readex Pro',
-    palette: 'Midnight Navy & Sapphire Blue',
-    colors: ['#060D21', '#1D4ED8', '#00D2FF', '#F59E0B'],
-  },
-  {
-    id: 'emerald',
-    name: 'الزمرد الأكاديمي (Cyber Emerald)',
-    emoji: '🌿',
-    fonts: 'Space Grotesk + Cairo',
-    palette: 'Pine Forest & Mint Emerald',
-    colors: ['#031A14', '#059669', '#10B981', '#34D399'],
-  },
-  {
-    id: 'sunset',
-    name: 'نيون الغروب (Sunset Crimson)',
-    emoji: '🌅',
-    fonts: 'Syne + Tajawal',
-    palette: 'Obsidian Violet & Sunset Coral',
-    colors: ['#0D0B18', '#EA580C', '#FF4B4B', '#FBBF24'],
-  },
+  { id: 'brutalism', name: 'النيو-بروتاليزم (أكسفورد كلاسيك)', emoji: '⚡', label: 'Neo-Brutalism', font: 'Cairo & Inter' },
+  { id: 'organic', name: 'التيراكوتا الطبيعي (Organic)', emoji: '🌿', label: 'Terracotta', font: 'Tajawal & Cairo' },
+  { id: 'swiss', name: 'المينيمالي السويسري (Swiss Red)', emoji: '🇨🇭', label: 'Swiss Red', font: 'Inter & Cairo' },
 ];
 
 export const AppProvider = ({ children }) => {
@@ -106,7 +85,7 @@ export const AppProvider = ({ children }) => {
   // 3. Theme & Appearance
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('uqu_theme') || localStorage.getItem(STORAGE_KEYS.THEME);
-    return stored || 'royal';
+    return stored || 'brutalism';
   });
 
   const [mode, setMode] = useState(() => {

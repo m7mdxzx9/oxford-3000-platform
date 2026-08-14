@@ -536,13 +536,13 @@ export const LexiconGrid = () => {
       <div className="card-theme-target p-4 sm:p-6 rounded-3xl border space-y-5 shadow-xl">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-2xl font-bold tracking-tight flex items-center gap-2 flex-wrap font-arabic">
               <span>{t('gridTitle')}</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full theme-btn-primary font-mono font-bold">
                 {totalFilteredItems} {t('words')}
               </span>
             </h1>
-            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-medium font-arabic">
               {t('gridSubtitle')}
             </p>
           </div>

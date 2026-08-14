@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Sparkles, Volume2, Star, CheckCircle2, Eye, EyeOff, BookOpen, Lightbulb, ArrowRight } from 'lucide-react';
+import { Volume2, Star, CheckCircle2, Eye, EyeOff, Lightbulb, ArrowRight, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { oxford3000Data } from '../data/oxford3000';
 import { playWordAudio } from '../services/audioService';
@@ -13,7 +13,7 @@ export default function WordOfTheDayWidget({ onOpenWordDetails }) {
   const [showSilentLetters, setShowSilentLetters] = useState(true);
   const [showMnemonic, setShowMnemonic] = useState(false);
 
-  // Pick deterministic word based on current day of year
+  // Deterministic daily word selection
   const dailyWord = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
@@ -38,49 +38,34 @@ export default function WordOfTheDayWidget({ onOpenWordDetails }) {
     setIsPlaying(false);
   };
 
-  const levelColorClass = {
-    A1: 'cefr-gradient-a1',
-    A2: 'cefr-gradient-a2',
-    B1: 'cefr-gradient-b1',
-    B2: 'cefr-gradient-b2',
-  }[dailyWord.cefr] || 'cefr-gradient-b1';
+  const isFav = isFavorite(dailyWord.word);
+  const isMst = isMastered(dailyWord.word);
 
   return (
-    <div className="glass-panel p-4 sm:p-6 rounded-3xl border shadow-xl relative overflow-hidden card-theme-target group">
-      {/* Background Subtle Gradient Mesh */}
-      <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-cyan-500/10 via-purple-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
-
-      {/* Header Bar */}
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-amber-500/20 text-amber-500 font-bold text-xs">
-            🌟
+    <div className="card-theme-target p-4 sm:p-5 rounded-2xl border shadow-md space-y-3 font-sans">
+      {/* Top Meta Bar */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <span className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
+            <Sparkles className="w-3.5 h-3.5" />
           </span>
-          <div>
-            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider opacity-80 flex items-center gap-1.5 font-arabic">
-              <span>كلمة اليوم الذكية</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-500 font-mono font-bold">
-                Word of the Day
-              </span>
-            </h3>
-          </div>
+          <span className="text-xs font-bold font-arabic opacity-90">كلمة اليوم الذكية</span>
         </div>
 
-        <div className="flex items-center gap-1">
-          <span className={`text-[10px] sm:text-xs font-black px-2.5 py-1 rounded-xl shadow-sm ${levelColorClass}`}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-black px-2 py-0.5 rounded-lg theme-btn-primary font-mono">
             {dailyWord.cefr}
           </span>
-          <span className="text-[10px] font-mono opacity-70 px-2 py-0.5 rounded-lg border bg-black/5 dark:bg-white/5">
+          <span className="text-[11px] font-mono opacity-70 px-2 py-0.5 rounded-lg border bg-black/5 dark:bg-white/5">
             {dailyWord.pos}
           </span>
         </div>
       </div>
 
-      {/* Word & IPA Row */}
-      <div className="flex items-baseline justify-between flex-wrap gap-2 my-2">
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Word with Silent Letters Highlight (Feature 23) */}
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight ltr-token">
+      {/* Main Word & Pronunciation Row */}
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <div className="space-y-0.5">
+          <h2 dir="ltr" className="ltr-token text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-slate-100">
             {showSilentLetters ? (
               charsAnalysis.map((item, idx) => (
                 <span
@@ -95,107 +80,109 @@ export default function WordOfTheDayWidget({ onOpenWordDetails }) {
               dailyWord.word
             )}
           </h2>
-
-          {/* IPA Phonetic */}
-          <span className="text-xs sm:text-sm font-mono text-cyan-500 dark:text-cyan-400 opacity-90 ltr-token">
+          <div dir="ltr" className="ltr-token text-xs sm:text-sm font-mono text-cyan-600 dark:text-cyan-400 font-bold">
             {dailyWord.ipa}
-          </span>
+          </div>
         </div>
 
-        {/* Audio Player with Live Equalizer (Feature 67) */}
-        <div className="flex items-center gap-2">
+        {/* Audio Player Button */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <LiveEqualizer isPlaying={isPlaying} />
           <button
+            type="button"
             onClick={handlePlayAudio}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl theme-btn-primary text-xs font-bold shadow-md active:scale-95 cursor-pointer"
-            title="استمع للنطق الصوتي"
+            disabled={isPlaying}
+            className="p-2.5 sm:px-3 sm:py-2 rounded-xl theme-btn-primary flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+            title="استمع للنطق"
           >
-            <Volume2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">نطق</span>
+            <Volume2 className="w-4 h-4" />
+            <span className="text-xs font-bold hidden sm:inline font-arabic">نطق</span>
           </button>
         </div>
       </div>
 
-      {/* Arabic Meaning */}
-      <div className="my-2 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border text-sm sm:text-base font-bold font-arabic text-emerald-600 dark:text-emerald-400">
-        {dailyWord.arabic}
+      {/* Meaning & Example */}
+      <div className="space-y-1.5 pt-1">
+        <div dir="rtl" className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 font-arabic">
+          {dailyWord.arabic}
+        </div>
+        <div dir="ltr" className="text-xs sm:text-sm italic opacity-80 ltr-token pl-2 border-l-2 border-cyan-500">
+          "{dailyWord.example}"
+        </div>
       </div>
 
-      {/* Example Sentence */}
-      <div className="my-2 text-xs sm:text-sm italic opacity-85 ltr-token pl-2 border-l-2 border-cyan-500">
-        "{dailyWord.example}"
-      </div>
-
-      {/* Visual Mnemonic Hook (Feature 33) */}
+      {/* Mnemonic Accordion */}
       {showMnemonic && (
-        <div className="my-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-xs font-medium space-y-1 dropdown-animate font-arabic">
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-medium space-y-1 font-arabic dropdown-animate">
           <div className="flex items-center gap-1.5 font-bold">
-            <Lightbulb className="w-4 h-4 text-amber-500" />
+            <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
             <span>الربط بالصورة الذهنية (Mnemonic Hook):</span>
           </div>
           <p className="leading-relaxed">{mnemonic.hook}</p>
         </div>
       )}
 
-      {/* Action Footer */}
-      <div className="flex items-center justify-between gap-2 pt-3 border-t mt-3 flex-wrap">
+      {/* Actions & Utilities Bar */}
+      <div className="flex items-center justify-between gap-2 pt-2 border-t flex-wrap">
+        {/* Toggle helpers */}
         <div className="flex items-center gap-1.5">
-          {/* Toggle Silent Letter Indicator */}
           <button
+            type="button"
             onClick={() => setShowSilentLetters(!showSilentLetters)}
-            className="px-2.5 py-1 rounded-xl border text-[11px] font-bold theme-btn-secondary flex items-center gap-1 active:scale-95"
-            title="تفعيل/إخفاء تمييز الحروف الصامتة"
+            className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 ${
+              showSilentLetters ? 'theme-btn-primary' : 'theme-btn-secondary opacity-80'
+            }`}
+            title="تمييز الحروف الصامتة"
           >
-            {showSilentLetters ? <EyeOff className="w-3 h-3 text-rose-500" /> : <Eye className="w-3 h-3" />}
+            {showSilentLetters ? <EyeOff className="w-3 h-3 text-rose-300" /> : <Eye className="w-3 h-3" />}
             <span className="font-arabic">الحروف الصامتة</span>
           </button>
 
-          {/* Toggle Mnemonic */}
           <button
+            type="button"
             onClick={() => setShowMnemonic(!showMnemonic)}
-            className="px-2.5 py-1 rounded-xl border text-[11px] font-bold theme-btn-secondary flex items-center gap-1 active:scale-95"
-            title="عرض التشبيه البصري والذاكرة"
+            className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95 ${
+              showMnemonic ? 'theme-btn-primary' : 'theme-btn-secondary opacity-80'
+            }`}
+            title="عرض الصورة الذهنية المساعدة"
           >
-            <Lightbulb className="w-3 h-3 text-amber-500" />
-            <span className="font-arabic">الصورة الذهنية</span>
+            <Lightbulb className="w-3 h-3 text-amber-400" />
+            <span className="font-arabic">الذاكرة</span>
           </button>
         </div>
 
+        {/* Action icons & Study button */}
         <div className="flex items-center gap-1.5">
-          {/* Favorite toggle */}
           <button
+            type="button"
             onClick={() => toggleFavorite(dailyWord.word)}
-            className={`p-1.5 rounded-xl border text-xs font-bold transition-all ${
-              isFavorite(dailyWord.word)
-                ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
-                : 'theme-btn-secondary'
+            className={`p-2 rounded-xl border text-xs font-bold transition-all active:scale-95 ${
+              isFav ? 'bg-amber-500/20 text-amber-500 border-amber-500/40' : 'theme-btn-secondary'
             }`}
-            title="إضافة للمفضلة"
+            title="المفضلة"
           >
-            <Star className={`w-3.5 h-3.5 ${isFavorite(dailyWord.word) ? 'fill-current' : ''}`} />
+            <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
           </button>
 
-          {/* Mastered toggle */}
           <button
+            type="button"
             onClick={() => toggleMastered(dailyWord.word)}
-            className={`p-1.5 rounded-xl border text-xs font-bold transition-all ${
-              isMastered(dailyWord.word)
-                ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40'
-                : 'theme-btn-secondary'
+            className={`p-2 rounded-xl border text-xs font-bold transition-all active:scale-95 ${
+              isMst ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40' : 'theme-btn-secondary'
             }`}
-            title="تحديد كـ كلمة متقنة"
+            title="متقنة"
           >
-            <CheckCircle2 className={`w-3.5 h-3.5 ${isMastered(dailyWord.word) ? 'fill-current' : ''}`} />
+            <CheckCircle2 className={`w-3.5 h-3.5 ${isMst ? 'fill-current' : ''}`} />
           </button>
 
-          {/* Open full details if handler provided */}
           {onOpenWordDetails && (
             <button
+              type="button"
               onClick={() => onOpenWordDetails(dailyWord)}
-              className="px-2.5 py-1 rounded-xl theme-btn-primary text-[11px] font-bold flex items-center gap-1"
+              className="px-3 py-1.5 rounded-xl theme-btn-primary text-xs font-bold flex items-center gap-1 shadow-sm active:scale-95 font-arabic"
             >
-              <span className="font-arabic">دراسة الكلمة</span>
-              <ArrowRight className="w-3 h-3 rtl:rotate-180" />
+              <span>تفاصيل</span>
+              <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
             </button>
           )}
         </div>
