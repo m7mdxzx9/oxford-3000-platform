@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, RefreshCw, Layers, ExternalLink, Lightbulb, Eye } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening, isSpeechRecognitionSupported } from '../services/speechEvaluation';
 import { generateSentence } from '../services/geminiService';
-import { getCuratedWordImage, fetchWordImage } from '../services/imageService';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import AudioSpeedControl from './AudioSpeedControl';
 import IpaSyllableVisualizer from './IpaSyllableVisualizer';
@@ -58,6 +58,15 @@ export default function WordModal({ word, onClose }) {
   const [generatingSentence, setGeneratingSentence] = useState(false);
   const [sentenceLevel, setSentenceLevel] = useState(word.cefr || 'B1');
 
+  // Prevent background body scroll when modal is open
+  useEffect(() => {
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = origOverflow;
+    };
+  }, []);
+
   if (!word) return null;
 
   const fav = isFavorite(word.word);
@@ -72,15 +81,16 @@ export default function WordModal({ word, onClose }) {
   };
 
   const handleGenerateAiSentence = async (overrideLevel = sentenceLevel) => {
+    setSentenceLevel(overrideLevel);
     setGeneratingSentence(true);
     try {
       const res = await generateSentence(word.word, 'medium', 'any', 'Casual Conversation', 'Present', apiKey, overrideLevel);
       if (res && res.sentence) {
         setCustomAiSentence(res);
-        addNotification(`Generated new ${overrideLevel} AI sentence for "${word.word}"`, 'success');
+        addNotification(`تم توليد جملة AI جديدة لمستوى ${overrideLevel} للكلمة "${word.word}"`, 'success');
       }
     } catch (err) {
-      addNotification('Failed to generate AI sentence.', 'warning');
+      addNotification('تعذر توليد الجملة بالذكاء الاصطناعي، يرجى المحاولة لاحقاً', 'warning');
     } finally {
       setGeneratingSentence(false);
     }
@@ -88,14 +98,14 @@ export default function WordModal({ word, onClose }) {
 
   const handleRecordSpeech = () => {
     if (!isSpeechRecognitionSupported()) {
-      addNotification('Web Speech API is not supported on this browser version.', 'warning');
+      addNotification('التعرف على الصوت غير مدعوم في هذا المتصفح.', 'warning');
       return;
     }
 
     if (isRecording) {
       stopListening();
       setIsRecording(false);
-      addNotification('Microphone recording stopped.', 'info');
+      addNotification('تم إيقاف التسجيل الصوتي.', 'info');
       return;
     }
 
@@ -108,25 +118,26 @@ export default function WordModal({ word, onClose }) {
         setIsRecording(false);
         setSpeechResult(res);
         if (res.score >= 80) {
-          addNotification(`Outstanding pronunciation! Score: ${res.score}%`, 'success');
+          addNotification(`نطق رائع وممتاز! الدقة: ${res.score}% 🌟`, 'success');
+          addXp(15);
         } else {
-          addNotification(`Score: ${res.score}%. Listen to audio and try again.`, 'info');
+          addNotification(`دقة النطق: ${res.score}%. استمع للصوت وحاول مرة أخرى.`, 'info');
         }
       },
       (err) => {
         setIsRecording(false);
-        addNotification(`Recording note: ${err.message || err}`, 'info');
+        addNotification(`ملاحظة تسجيل: ${err.message || err}`, 'info');
       }
     );
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="card-theme-target w-full max-w-2xl border rounded-3xl p-5 sm:p-7 shadow-2xl relative my-auto max-h-[88vh] flex flex-col"
+        className="card-theme-target w-full max-w-2xl border rounded-3xl p-5 sm:p-7 shadow-2xl relative my-auto max-h-[88vh] flex flex-col font-sans"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar with Badges and Close Button */}
@@ -139,7 +150,7 @@ export default function WordModal({ word, onClose }) {
               {word.pos || 'word'}
             </span>
             {word.isCustom && (
-              <span className="px-2.5 py-0.5 text-xs font-bold rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+              <span className="px-2.5 py-0.5 text-xs font-bold rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1 font-arabic">
                 <Sparkles className="w-3.5 h-3.5" /> Gemini AI
               </span>
             )}
@@ -147,8 +158,8 @@ export default function WordModal({ word, onClose }) {
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl theme-btn-secondary opacity-75 hover:opacity-100 transition-all"
-            aria-label="Close modal"
+            className="p-2 rounded-xl theme-btn-secondary opacity-75 hover:opacity-100 transition-all cursor-pointer"
+            aria-label="إغلاق النافذة"
           >
             <X className="w-5 h-5" />
           </button>
@@ -179,7 +190,7 @@ export default function WordModal({ word, onClose }) {
           {/* Visual Mnemonic Hook (Feature 33) */}
           <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-xs font-medium space-y-1 font-arabic">
             <div className="flex items-center gap-1.5 font-bold">
-              <Lightbulb className="w-4 h-4 text-amber-500" />
+              <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
               <span>الربط بالصورة الذهنية (Visual Mnemonic):</span>
             </div>
             <p className="leading-relaxed">
@@ -274,38 +285,62 @@ export default function WordModal({ word, onClose }) {
             </div>
           </div>
 
-          {/* Example Sentence & Token Viewer */}
+          {/* Example Sentence & AI Sentence Level Selector with A1, A2, B1, B2 */}
           <div className="p-4 rounded-2xl border space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 Example Sentence:
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 flex-wrap">
+                {/* A1 AI Button */}
+                <button
+                  onClick={() => handleGenerateAiSentence('A1')}
+                  disabled={generatingSentence}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                    sentenceLevel === 'A1' ? 'theme-btn-primary shadow-sm' : 'theme-btn-secondary'
+                  }`}
+                  title="توليد جملة بمستوى A1 للمبتدئين"
+                >
+                  A1 AI
+                </button>
+                {/* A2 AI Button */}
                 <button
                   onClick={() => handleGenerateAiSentence('A2')}
                   disabled={generatingSentence}
-                  className="px-2 py-1 rounded-lg text-[10px] font-bold border theme-btn-secondary"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                    sentenceLevel === 'A2' ? 'theme-btn-primary shadow-sm' : 'theme-btn-secondary'
+                  }`}
+                  title="توليد جملة بمستوى A2 الأساسي"
                 >
                   A2 AI
                 </button>
+                {/* B1 AI Button */}
                 <button
                   onClick={() => handleGenerateAiSentence('B1')}
                   disabled={generatingSentence}
-                  className="px-2 py-1 rounded-lg text-[10px] font-bold border theme-btn-secondary"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                    sentenceLevel === 'B1' ? 'theme-btn-primary shadow-sm' : 'theme-btn-secondary'
+                  }`}
+                  title="توليد جملة بمستوى B1 المتوسط"
                 >
                   B1 AI
                 </button>
+                {/* B2 AI Button */}
                 <button
                   onClick={() => handleGenerateAiSentence('B2')}
                   disabled={generatingSentence}
-                  className="px-2 py-1 rounded-lg text-[10px] font-bold border theme-btn-secondary"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black border transition-all ${
+                    sentenceLevel === 'B2' ? 'theme-btn-primary shadow-sm' : 'theme-btn-secondary'
+                  }`}
+                  title="توليد جملة بمستوى B2 المتقدم"
                 >
                   B2 AI
                 </button>
+                {/* Primary New AI Generator */}
                 <button
-                  onClick={() => handleGenerateAiSentence()}
+                  onClick={() => handleGenerateAiSentence(sentenceLevel)}
                   disabled={generatingSentence}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold theme-btn-primary flex items-center gap-1"
+                  className="px-3 py-1 rounded-lg text-xs font-black theme-btn-primary flex items-center gap-1 shadow-sm"
                 >
                   {generatingSentence ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                   <span>✨ New AI</span>
@@ -339,9 +374,9 @@ export default function WordModal({ word, onClose }) {
             </div>
 
             {speechResult && (
-              <div className="p-3 rounded-xl border bg-black/5 space-y-1 text-xs font-bold">
+              <div className="p-3 rounded-xl border bg-black/5 space-y-1 text-xs font-bold font-arabic">
                 <div className="flex items-center justify-between">
-                  <span>Accuracy Score:</span>
+                  <span>درجة الدقة:</span>
                   <span className={speechResult.score >= 80 ? 'text-emerald-500' : 'text-amber-500'}>
                     {speechResult.score}%
                   </span>
@@ -354,4 +389,6 @@ export default function WordModal({ word, onClose }) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { translations } from '../data/translations';
 import { DEFAULT_GEMINI_KEY } from '../services/geminiService';
 import { VOICE_PRESETS } from '../services/audioService';
@@ -10,23 +10,19 @@ const AppContext = createContext(null);
 
 const STORAGE_KEYS = {
   AUTH_USER: 'oxford3000_auth_user',
-  FAVORITES: 'oxford3000_favorites',
-  MASTERED: 'oxford3000_mastered',
-  API_KEY: 'oxford3000_gemini_api_key',
-  CUSTOM_WORDS: 'oxford3000_custom_words',
+  THEME: 'oxford3000_theme',
+  COLOR_PALETTE: 'oxford3000_color_palette',
+  MODE: 'oxford3000_mode',
   LANGUAGE: 'oxford3000_language',
   VOICE_PRESET: 'oxford3000_voice_preset',
-  THEME: 'oxford3000_theme',
-  MODE: 'oxford3000_mode',
-  XP: 'oxford3000_xp',
-  STREAK: 'oxford3000_streak',
-  SRS: 'oxford3000_srs_records',
+  AUDIO_SPEED: 'oxford3000_audio_speed',
+  API_KEY: 'oxford3000_gemini_api_key',
 };
 
 const loadFromStorage = (key, fallback) => {
   try {
     const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : fallback;
+    return item !== null ? JSON.parse(item) : fallback;
   } catch (err) {
     return fallback;
   }
@@ -36,6 +32,15 @@ const saveToStorage = (key, value) => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (err) {}
+};
+
+/**
+ * User-Scoped Storage Helper:
+ * Ensures complete data isolation between "محمد" and "ريوف"
+ */
+const getUserKey = (username, key) => {
+  const safeUser = username ? encodeURIComponent(username.trim()) : 'guest';
+  return `oxford3000_user_${safeUser}_${key}`;
 };
 
 export const THEMES = [
@@ -48,15 +53,7 @@ export const AppProvider = ({ children }) => {
   // 1. Authentication State
   const [authUser, setAuthUser] = useState(() => loadFromStorage(STORAGE_KEYS.AUTH_USER, null));
 
-  const loginUser = useCallback((userObj) => {
-    setAuthUser(userObj);
-    saveToStorage(STORAGE_KEYS.AUTH_USER, userObj);
-  }, []);
-
-  const logoutUser = useCallback(() => {
-    setAuthUser(null);
-    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
-  }, []);
+  const activeUsername = authUser?.username || 'guest';
 
   // 2. Navigation & Notifications
   const [activeTab, setActiveTabState] = useState('grid');
@@ -85,17 +82,15 @@ export const AppProvider = ({ children }) => {
 
   // 3. Theme & Appearance with Custom Color Palette Switching
   const [theme, setTheme] = useState(() => {
-    const stored = localStorage.getItem('uqu_theme') || localStorage.getItem(STORAGE_KEYS.THEME);
-    return stored || 'brutalism';
+    return localStorage.getItem(STORAGE_KEYS.THEME) || 'brutalism';
   });
 
   const [colorPaletteId, setColorPaletteId] = useState(() => {
-    return localStorage.getItem('oxford3000_color_palette') || 'default';
+    return localStorage.getItem(STORAGE_KEYS.COLOR_PALETTE) || 'default';
   });
 
   const [mode, setMode] = useState(() => {
-    const stored = localStorage.getItem('uqu_mode') || localStorage.getItem(STORAGE_KEYS.MODE);
-    return stored || 'dark';
+    return localStorage.getItem(STORAGE_KEYS.MODE) || 'dark';
   });
 
   // Apply dynamic color palettes to CSS variables
@@ -110,7 +105,7 @@ export const AppProvider = ({ children }) => {
       if (activePalette) {
         const accent = mode === 'dark' ? activePalette.accentDark : activePalette.accentLight;
         const shadow = mode === 'dark' ? activePalette.shadowColorDark : activePalette.shadowColorLight;
-        
+
         root.style.setProperty('--bg-accent', accent);
         root.style.setProperty('--bg-accent-hover', activePalette.accentHover);
         if (theme === 'brutalism') {
@@ -125,21 +120,19 @@ export const AppProvider = ({ children }) => {
 
   const selectColorPalette = useCallback((paletteId) => {
     setColorPaletteId(paletteId);
-    localStorage.setItem('oxford3000_color_palette', paletteId);
+    localStorage.setItem(STORAGE_KEYS.COLOR_PALETTE, paletteId);
   }, []);
 
   const [language, setLanguage] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
-    return stored || 'ar';
+    return localStorage.getItem(STORAGE_KEYS.LANGUAGE) || 'ar';
   });
 
   const [voicePreset, setVoicePreset] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEYS.VOICE_PRESET);
-    return stored || 'us-female';
+    return localStorage.getItem(STORAGE_KEYS.VOICE_PRESET) || 'us-female';
   });
 
   const [audioSpeed, setAudioSpeed] = useState(() => {
-    const stored = localStorage.getItem('oxford3000_audio_speed');
+    const stored = localStorage.getItem(STORAGE_KEYS.AUDIO_SPEED);
     return stored ? parseFloat(stored) : 1.0;
   });
 
@@ -164,41 +157,198 @@ export const AppProvider = ({ children }) => {
     };
   }, [addNotification]);
 
-  // 5. XP & Streak Tracking (Feature 71)
-  const [xp, setXp] = useState(() => loadFromStorage(STORAGE_KEYS.XP, 120));
-  const [streak, setStreak] = useState(() => loadFromStorage(STORAGE_KEYS.STREAK, 3));
+  // 5. User-Isolated Live Realistic Stats & Activity (ZERO FAKE DATA)
+  const [xp, setXp] = useState(0);
+  const [streak, setStreak] = useState(1);
+  const [favorites, setFavorites] = useState([]);
+  const [mastered, setMastered] = useState([]);
+  const [customWords, setCustomWords] = useState([]);
+  const [srsRecords, setSrsRecords] = useState({});
+  const [activityLog, setActivityLog] = useState([]);
 
-  const addXp = useCallback((amount = 10) => {
-    setXp((prev) => {
-      const next = prev + amount;
-      saveToStorage(STORAGE_KEYS.XP, next);
-      return next;
+  // Load user data whenever active user changes
+  useEffect(() => {
+    if (!authUser) {
+      setXp(0);
+      setStreak(0);
+      setFavorites([]);
+      setMastered([]);
+      setCustomWords([]);
+      setSrsRecords({});
+      setActivityLog([]);
+      return;
+    }
+
+    const uKey = activeUsername;
+    const loadedFavorites = loadFromStorage(getUserKey(uKey, 'favorites'), []);
+    const loadedMastered = loadFromStorage(getUserKey(uKey, 'mastered'), []);
+    const loadedCustom = loadFromStorage(getUserKey(uKey, 'custom_words'), []);
+    const loadedSRS = loadFromStorage(getUserKey(uKey, 'srs'), {});
+    const loadedActivity = loadFromStorage(getUserKey(uKey, 'activity_log'), []);
+    const loadedXP = loadFromStorage(getUserKey(uKey, 'xp'), 0);
+
+    // Realistic Daily Streak calculation based on actual calendar days
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const lastActive = loadFromStorage(getUserKey(uKey, 'last_active_date'), null);
+    let currentStreak = loadFromStorage(getUserKey(uKey, 'streak'), 1);
+
+    if (lastActive) {
+      const lastDate = new Date(lastActive);
+      const todayDate = new Date(todayStr);
+      const diffDays = Math.round((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 1) {
+        // Logged in on consecutive day -> increment streak
+        currentStreak += 1;
+      } else if (diffDays > 1) {
+        // Missed one or more days -> reset streak to 1
+        currentStreak = 1;
+      }
+    } else {
+      currentStreak = 1;
+    }
+
+    saveToStorage(getUserKey(uKey, 'last_active_date'), todayStr);
+    saveToStorage(getUserKey(uKey, 'streak'), currentStreak);
+
+    setFavorites(loadedFavorites);
+    setMastered(loadedMastered);
+    setCustomWords(loadedCustom);
+    setSrsRecords(loadedSRS);
+    setActivityLog(loadedActivity);
+    setXp(loadedXP);
+    setStreak(currentStreak);
+  }, [authUser, activeUsername]);
+
+  // Record Real Activity and XP
+  const recordActivity = useCallback((type, title, earnedXp = 0, details = '') => {
+    if (!authUser) return;
+    const uKey = authUser.username;
+    const newEntry = {
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+      type,
+      title,
+      earnedXp,
+      details,
+      timestamp: Date.now(),
+    };
+
+    setActivityLog((prev) => {
+      const updated = [newEntry, ...prev].slice(0, 50); // Keep last 50 activities
+      saveToStorage(getUserKey(uKey, 'activity_log'), updated);
+      return updated;
     });
+
+    if (earnedXp > 0) {
+      setXp((prev) => {
+        const nextXp = prev + earnedXp;
+        saveToStorage(getUserKey(uKey, 'xp'), nextXp);
+        return nextXp;
+      });
+    }
+  }, [authUser]);
+
+  const addXp = useCallback((amount = 10, reason = 'نشاط دراسي') => {
+    recordActivity('xp_gain', reason, amount);
+  }, [recordActivity]);
+
+  const loginUser = useCallback((userObj) => {
+    setAuthUser(userObj);
+    saveToStorage(STORAGE_KEYS.AUTH_USER, userObj);
   }, []);
 
-  // 6. Lexicon, Favorites, Mastered & Custom
-  const [favorites, setFavorites] = useState(() => loadFromStorage(STORAGE_KEYS.FAVORITES, []));
-  const [mastered, setMastered] = useState(() => loadFromStorage(STORAGE_KEYS.MASTERED, []));
-  const [customWords, setCustomWords] = useState(() => loadFromStorage(STORAGE_KEYS.CUSTOM_WORDS, []));
-  const [selectedWords, setSelectedWords] = useState([]);
+  const logoutUser = useCallback(() => {
+    setAuthUser(null);
+    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+  }, []);
+
+  // 6. Real Live Lexicon Interactivity Actions
+  const toggleFavorite = useCallback((wordTerm) => {
+    if (!authUser) return;
+    const uKey = authUser.username;
+    setFavorites((prev) => {
+      const exists = prev.includes(wordTerm);
+      const updated = exists ? prev.filter((w) => w !== wordTerm) : [...prev, wordTerm];
+      saveToStorage(getUserKey(uKey, 'favorites'), updated);
+      if (!exists) {
+        recordActivity('favorite', `إضافة "${wordTerm}" إلى المفضلة ⭐`, 5);
+      }
+      return updated;
+    });
+  }, [authUser, recordActivity]);
+
+  const isFavorite = useCallback((wordTerm) => favorites.includes(wordTerm), [favorites]);
+
+  const toggleMastered = useCallback((wordTerm) => {
+    if (!authUser) return;
+    const uKey = authUser.username;
+    setMastered((prev) => {
+      const exists = prev.includes(wordTerm);
+      const updated = exists ? prev.filter((w) => w !== wordTerm) : [...prev, wordTerm];
+      saveToStorage(getUserKey(uKey, 'mastered'), updated);
+      if (!exists) {
+        recordActivity('mastered', `إتقان الكلمة "${wordTerm}" بنجاح 🎓`, 15);
+      }
+      return updated;
+    });
+  }, [authUser, recordActivity]);
+
+  const isMastered = useCallback((wordTerm) => mastered.includes(wordTerm), [mastered]);
+
+  const addCustomWord = useCallback((newWordObj) => {
+    if (!authUser) return;
+    const uKey = authUser.username;
+    setCustomWords((prev) => {
+      const updated = [newWordObj, ...prev];
+      saveToStorage(getUserKey(uKey, 'custom_words'), updated);
+      recordActivity('custom_word', `إضافة مفردة جديدة بالذكاء الاصطناعي "${newWordObj.word}" ✨`, 20);
+      return updated;
+    });
+  }, [authUser, recordActivity]);
 
   // 7. Spaced Repetition (SRS) Records (Feature 31)
-  const [srsRecords, setSrsRecords] = useState(() => loadFromStorage(STORAGE_KEYS.SRS, {}));
-
   const rateWordSRS = useCallback((wordTerm, rating = SRS_RATINGS.GOOD) => {
+    if (!authUser) return;
+    const uKey = authUser.username;
     setSrsRecords((prev) => {
       const current = prev[wordTerm] || {};
       const updated = calculateNextSRS(current, rating);
       const nextRecords = { ...prev, [wordTerm]: updated };
-      saveToStorage(STORAGE_KEYS.SRS, nextRecords);
+      saveToStorage(getUserKey(uKey, 'srs'), nextRecords);
+
+      const ratingNames = { 1: 'إعادة مراجعة', 2: 'صعبة', 3: 'جيدة', 4: 'سهلة ومتقنة' };
+      recordActivity('srs_review', `مراجعة تكرار متباعد: "${wordTerm}" (${ratingNames[rating]}) 🧠`, 10);
       return nextRecords;
+    });
+  }, [authUser, recordActivity]);
+
+  const dueSRSCount = useMemo(() => {
+    return Object.values(srsRecords).filter(isWordDueForReview).length;
+  }, [srsRecords]);
+
+  // 8. Storyteller Selection
+  const [selectedWords, setSelectedWords] = useState([]);
+
+  const toggleSelectWord = useCallback((wordObj) => {
+    setSelectedWords((prev) => {
+      const exists = prev.some((w) => w.word === wordObj.word);
+      if (exists) {
+        return prev.filter((w) => w.word !== wordObj.word);
+      } else {
+        if (prev.length >= 5) return prev;
+        return [...prev, wordObj];
+      }
     });
   }, []);
 
-  // Calculate Due Reviews Count
-  const dueSRSCount = Object.values(srsRecords).filter(isWordDueForReview).length;
+  const clearSelectedWords = useCallback(() => setSelectedWords([]), []);
 
-  // 8. API Keys & Modals
+  const isSelectedWord = useCallback(
+    (wordObj) => selectedWords.some((w) => w.word === wordObj.word),
+    [selectedWords]
+  );
+
+  // 9. API Keys & Modals
   const [apiKey, setApiKey] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.API_KEY);
     return stored !== null && stored.trim() !== '' ? stored : DEFAULT_GEMINI_KEY;
@@ -208,13 +358,11 @@ export const AppProvider = ({ children }) => {
 
   // Sync Root Theme / Mode Attributes
   useEffect(() => {
-    localStorage.setItem('uqu_theme', theme);
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   useEffect(() => {
-    localStorage.setItem('uqu_mode', mode);
     localStorage.setItem(STORAGE_KEYS.MODE, mode);
     document.documentElement.setAttribute('data-mode', mode);
   }, [mode]);
@@ -233,6 +381,10 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem(STORAGE_KEYS.VOICE_PRESET, voicePreset);
   }, [voicePreset]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.AUDIO_SPEED, audioSpeed.toString());
+  }, [audioSpeed]);
+
   const t = useCallback((key) => {
     const langDict = translations[language] || translations.ar || translations.en;
     return langDict[key] || translations.en[key] || key;
@@ -242,72 +394,11 @@ export const AppProvider = ({ children }) => {
     setLanguage((prev) => (prev === 'en' ? 'ar' : 'en'));
   }, []);
 
-  useEffect(() => { saveToStorage(STORAGE_KEYS.FAVORITES, favorites); }, [favorites]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.MASTERED, mastered); }, [mastered]);
-  useEffect(() => { saveToStorage(STORAGE_KEYS.CUSTOM_WORDS, customWords); }, [customWords]);
-
   useEffect(() => {
     if (apiKey) {
       localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.API_KEY);
     }
   }, [apiKey]);
-
-  const toggleFavorite = useCallback((wordTerm) => {
-    setFavorites((prev) => {
-      const exists = prev.includes(wordTerm);
-      const updated = exists ? prev.filter((w) => w !== wordTerm) : [...prev, wordTerm];
-      addNotification(
-        exists ? `تمت إزالة "${wordTerm}" من المفضلة` : `تمت إضافة "${wordTerm}" إلى المفضلة ⭐`,
-        exists ? 'info' : 'success'
-      );
-      return updated;
-    });
-  }, [addNotification]);
-
-  const isFavorite = useCallback((wordTerm) => favorites.includes(wordTerm), [favorites]);
-
-  const toggleMastered = useCallback((wordTerm) => {
-    setMastered((prev) => {
-      const exists = prev.includes(wordTerm);
-      const updated = exists ? prev.filter((w) => w !== wordTerm) : [...prev, wordTerm];
-      addNotification(
-        exists ? `تم إلغاء تمييز "${wordTerm}" كمتقن` : `تم تمييز "${wordTerm}" كـ كلمة متقنة 🎯`,
-        exists ? 'info' : 'success'
-      );
-      return updated;
-    });
-  }, [addNotification]);
-
-  const isMastered = useCallback((wordTerm) => mastered.includes(wordTerm), [mastered]);
-
-  const addCustomWord = useCallback((wordObj) => {
-    setCustomWords((prev) => [wordObj, ...prev]);
-    addNotification(`تمت إضافة كلمة مخصصة: "${wordObj.word}"`, 'success');
-  }, [addNotification]);
-
-  const clearSelectedWords = useCallback(() => {
-    setSelectedWords([]);
-    addNotification('تم تفريغ الكلمات المحددة', 'info', 2000);
-  }, [addNotification]);
-
-  const toggleSelectWord = useCallback((wordObj) => {
-    setSelectedWords((prev) => {
-      const exists = prev.some((w) => w.word === wordObj.word);
-      if (exists) {
-        return prev.filter((w) => w.word !== wordObj.word);
-      } else {
-        if (prev.length >= 5) return prev;
-        return [...prev, wordObj];
-      }
-    });
-  }, []);
-
-  const isSelectedWord = useCallback(
-    (wordObj) => selectedWords.some((w) => w.word === wordObj.word),
-    [selectedWords]
-  );
 
   const value = {
     authUser,
@@ -335,6 +426,8 @@ export const AppProvider = ({ children }) => {
     xp,
     addXp,
     streak,
+    activityLog,
+    recordActivity,
     favorites,
     favoritesCount: favorites.length,
     toggleFavorite,
