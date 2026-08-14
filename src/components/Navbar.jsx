@@ -24,8 +24,10 @@ import {
   WifiOff,
   LogOut,
   Compass,
+  Palette,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import ThemeColorStudioModal from './ThemeColorStudioModal';
 
 export default function Navbar() {
   const {
@@ -48,6 +50,7 @@ export default function Navbar() {
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -212,6 +215,16 @@ export default function Navbar() {
                 <span className="text-amber-500 font-bold">{streak}d</span>
               </div>
 
+              {/* Theme & Color Palette Studio Button (🎨) */}
+              <button
+                onClick={() => setIsThemeModalOpen(true)}
+                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl theme-btn-secondary text-xs font-bold transition-all shrink-0 active:scale-90 border shadow-sm"
+                title="تخصيص الألوان والهوية البصرية"
+                aria-label="Theme Studio"
+              >
+                <Palette className="w-3.5 h-3.5 text-amber-500" />
+              </button>
+
               {/* Light / Dark Mode Toggle */}
               <button
                 onClick={toggleMode}
@@ -362,6 +375,8 @@ export default function Navbar() {
           );
         })}
       </nav>
+      {/* Theme & Color Palette Customizer Modal */}
+      <ThemeColorStudioModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} />
     </>
   );
 }

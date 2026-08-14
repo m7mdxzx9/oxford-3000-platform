@@ -4,6 +4,7 @@ import { DEFAULT_GEMINI_KEY } from '../services/geminiService';
 import { VOICE_PRESETS } from '../services/audioService';
 import { playTabSwitchSound, playSuccessChime } from '../services/soundEffects';
 import { calculateNextSRS, isWordDueForReview, SRS_RATINGS } from '../utils/srsUtils';
+import { THEME_DEFINITIONS } from '../utils/themePalettes';
 
 const AppContext = createContext(null);
 
@@ -82,16 +83,50 @@ export const AppProvider = ({ children }) => {
     setActiveTabState(newTab);
   }, []);
 
-  // 3. Theme & Appearance
+  // 3. Theme & Appearance with Custom Color Palette Switching
   const [theme, setTheme] = useState(() => {
     const stored = localStorage.getItem('uqu_theme') || localStorage.getItem(STORAGE_KEYS.THEME);
     return stored || 'brutalism';
+  });
+
+  const [colorPaletteId, setColorPaletteId] = useState(() => {
+    return localStorage.getItem('oxford3000_color_palette') || 'default';
   });
 
   const [mode, setMode] = useState(() => {
     const stored = localStorage.getItem('uqu_mode') || localStorage.getItem(STORAGE_KEYS.MODE);
     return stored || 'dark';
   });
+
+  // Apply dynamic color palettes to CSS variables
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-theme', theme);
+    root.setAttribute('data-mode', mode);
+
+    const themeDef = THEME_DEFINITIONS[theme];
+    if (themeDef && themeDef.palettes) {
+      const activePalette = themeDef.palettes.find((p) => p.id === colorPaletteId) || themeDef.palettes[0];
+      if (activePalette) {
+        const accent = mode === 'dark' ? activePalette.accentDark : activePalette.accentLight;
+        const shadow = mode === 'dark' ? activePalette.shadowColorDark : activePalette.shadowColorLight;
+        
+        root.style.setProperty('--bg-accent', accent);
+        root.style.setProperty('--bg-accent-hover', activePalette.accentHover);
+        if (theme === 'brutalism') {
+          root.style.setProperty('--shadow-btn', `3px 3px 0px ${shadow}`);
+          root.style.setProperty('--shadow-card', `4px 4px 0px ${shadow}`);
+        } else {
+          root.style.setProperty('--shadow-btn', `0 4px 14px ${shadow}`);
+        }
+      }
+    }
+  }, [theme, colorPaletteId, mode]);
+
+  const selectColorPalette = useCallback((paletteId) => {
+    setColorPaletteId(paletteId);
+    localStorage.setItem('oxford3000_color_palette', paletteId);
+  }, []);
 
   const [language, setLanguage] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
@@ -280,6 +315,9 @@ export const AppProvider = ({ children }) => {
     logoutUser,
     theme,
     setTheme,
+    colorPaletteId,
+    selectColorPalette,
+    THEME_DEFINITIONS,
     mode,
     setMode,
     toggleMode,
