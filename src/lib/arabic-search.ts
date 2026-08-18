@@ -4,7 +4,7 @@
  * and matches queries across headwords, multi-synonym meaning stacks, and context examples.
  */
 
-export function normalizeArabicText(text: string): string {
+export function normalizeArabic(text: string): string {
   if (!text) return '';
   return text
     // 1. Remove Arabic Harakat / Diacritics (Fathatan, Dammatan, Kasratan, Fatha, Damma, Kasra, Shadda, Sukun, Dagger Alif)
@@ -23,6 +23,8 @@ export function normalizeArabicText(text: string): string {
     .trim()
     .toLowerCase();
 }
+
+export const normalizeArabicText = normalizeArabic;
 
 /**
  * Extracts and normalizes individual synonym phrases from an Arabic meaning string
@@ -58,6 +60,7 @@ export interface SearchableLexiconItem {
   arabic: string;
   example: string;
   ipa: string;
+  meanings?: string[];
 }
 
 /**
@@ -70,7 +73,7 @@ export function matchesSearchQuery(
   if (!query || !query.trim()) return true;
 
   const rawQuery = query.trim().toLowerCase();
-  const normalizedQuery = normalizeArabicText(rawQuery);
+  const normalizedQuery = normalizeArabic(rawQuery);
 
   // 1. Direct English Headword Match
   if (item.word.toLowerCase().includes(rawQuery)) {
@@ -78,25 +81,28 @@ export function matchesSearchQuery(
   }
 
   // 2. English Example Match
-  if (item.example.toLowerCase().includes(rawQuery)) {
+  if (item.example && item.example.toLowerCase().includes(rawQuery)) {
     return true;
   }
 
   // 3. Part of Speech or IPA Match
-  if (item.pos.toLowerCase().includes(rawQuery) || item.ipa.toLowerCase().includes(rawQuery)) {
+  if (
+    (item.pos && item.pos.toLowerCase().includes(rawQuery)) ||
+    (item.ipa && item.ipa.toLowerCase().includes(rawQuery))
+  ) {
     return true;
   }
 
   // 4. Arabic Full String Normalized Match
-  const normalizedArabic = normalizeArabicText(item.arabic);
+  const normalizedArabic = normalizeArabic(item.arabic || '');
   if (normalizedArabic.includes(normalizedQuery)) {
     return true;
   }
 
   // 5. Individual Arabic Synonyms Match
-  const meanings = extractArabicMeanings(item.arabic);
+  const meanings = item.meanings || extractArabicMeanings(item.arabic || '');
   for (const meaning of meanings) {
-    const normalizedMeaning = normalizeArabicText(meaning);
+    const normalizedMeaning = normalizeArabic(meaning);
     if (
       normalizedMeaning.includes(normalizedQuery) ||
       normalizedQuery.includes(normalizedMeaning)
@@ -118,4 +124,15 @@ export function matchesSearchQuery(
   }
 
   return false;
+}
+
+/**
+ * Deep search across word, meanings, and examples
+ */
+export function deepSearchDictionary<T extends SearchableLexiconItem>(
+  query: string,
+  data: T[]
+): T[] {
+  if (!query || !query.trim()) return data;
+  return data.filter((item) => matchesSearchQuery(item, query));
 }
