@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, RefreshCw, Layers, ExternalLink, Lightbulb, Eye } from 'lucide-react';
+import { Volume2, Mic, MicOff, Star, CheckCircle, X, Sparkles, RefreshCw, Layers, ExternalLink, Lightbulb, Eye, Palette } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening, isSpeechRecognitionSupported } from '../services/speechEvaluation';
@@ -11,6 +11,7 @@ import IpaSyllableVisualizer from './IpaSyllableVisualizer';
 import { fetchFreeDictDetails, fetchDatamuseDetails } from '../services/dictionaryService';
 import { analyzeSilentLetters } from '../utils/phoneticsUtils';
 import { getMnemonicForWord } from '../utils/mnemonicsData';
+import { getWordMeanings } from '../utils/wordMeaningsDictionary';
 
 export default function WordModal({ word, onClose }) {
   const {
@@ -26,7 +27,11 @@ export default function WordModal({ word, onClose }) {
     setAudioSpeed,
     apiKey,
     addXp,
+    setIsThemeModalOpen,
   } = useApp();
+
+
+  const wordMeanings = useMemo(() => getWordMeanings(word), [word]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [speechResult, setSpeechResult] = useState(null);
@@ -156,14 +161,26 @@ export default function WordModal({ word, onClose }) {
             )}
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl theme-btn-secondary opacity-75 hover:opacity-100 transition-all cursor-pointer"
-            aria-label="إغلاق النافذة"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsThemeModalOpen(true)}
+              className="px-2.5 py-1 rounded-xl theme-btn-primary text-xs font-black flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+              title="تخصيص ألوان الخط والمربعات"
+            >
+              <Palette className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+              <span className="font-arabic text-[11px]">🎨 تخصيص الألوان والخط</span>
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl theme-btn-secondary opacity-75 hover:opacity-100 transition-all cursor-pointer"
+              aria-label="إغلاق النافذة"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
 
         {/* Scrollable Body Content */}
         <div className="overflow-y-auto pr-1 space-y-4 flex-1 overscroll-contain">
@@ -179,13 +196,27 @@ export default function WordModal({ word, onClose }) {
             <IpaSyllableVisualizer ipa={word.ipa || word.phonetic || `/${word.word}/`} />
           </div>
 
-          {/* Arabic Translation Block */}
-          <div dir="rtl" className="rtl-text p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-center font-arabic">
-            <span className="text-[11px] opacity-75 font-bold block mb-0.5">الترجمة العربية والسياق</span>
-            <p className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-300">
-              {word.arabic || word.translation}
+          {/* Arabic Translation Block & Multi-Meanings (Feature 0301) */}
+          <div dir="rtl" className="rtl-text p-4 rounded-2xl box-surface border border-amber-500/40 text-center font-arabic space-y-2">
+            <span className="text-[11px] opacity-80 font-bold block text-[var(--text-main)]">الترجمة العربية الأساسية والمعاني المتعددة</span>
+            <p className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-300">
+              {wordMeanings.primary || word.arabic || word.translation}
             </p>
+            {wordMeanings.alternatives.length > 1 && (
+              <div className="pt-2 border-t border-amber-500/20 flex items-center justify-center gap-1.5 flex-wrap">
+                <span className="text-[10px] opacity-75">معانٍ وترجمات بديلة:</span>
+                {wordMeanings.alternatives.map((alt, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-0.5 rounded-lg bg-amber-500/15 text-[11px] font-bold text-amber-800 dark:text-amber-200 border border-amber-500/30"
+                  >
+                    {alt}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
+
 
           {/* Visual Mnemonic Hook (Feature 33) */}
           <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 text-xs font-medium space-y-1 font-arabic">
@@ -199,12 +230,12 @@ export default function WordModal({ word, onClose }) {
           </div>
 
           {/* Synonyms & Antonyms */}
-          {datamuseData && (datamuseData.synonyms?.length > 0 || datamuseData.antonyms?.length > 0) && (
+          {(wordMeanings.synonyms.length > 0 || (datamuseData && (datamuseData.synonyms?.length > 0 || datamuseData.antonyms?.length > 0))) && (
             <div className="p-3.5 rounded-2xl border bg-black/5 space-y-2 text-xs font-black">
-              {datamuseData.synonyms?.length > 0 && (
+              {(wordMeanings.synonyms.length > 0 || datamuseData?.synonyms?.length > 0) && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-cyan-600 dark:text-cyan-400 font-black">المرادفات (Synonyms):</span>
-                  {datamuseData.synonyms.slice(0, 5).map((syn, idx) => (
+                  {Array.from(new Set([...wordMeanings.synonyms, ...(datamuseData?.synonyms || [])])).slice(0, 7).map((syn, idx) => (
                     <span key={idx} className="px-2 py-0.5 rounded-lg theme-btn-secondary text-[11px] font-bold">
                       {syn}
                     </span>
@@ -286,11 +317,12 @@ export default function WordModal({ word, onClose }) {
           </div>
 
           {/* Example Sentence & AI Sentence Level Selector with A1, A2, B1, B2 */}
-          <div className="p-4 rounded-2xl border space-y-3">
+          <div className="p-4 rounded-2xl box-surface space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
                 Example Sentence:
               </span>
+
               <div className="flex items-center gap-1 flex-wrap">
                 {/* A1 AI Button */}
                 <button

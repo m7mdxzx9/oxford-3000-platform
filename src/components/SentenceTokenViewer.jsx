@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { playAudio } from '../services/audioService';
-import { oxford3000Data } from '../data/oxford3000';
+import { oxford3000Data } from '../data/oxford3000Data';
 import { fetchMissingTerm } from '../services/geminiService';
 import { CORE_ARABIC_DICTIONARY, stemEnglishWord } from '../utils/arabicTranslationDictionary';
+import { EXTENDED_WORD_MEANINGS } from '../utils/wordMeaningsDictionary';
 
 // Fast lookup map for local Oxford 3000 word translations
 const localTranslationMap = new Map();
@@ -22,7 +23,7 @@ if (Array.isArray(oxford3000Data)) {
  * Splits a sentence into interactive clickable word tokens with strict LTR CSS isolation
  * and interactive word-by-word Arabic translation tooltips.
  */
-export const SentenceTokenViewer = ({
+export const SentenceTokenViewer = React.memo(function SentenceTokenViewer({
   sentence = '',
   targetWords = [],
   wordTranslations = {}, // AI-generated or custom word-to-arabic map
@@ -36,22 +37,22 @@ export const SentenceTokenViewer = ({
   interactive = true,
   showInlineTranslationBadges = false,
   className = '',
-}) => {
+}) {
   const [playingWord, setPlayingWord] = useState(null);
   const [activeTooltipWord, setActiveTooltipWord] = useState(null);
 
-  if (!sentence) return null;
-
   // Normalize target words array for fast lookup
-  const normalizedTargets = new Set(
-    (targetWords || [])
-      .map((w) => {
-        if (typeof w === 'string') return w.toLowerCase();
-        if (w && typeof w.word === 'string') return w.word.toLowerCase();
-        return '';
-      })
-      .filter(Boolean)
-  );
+  const normalizedTargets = useMemo(() => {
+    return new Set(
+      (targetWords || [])
+        .map((w) => {
+          if (typeof w === 'string') return w.toLowerCase();
+          if (w && typeof w.word === 'string') return w.word.toLowerCase();
+          return '';
+        })
+        .filter(Boolean)
+    );
+  }, [targetWords]);
 
   // Extract effective word breakdown list
   const effectiveBreakdown = useMemo(() => {
@@ -92,6 +93,8 @@ export const SentenceTokenViewer = ({
   // State to store dynamically resolved translations for words not in static map
   const [dynamicTranslations, setDynamicTranslations] = useState({});
 
+  if (!sentence) return null;
+
   // Function to resolve Arabic translation for any English word
   const getWordTranslation = (token) => {
     if (!token) return '';
@@ -103,26 +106,34 @@ export const SentenceTokenViewer = ({
       return CORE_ARABIC_DICTIONARY[cleanToken];
     }
 
-    // 2. AI translations lookup
+    // 2. Curated Extended Meanings dictionary lookup
+    if (EXTENDED_WORD_MEANINGS && EXTENDED_WORD_MEANINGS[cleanToken]?.primary) {
+      return EXTENDED_WORD_MEANINGS[cleanToken].primary;
+    }
+
+    // 3. AI contextual translations lookup
     if (normalizedAiTranslations[cleanToken]) {
       return normalizedAiTranslations[cleanToken];
     }
 
-    // 3. Dynamic cached translations lookup
+    // 4. Dynamic cached translations lookup
     if (dynamicTranslations[cleanToken]) {
       return dynamicTranslations[cleanToken];
     }
 
-    // 4. Local Oxford 3000 translation map lookup
+    // 5. Local Oxford 3000 translation map lookup
     if (localTranslationMap.has(cleanToken)) {
       return localTranslationMap.get(cleanToken);
     }
 
-    // 5. Stemming / Lemmatization (e.g. "languages" -> "language")
+    // 6. Stemming / Lemmatization (e.g. "practicing" -> "practice", "skills" -> "skill")
     const stemmed = stemEnglishWord(cleanToken);
     if (stemmed && stemmed !== cleanToken) {
       if (CORE_ARABIC_DICTIONARY[stemmed]) {
         return CORE_ARABIC_DICTIONARY[stemmed];
+      }
+      if (EXTENDED_WORD_MEANINGS && EXTENDED_WORD_MEANINGS[stemmed]?.primary) {
+        return EXTENDED_WORD_MEANINGS[stemmed].primary;
       }
       if (localTranslationMap.has(stemmed)) {
         return localTranslationMap.get(stemmed);
@@ -132,7 +143,7 @@ export const SentenceTokenViewer = ({
       }
     }
 
-    // 6. Partial key matches in AI translations
+    // 7. Partial key matches in AI translations
     const partialKey = Object.keys(normalizedAiTranslations).find((k) => k.includes(cleanToken) || cleanToken.includes(k));
     if (partialKey) return normalizedAiTranslations[partialKey];
 
@@ -148,17 +159,17 @@ export const SentenceTokenViewer = ({
 
     // If translation not yet in cache, set loading state and query dynamic translation API
     if (!translation && clean) {
-      setActiveTooltipWord({ word, translation: 'جاري جلب الترجمة...', index: tokenIndex, loading: true });
+      setActiveTooltipWord({ word, translation: 'جاري استخراج المعنى الدقيق...', index: tokenIndex, loading: true });
       fetchMissingTerm(clean).then((res) => {
         if (res && res.arabic) {
           setDynamicTranslations((prev) => ({ ...prev, [clean]: res.arabic }));
           setActiveTooltipWord({ word, translation: res.arabic, index: tokenIndex });
         } else {
-          setActiveTooltipWord({ word, translation: `مفردة ${clean}`, index: tokenIndex });
+          setActiveTooltipWord({ word, translation: clean, index: tokenIndex });
         }
       });
     } else {
-      setActiveTooltipWord((prev) => (prev && prev.index === tokenIndex ? null : { word, translation: translation || `مفردة ${clean}`, index: tokenIndex }));
+      setActiveTooltipWord((prev) => (prev && prev.index === tokenIndex ? null : { word, translation: translation || clean, index: tokenIndex }));
     }
 
     if (onWordClick) {
@@ -295,7 +306,6 @@ export const SentenceTokenViewer = ({
       )}
     </div>
   );
-};
+});
 
 export default SentenceTokenViewer;
-

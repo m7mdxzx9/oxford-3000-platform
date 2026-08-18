@@ -1,0 +1,51 @@
+{
+  "name": "Oxford 3000™ - Master English Lexicon",
+  "short_name": "Oxford 3000",
+  "description": "Interactive, modular CEFR English learning platform with FSRS Spaced Repetition, WebRTC Duo Multiplayer, and IndexedDB Offline Architecture.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#060D21",
+  "orientation": "portrait-primary",
+  "dir": "rtl",
+  "lang": "ar",
+  "categories": ["education", "games", "productivity"],
+  "icons": [
+    {
+      "src": "./icon-192.svg",
+      "sizes": "48x48",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.svg",
+      "sizes": "72x72",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.svg",
+      "sizes": "96x96",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.svg",
+      "sizes": "144x144",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

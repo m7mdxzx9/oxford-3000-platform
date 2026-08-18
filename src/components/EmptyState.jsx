@@ -5,7 +5,7 @@ import { SearchX, StarOff, RotateCcw, Sparkles } from 'lucide-react';
  * EmptyState Component
  * Displays polished, accessible empty state UI for no search results or empty bookmarks.
  */
-export const EmptyState = ({
+export const EmptyState = React.memo(function EmptyState({
   type = 'search', // 'search' | 'favorites' | 'mastered'
   title = '',
   description = '',
@@ -13,7 +13,7 @@ export const EmptyState = ({
   onReset = null,
   onAiFetch = null,
   isFetchingTerm = false,
-}) => {
+}) {
   if (type === 'favorites') {
     return (
       <div className="card-theme-target p-8 sm:p-12 rounded-3xl border border-amber-500/30 text-center max-w-xl mx-auto shadow-2xl space-y-4 my-8 bg-[var(--bg-card)] text-[var(--text-main)]">
@@ -96,6 +96,6 @@ export const EmptyState = ({
       </div>
     </div>
   );
-};
+});
 
 export default EmptyState;

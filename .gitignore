@@ -9,6 +9,13 @@ node_modules/
 # Production build
 dist/
 dist-ssr/
+.next/
+out/
+*.tsbuildinfo
+# Environment variables
+.env
+.env.*
+!.env.example
 *.local
 
 # Editor directories and files

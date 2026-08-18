@@ -1,8 +1,8 @@
-import { oxford3000Data, OXFORD_3000, getCefrLevels, getPosOptions } from '../src/data/oxford3000.js';
+import { oxford3000Data, OXFORD_3000, getCefrLevels, getPosOptions } from '../src/data/oxford3000Data.js';
 import normalizedOxford3000 from '../src/data/oxford3000Data.js';
 import { translations } from '../src/data/translations.js';
 import geminiService from '../src/services/geminiService.js';
-import imagenService from '../src/services/imagenService.js';
+import imageService from '../src/services/imageService.js';
 import audioService from '../src/services/audioService.js';
 import speechEvaluation from '../src/services/speechEvaluation.js';
 
@@ -56,13 +56,13 @@ async function runAudit() {
     assert(false, `fetchMissingTerm error: ${err.message}`);
   }
 
-  // TEST 5: Imagen 4.0 Visual Illustration Generation
-  console.log('\n[5/6] Testing Imagen 4.0 Visual Concept Illustration...');
+  // TEST 5: Visual Illustration Generation
+  console.log('\n[5/6] Testing Visual Concept Illustration...');
   try {
-    const illustration = await imagenService.generateVisualIllustration('abandon', 'snowstorm');
-    assert(typeof illustration === 'string' && illustration.length > 50, 'Imagen 4.0 illustration URL/SVG generated successfully');
+    const illustration = await imageService.generateVisualIllustration('abandon', 'snowstorm');
+    assert(typeof illustration === 'string' && illustration.length > 50, 'Illustration URL/SVG generated successfully');
   } catch (err) {
-    assert(false, `imagenService error: ${err.message}`);
+    assert(false, `imageService error: ${err.message}`);
   }
 
   // AUDIT SUMMARY

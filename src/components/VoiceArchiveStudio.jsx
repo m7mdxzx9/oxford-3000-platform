@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Volume2, Mic, Play, Trash2, Calendar, Award, RotateCcw, CheckCircle2, Flame, History, Sparkles, Activity } from 'lucide-react';
+import { Volume2, Mic, Play, Trash2, Calendar, Award, RotateCcw, CheckCircle2, Flame, History, Sparkles, Activity, Database } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { oxford3000Data } from '../data/oxford3000';
+import { oxford3000Data } from '../data/oxford3000Data';
 import { playWordAudio } from '../services/audioService';
 import { evaluateSpeech } from '../services/speechEvaluation';
 import { playSuccessChime } from '../services/soundEffects';
+import { saveVoiceRecording, getAllVoiceRecordings, deleteVoiceRecording, clearAllVoiceRecordings } from '../services/indexedDbService';
 import ElectromagneticMic from './ElectromagneticMic';
 import LiveEqualizer from './LiveEqualizer';
-
-const ARCHIVE_STORAGE_KEY = 'oxford3000_voice_archive';
 
 export default function VoiceArchiveStudio() {
   const { voicePreset, audioSpeed, addNotification } = useApp();
@@ -16,24 +15,47 @@ export default function VoiceArchiveStudio() {
   const [isRecording, setIsRecording] = useState(false);
   const [isNativePlaying, setIsNativePlaying] = useState(false);
   const [isUserPlaying, setIsUserPlaying] = useState(null);
-  const [recordings, setRecordings] = useState(() => {
-    try {
-      const saved = localStorage.getItem(ARCHIVE_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
+  const [recordings, setRecordings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-  // Save to localStorage
+  // Load from IndexedDB on mount
   useEffect(() => {
-    try {
-      localStorage.setItem(ARCHIVE_STORAGE_KEY, JSON.stringify(recordings.slice(0, 30)));
-    } catch (e) {}
-  }, [recordings]);
+    let isMounted = true;
+    const fetchRecordings = async () => {
+      try {
+        const idbRecords = await getAllVoiceRecordings();
+        if (isMounted) {
+          if (idbRecords && idbRecords.length > 0) {
+            setRecordings(idbRecords);
+          } else {
+            // Fallback check from localStorage for initial migration
+            try {
+              const saved = localStorage.getItem('oxford3000_voice_archive');
+              if (saved) {
+                const parsed = JSON.parse(saved);
+                setRecordings(parsed);
+                // Save to IndexedDB
+                for (const item of parsed) {
+                  await saveVoiceRecording(item);
+                }
+              }
+            } catch (e) {}
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchRecordings();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Handle Native Play
   const playNativeAudio = async (word) => {
@@ -63,18 +85,18 @@ export default function VoiceArchiveStudio() {
         reader.onloadend = async () => {
           const base64Audio = reader.result;
           
-          // Generate simulated speech score if WebSpeech not available or run speech recognition
           const mockScore = Math.floor(75 + Math.random() * 25);
 
           const newRecord = {
-            id: Date.now().toString(),
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 6),
             word: selectedWordObj.word,
             arabic: selectedWordObj.arabic,
             cefr: selectedWordObj.cefr,
             ipa: selectedWordObj.ipa,
             score: mockScore,
             audioData: base64Audio,
-            timestamp: new Date().toLocaleDateString('ar-EG', {
+            timestamp: Date.now(),
+            dateStr: new Date().toLocaleDateString('ar-SA', {
               month: 'short',
               day: 'numeric',
               hour: '2-digit',
@@ -82,8 +104,11 @@ export default function VoiceArchiveStudio() {
             }),
           };
 
+          // Save to persistent IndexedDB
+          await saveVoiceRecording(newRecord);
+
           setRecordings((prev) => [newRecord, ...prev]);
-          addNotification(`تم حفظ تسجيلك الصوتي لكلمة "${selectedWordObj.word}" بنجاح!`, 'success');
+          addNotification(`تم حفظ تسجيلك الصوتي لكلمة "${selectedWordObj.word}" في قاعدة البيانات!`, 'success');
           try {
             playSuccessChime();
           } catch (e) {}
@@ -116,13 +141,20 @@ export default function VoiceArchiveStudio() {
     audio.play();
   };
 
-  const deleteRecord = (id) => {
+  const handleDeleteRecord = async (id) => {
+    await deleteVoiceRecording(id);
     setRecordings((prev) => prev.filter((r) => r.id !== id));
+    addNotification('تم حذف التسجيل الصوتي', 'info');
   };
 
-  const clearAllRecordings = () => {
-    if (window.confirm('هل أنت متأكد من مسح جميع التسجيلات المحفوظة؟')) {
+  const handleClearAllRecordings = async () => {
+    if (window.confirm('هل أنت متأكد من مسح جميع التسجيلات المحفوظة من الذاكرة الدائمة؟')) {
+      await clearAllVoiceRecordings();
       setRecordings([]);
+      try {
+        localStorage.removeItem('oxford3000_voice_archive');
+      } catch (e) {}
+      addNotification('تم تفريغ الأرشيف الصوتي بالكامل', 'info');
     }
   };
 
@@ -138,19 +170,20 @@ export default function VoiceArchiveStudio() {
             <div>
               <h2 className="text-xl sm:text-2xl font-black font-arabic flex items-center gap-2">
                 <span>أرشيف التطور والتسجيل الصوتي</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 font-mono font-bold">
-                  Voice Vault
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 font-mono font-bold flex items-center gap-1">
+                  <Database className="w-3 h-3" />
+                  <span>IndexedDB Powered</span>
                 </span>
               </h2>
               <p className="text-xs sm:text-sm opacity-75 font-arabic">
-                سجّل صوتك، قارنه بنطق المتحدث الأصلي، وراقب تحسن نطقك بمرور الوقت
+                سجّل صوتك بلا حدود، قارنه بنطق المتحدث الأصلي، وراقب تحسن نطقك بمرور الوقت
               </p>
             </div>
           </div>
 
           {recordings.length > 0 && (
             <button
-              onClick={clearAllRecordings}
+              onClick={handleClearAllRecordings}
               className="px-3 py-1.5 rounded-xl border text-xs font-bold text-rose-500 border-rose-500/30 hover:bg-rose-500/10 flex items-center gap-1 font-arabic"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -218,7 +251,7 @@ export default function VoiceArchiveStudio() {
               </div>
             </div>
 
-            {/* 2. Electromagnetic Record Button (Feature 10) */}
+            {/* 2. Electromagnetic Record Button */}
             <div className="flex flex-col items-center gap-1.5">
               <ElectromagneticMic
                 isRecording={isRecording}
@@ -236,11 +269,15 @@ export default function VoiceArchiveStudio() {
         <div className="flex items-center gap-2 px-1">
           <History className="w-4 h-4 text-rose-500" />
           <h3 className="text-sm font-black font-arabic">
-            سجل التسجيلات الصوتية المحفوظة ({recordings.length})
+            سجل التسجيلات الصوتية في الذاكرة الدائمة ({recordings.length})
           </h3>
         </div>
 
-        {recordings.length === 0 ? (
+        {loading ? (
+          <div className="p-8 rounded-3xl glass-panel border text-center opacity-70 font-arabic text-sm">
+            جاري قراءة الأرشيف الصوتي من قاعدة البيانات...
+          </div>
+        ) : recordings.length === 0 ? (
           <div className="p-8 rounded-3xl glass-panel border text-center opacity-70 font-arabic text-sm space-y-2">
             <p>لا توجد تسجيلات بعد في أرشيفك الصوتي.</p>
             <p className="text-xs">سجّل أول نطق لك لتتمكن من سماع ومقارنة تطورك مع الوقت!</p>
@@ -256,13 +293,13 @@ export default function VoiceArchiveStudio() {
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-base ltr-token">{rec.word}</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-500 font-mono font-bold">
-                      {rec.cefr}
+                      {rec.cefr || 'A1'}
                     </span>
                   </div>
                   <div className="text-xs font-bold font-arabic opacity-80">{rec.arabic}</div>
                   <div className="text-[10px] opacity-60 font-mono flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    <span>{rec.timestamp}</span>
+                    <span>{rec.dateStr || rec.timestamp}</span>
                   </div>
                 </div>
 
@@ -282,8 +319,8 @@ export default function VoiceArchiveStudio() {
 
                   {/* Play user recording button */}
                   <button
-                    onClick={() => playRecordedAudio(rec.id, rec.audioData)}
-                    className="p-2 rounded-xl theme-btn-primary active:scale-95"
+                    onClick={() => playRecordedAudio(rec.id, rec.audioData || rec.audioDataUrl)}
+                    className="p-2 rounded-xl theme-btn-primary active:scale-95 cursor-pointer"
                     title="تشغيل تسجيلك"
                   >
                     <Play className="w-4 h-4 fill-current" />
@@ -292,7 +329,7 @@ export default function VoiceArchiveStudio() {
                   {/* Play native side-by-side */}
                   <button
                     onClick={() => playNativeAudio(rec.word)}
-                    className="p-2 rounded-xl theme-btn-secondary active:scale-95"
+                    className="p-2 rounded-xl theme-btn-secondary active:scale-95 cursor-pointer"
                     title="مقارنة بالمتحدث الأصلي"
                   >
                     <Volume2 className="w-4 h-4 text-cyan-400" />
@@ -300,8 +337,8 @@ export default function VoiceArchiveStudio() {
 
                   {/* Delete record */}
                   <button
-                    onClick={() => deleteRecord(rec.id)}
-                    className="p-2 rounded-xl hover:bg-rose-500/10 text-rose-500 active:scale-95"
+                    onClick={() => handleDeleteRecord(rec.id)}
+                    className="p-2 rounded-xl hover:bg-rose-500/10 text-rose-500 active:scale-95 cursor-pointer"
                     title="حذف التسجيل"
                   >
                     <Trash2 className="w-4 h-4" />

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Sparkles, Brain, CheckCircle2, XCircle, RotateCcw, Flame, ArrowRight, Lightbulb, HelpCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { oxford3000Data } from '../data/oxford3000';
+import { oxford3000Data } from '../data/oxford3000Data';
 import { playSuccessChime } from '../services/soundEffects';
 
 export default function ActiveRecallTrainer() {

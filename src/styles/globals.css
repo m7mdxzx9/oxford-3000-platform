@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 253 251 247;
+    --surface: 255 255 255;
+    --foreground: 10 25 47;
+    --primary: 30 58 138;
+    --primary-foreground: 255 255 255;
+    --accent: 217 119 6;
+    --accent-foreground: 255 255 255;
+    --muted: 243 239 230;
+    --muted-foreground: 100 116 139;
+    --border: 226 217 200;
+    --ring: 30 58 138;
+    --radius: 0.5rem;
+    --font-heading: 'Newsreader', serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  .dark {
+    --background: 6 13 26;
+    --surface: 12 25 46;
+    --foreground: 241 245 249;
+    --primary: 59 130 246;
+    --primary-foreground: 6 13 26;
+    --accent: 245 158 11;
+    --accent-foreground: 6 13 26;
+    --muted: 17 34 64;
+    --muted-foreground: 148 163 184;
+    --border: 30 41 59;
+    --ring: 59 130 246;
+  }
+}
+
+/* LTR and RTL Bidirectional Isolation */
+.ltr-isolate {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  text-align: left;
+}
+
+.rtl-text {
+  direction: rtl !important;
+  unicode-bidi: isolate !important;
+  font-family: 'Segoe UI', Tahoma, 'Noto Sans Arabic', sans-serif;
+}
+
+/* Scrollbar Polish */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Glassmorphic Backdrop */
+.glass-panel {
+  background: rgba(var(--surface), 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(var(--border), 0.6);
+}
+
+/* 3D Flip Card Styles */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}

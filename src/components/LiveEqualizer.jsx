@@ -4,7 +4,7 @@ import React from 'react';
  * Feature 67: Live Equalizer Sound Wave Visualizer
  * Renders dynamic animated audio frequency bars during speech or TTS playback.
  */
-export default function LiveEqualizer({ isPlaying = false, barColor = 'bg-cyan-500', barCount = 5 }) {
+const LiveEqualizer = React.memo(function LiveEqualizer({ isPlaying = false, barColor = 'bg-cyan-500', barCount = 5 }) {
   if (!isPlaying) {
     return (
       <div className="flex items-center gap-1 h-5 px-1 opacity-40">
@@ -24,4 +24,6 @@ export default function LiveEqualizer({ isPlaying = false, barColor = 'bg-cyan-5
       <div className={`w-1 rounded-full ${barColor} eq-bar eq-bar-5`} />
     </div>
   );
-}
+});
+
+export default LiveEqualizer;

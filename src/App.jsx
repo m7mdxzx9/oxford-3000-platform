@@ -1,10 +1,15 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Palette } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
 import LoginScreen from './components/LoginScreen';
 import ApiKeyModal from './components/ApiKeyModal';
 import ToastNotifications from './components/ToastNotifications';
+import ThemeColorStudioModal from './components/ThemeColorStudioModal';
+import BackupRestoreModal from './components/BackupRestoreModal';
 import LexiconGrid from './components/LexiconGrid';
+
+
 import KickstartZeroSection from './components/KickstartZeroSection';
 import B1BridgeSection from './components/B1BridgeSection';
 import SpeedListeningDrill from './components/SpeedListeningDrill';
@@ -69,15 +74,21 @@ function AmbientBackgroundMesh({ activeTab }) {
   }, [activeTab]);
 
   return (
-    <div className="ambient-glow-mesh">
+    <div
+      className="ambient-glow-mesh pointer-events-none"
+      style={{ transform: 'translate3d(0, 0, 0)', willChange: 'transform' }}
+    >
       <div
-        className={`ambient-orb w-[420px] h-[420px] -top-32 -left-32 ${orbColors.orb1} animate-float-orb-1`}
+        className={`ambient-orb w-[420px] h-[420px] -top-32 -start-32 ${orbColors.orb1} animate-float-orb-1`}
+        style={{ willChange: 'transform' }}
       />
       <div
-        className={`ambient-orb w-[480px] h-[480px] top-1/3 -right-40 ${orbColors.orb2} animate-float-orb-2`}
+        className={`ambient-orb w-[480px] h-[480px] top-1/3 -end-40 ${orbColors.orb2} animate-float-orb-2`}
+        style={{ willChange: 'transform' }}
       />
       <div
-        className={`ambient-orb w-[360px] h-[360px] -bottom-24 left-1/3 ${orbColors.orb1} animate-float-orb-1`}
+        className={`ambient-orb w-[360px] h-[360px] -bottom-24 start-1/3 ${orbColors.orb1} animate-float-orb-1`}
+        style={{ willChange: 'transform' }}
       />
     </div>
   );
@@ -97,7 +108,7 @@ function PageTransitionBar({ activeTab }) {
   if (!animating) return null;
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-transparent overflow-hidden pointer-events-none">
+    <div className="fixed top-0 inset-x-0 z-50 h-1 bg-transparent overflow-hidden pointer-events-none">
       <div className="h-full bg-gradient-to-r from-cyan-500 via-amber-400 to-emerald-500 top-progress-bar shadow-[0_0_15px_rgba(6,182,212,0.9)]" />
     </div>
   );
@@ -144,7 +155,15 @@ function MainContent() {
 }
 
 function AppContainer() {
-  const { authUser, loginUser, activeTab } = useApp();
+  const {
+    authUser,
+    loginUser,
+    activeTab,
+    isThemeModalOpen,
+    setIsThemeModalOpen,
+    isBackupModalOpen,
+    setIsBackupModalOpen,
+  } = useApp();
 
   // Authentication Gate: if user is not logged in, show LoginScreen
   if (!authUser) {
@@ -164,11 +183,26 @@ function AppContainer() {
       <footer className="glass-panel border-t py-4 px-4 text-center text-xs opacity-75 mt-auto relative z-10 font-arabic">
         <p>منصة أكسفورد 3000™ لتعلم الإنجليزية &copy; 2026. مهيأة ومطورة بأحدث معايير CEFR.</p>
       </footer>
+
+      {/* Floating Quick Color & Contrast Studio Trigger */}
+      <button
+        onClick={() => setIsThemeModalOpen(true)}
+        className="fixed bottom-20 xl:bottom-6 start-4 z-40 px-3.5 py-2.5 rounded-2xl theme-btn-primary shadow-2xl flex items-center gap-2 text-xs font-black font-arabic active:scale-95 transition-all hover:scale-105 border cursor-pointer group"
+        title="تخصيص ألوان الخط والمربعات والتباين"
+      >
+        <Palette className="w-4 h-4 text-amber-300 animate-pulse group-hover:rotate-12 transition-transform" />
+        <span>🎨 ألوان الخط والمربعات</span>
+      </button>
+
       <ApiKeyModal />
+      <ThemeColorStudioModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} />
+      <BackupRestoreModal isOpen={isBackupModalOpen} onClose={() => setIsBackupModalOpen(false)} />
       <ToastNotifications />
     </div>
   );
 }
+
+
 
 export default function App() {
   return (

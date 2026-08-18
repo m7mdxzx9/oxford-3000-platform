@@ -13,7 +13,7 @@ import {
   Filter,
   HelpCircle,
 } from 'lucide-react';
-import { OXFORD_3000 } from '../data/oxford3000';
+import { OXFORD_3000 } from '../data/oxford3000Data';
 import { playAudio } from '../services/audioService';
 import { useApp } from '../context/AppContext';
 import { getWordExample } from '../utils/exampleSentenceService';

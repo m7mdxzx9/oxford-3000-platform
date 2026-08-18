@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Volume2, Star, CheckCircle2, Eye, EyeOff, Lightbulb, ArrowRight, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { oxford3000Data } from '../data/oxford3000';
+import { oxford3000Data } from '../data/oxford3000Data';
 import { playWordAudio } from '../services/audioService';
 import { analyzeSilentLetters } from '../utils/phoneticsUtils';
 import { getMnemonicForWord } from '../utils/mnemonicsData';

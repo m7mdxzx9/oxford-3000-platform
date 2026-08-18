@@ -14,7 +14,7 @@ import {
   Brain,
   Zap,
 } from 'lucide-react';
-import { OXFORD_3000 } from '../data/oxford3000';
+import { OXFORD_3000 } from '../data/oxford3000Data';
 import { useApp } from '../context/AppContext';
 import { isWordDueForReview } from '../utils/srsUtils';
 

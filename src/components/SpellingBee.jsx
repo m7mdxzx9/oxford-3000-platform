@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Volume2, Sparkles, HelpCircle, CheckCircle2, RotateCcw, Flame, ArrowRight, Lightbulb, Delete, Check } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { oxford3000Data } from '../data/oxford3000';
+import { oxford3000Data } from '../data/oxford3000Data';
 import { playWordAudio } from '../services/audioService';
 import { playSuccessChime } from '../services/soundEffects';
 import LiveEqualizer from './LiveEqualizer';

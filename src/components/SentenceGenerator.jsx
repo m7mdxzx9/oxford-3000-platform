@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { generateSentence } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
 import { recordAndEvaluateSpeech, stopListening } from '../services/speechEvaluation';
-import { oxford3000Data } from '../data/oxford3000';
+import { oxford3000Data } from '../data/oxford3000Data';
 import SentenceTokenViewer from './SentenceTokenViewer';
 import SpeechScoreVisualizer from './SpeechScoreVisualizer';
 

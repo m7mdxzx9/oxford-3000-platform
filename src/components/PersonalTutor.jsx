@@ -5,14 +5,14 @@ import { getTutorResponse } from '../services/geminiService';
 import { playAudio } from '../services/audioService';
 import { startListening, stopListening } from '../services/speechEvaluation';
 import SentenceTokenViewer from './SentenceTokenViewer';
+import { DIALOGUE_TOPICS } from '../data/dialogueScenarios';
 
-const SCENARIOS = [
-  { id: 'Job Interview', title: 'Job Interview', arTitle: 'مقابلة عمل' },
-  { id: 'Ordering Coffee', title: 'Ordering Coffee', arTitle: 'طلب قهوة' },
-  { id: 'Airport & Travel', title: 'Airport & Travel', arTitle: 'المطار والسفر' },
-  { id: 'Daily Casual Chat', title: 'Daily Casual Chat', arTitle: 'محادثة يومية' },
-  { id: 'Academic Debate', title: 'Academic Debate', arTitle: 'نقاش أكاديمي' },
-];
+const SCENARIOS = DIALOGUE_TOPICS.map((t) => ({
+  id: t.id,
+  title: t.title,
+  arTitle: t.roles.player1.name,
+  icon: t.icon,
+}));
 
 export default function PersonalTutor() {
   const { apiKey, addNotification, t, voicePreset, setVoicePreset, voicePresets, language, addXp } = useApp();

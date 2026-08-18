@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Download, FileText, Printer, FileSpreadsheet, FileCode, CheckCircle, Sparkles, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { oxford3000Data } from '../data/oxford3000';
+import { oxford3000Data } from '../data/oxford3000Data';
 
 export const ExportModal = ({ isOpen, onClose, filteredWords = [] }) => {
   const { favorites, mastered, addNotification } = useApp();
@@ -42,6 +42,17 @@ export const ExportModal = ({ isOpen, onClose, filteredWords = [] }) => {
     URL.revokeObjectURL(url);
   };
 
+  // Helper to sanitize text and prevent DOM XSS injection in print windows
+  const escapeHtml = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
   // 1. Export as Printable PDF Document (HTML Print Preview)
   const handleExportPDF = (words) => {
     const printWindow = window.open('', '_blank');
@@ -52,16 +63,16 @@ export const ExportModal = ({ isOpen, onClose, filteredWords = [] }) => {
 
     const rows = words.map((w, idx) => `
       <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px;">
-        <td style="padding: 10px; font-weight: bold; color: #0f172a;">${idx + 1}. ${w.word}</td>
-        <td style="padding: 10px; color: #64748b; font-family: monospace;">${w.phonetic || ''}</td>
+        <td style="padding: 10px; font-weight: bold; color: #0f172a;">${idx + 1}. ${escapeHtml(w.word)}</td>
+        <td style="padding: 10px; color: #64748b; font-family: monospace;">${escapeHtml(w.phonetic || '')}</td>
         <td style="padding: 10px; text-align: center;">
           <span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; background: #e0f2fe; color: #0369a1;">
-            ${w.cefr || 'A1'}
+            ${escapeHtml(w.cefr || 'A1')}
           </span>
         </td>
-        <td style="padding: 10px; color: #64748b; font-style: italic;">${w.pos || ''}</td>
-        ${includeTranslations ? `<td style="padding: 10px; font-weight: bold; color: #1e293b; direction: rtl; text-align: right;">${w.arabic || ''}</td>` : ''}
-        ${includeSentences ? `<td style="padding: 10px; color: #334155; max-width: 250px;">${w.example || w.aiSentence?.sentence || '—'}</td>` : ''}
+        <td style="padding: 10px; color: #64748b; font-style: italic;">${escapeHtml(w.pos || '')}</td>
+        ${includeTranslations ? `<td style="padding: 10px; font-weight: bold; color: #1e293b; direction: rtl; text-align: right;">${escapeHtml(w.arabic || '')}</td>` : ''}
+        ${includeSentences ? `<td style="padding: 10px; color: #334155; max-width: 250px;">${escapeHtml(w.example || w.aiSentence?.sentence || '—')}</td>` : ''}
       </tr>
     `).join('');
 

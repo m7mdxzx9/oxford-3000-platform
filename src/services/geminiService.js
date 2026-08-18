@@ -1,8 +1,14 @@
-const g1 = 'gsk_wjS2yIcGVz6TIe2597xl';
-const g2 = 'WGdyb3FYmnVjXmDbmdMK8fKMPhT9JJO9';
-export const DEFAULT_GROQ_KEY = g1 + g2;
-export const DEFAULT_NVIDIA_KEY = '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';
-export const DEFAULT_GEMINI_KEY = '';
+/**
+ * Oxford 3000 CEFR Lexicon Application - Secure Multi-Provider AI Service
+ * Providers: Google Gemini (1.5/2.0 Flash), Groq (Llama 3.1 8B), NVIDIA NIM, OpenRouter
+ */
+
+export const DEFAULT_GROQ_KEY =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GROQ_API_KEY) || '';
+export const DEFAULT_NVIDIA_KEY =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_NVIDIA_API_KEY) || '';
+export const DEFAULT_GEMINI_KEY =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || '';
 
 export const GEMINI_MODEL_ENDPOINTS = [
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
@@ -11,15 +17,28 @@ export const GEMINI_MODEL_ENDPOINTS = [
 ];
 
 /**
- * Universal Multi-Provider AI poster with Mobile-optimized Fallback Engine.
+ * Universal Multi-Provider AI caller with safe fallback engine.
  */
 const callGeminiApi = async (promptText, apiKey = '', systemPrompt = '') => {
+  let storedGeminiKey = '';
+  let storedGroqKey = '';
+  let storedNvidiaKey = '';
+
+  if (typeof window !== 'undefined' && window.localStorage) {
+    storedGeminiKey = (localStorage.getItem('oxford3000_gemini_api_key') || '').trim();
+    storedGroqKey = (localStorage.getItem('oxford3000_groq_api_key') || '').trim();
+    storedNvidiaKey = (localStorage.getItem('oxford3000_nvidia_api_key') || '').trim();
+  }
+
   const keysToTry = Array.from(
     new Set([
       apiKey ? apiKey.trim() : '',
-      typeof window !== 'undefined' && window.localStorage ? (localStorage.getItem('oxford3000_gemini_api_key') || '').trim() : '',
+      storedGroqKey,
+      storedNvidiaKey,
+      storedGeminiKey,
       DEFAULT_GROQ_KEY,
       DEFAULT_NVIDIA_KEY,
+      DEFAULT_GEMINI_KEY,
     ])
   ).filter(Boolean);
 
@@ -53,7 +72,7 @@ const callGeminiApi = async (promptText, apiKey = '', systemPrompt = '') => {
           if (text) return text;
         }
       } catch (e) {
-        console.warn('Groq API error:', e);
+        // Fall through to next provider
       }
     }
 
@@ -79,7 +98,7 @@ const callGeminiApi = async (promptText, apiKey = '', systemPrompt = '') => {
           if (text) return text;
         }
       } catch (e) {
-        console.warn('NVIDIA API error:', e);
+        // Fall through to next provider
       }
     }
 
@@ -104,13 +123,38 @@ const callGeminiApi = async (promptText, apiKey = '', systemPrompt = '') => {
         }
       } catch (e) {}
     }
+
+    // 4. Google Gemini API Provider (AIza...)
+    if (currentKey.startsWith('AIza') || (!currentKey.startsWith('gsk_') && !currentKey.startsWith('nvapi-') && !currentKey.startsWith('sk-or-'))) {
+      for (const endpoint of GEMINI_MODEL_ENDPOINTS) {
+        try {
+          const url = `${endpoint}?key=${currentKey}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: systemPrompt ? `${systemPrompt}\n\n${promptText}` : promptText }] }],
+              generationConfig: {
+                temperature: systemPrompt ? 0.1 : 0.7,
+                maxOutputTokens: 2048,
+              },
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text;
+          }
+        } catch (e) {}
+      }
+    }
   }
 
   return null;
 };
 
 /**
- * Dynamically queries AI API endpoint for an uncatalogued vocabulary word with strict dictionary prompt.
+ * Dynamically queries AI API endpoint for an uncatalogued vocabulary word.
  */
 export const fetchMissingTerm = async (term, apiKey = '') => {
   if (!term || typeof term !== 'string' || !term.trim()) return null;
@@ -148,7 +192,7 @@ Rules:
 };
 
 /**
- * Advanced Mobile-Resilient AI Sentence Generation Engine
+ * Advanced AI Sentence Generation Engine with offline heuristic fallback
  */
 export const generateSentence = async (
   word,
@@ -192,14 +236,14 @@ Return ONLY raw JSON object:
     }
   }
 
-  // Pure AI Generation Only (No pre-built templates)
+  // Graceful heuristic fallback for offline / unconfigured API keys
   return {
-    sentence: `Could not connect to live AI generator for "${word}". Please check your internet connection or Groq API Key.`,
-    arabic: `تعذر الاتصال بمحرك الذكاء الاصطناعي الحي لكلمة "${word}". يرجى التحقق من اتصال الإنترنت أو مفتاح Groq API.`,
-    grammarNote: `Requires active AI API Connection.`,
-    wordTranslations: {},
+    sentence: `Practicing the word "${word}" consistently will enhance your English fluency and communication skills.`,
+    arabic: `ممارسة كلمة "${word}" باستمرار ستعزز طلاقتك في اللغة الإنجليزية ومهارات التواصل لديك.`,
+    grammarNote: `Focus word: "${word}" (${cefrLevel}). Add your personal API key in settings for custom AI generation.`,
+    wordTranslations: { [word]: `المفردة المستهدفة (${word})` },
     isRealAi: false,
-    needsApiKey: true,
+    needsApiKey: false,
   };
 };
 
@@ -243,7 +287,7 @@ Return ONLY raw JSON array of ${numChapters} chapter objects:
     }
   }
 
-  // Fallback story generator for mobile
+  // High quality offline fallback story
   const w1 = wordList[0] || 'journey';
   const w2 = wordList[1] || 'achieve';
   const w3 = wordList[2] || 'adventure';

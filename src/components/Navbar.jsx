@@ -25,6 +25,8 @@ import {
   LogOut,
   Compass,
   Palette,
+  Database,
+  Key,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import ThemeColorStudioModal from './ThemeColorStudioModal';
@@ -47,12 +49,17 @@ export default function Navbar() {
     streak,
     xp,
     dueSRSCount,
+    isThemeModalOpen,
+    setIsThemeModalOpen,
+    setIsBackupModalOpen,
+    setIsApiKeyModalOpen,
   } = useApp();
 
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -218,17 +225,41 @@ export default function Navbar() {
               {/* Theme & Color Palette Studio Button (🎨) */}
               <button
                 onClick={() => setIsThemeModalOpen(true)}
-                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl theme-btn-secondary text-xs font-bold transition-all shrink-0 active:scale-90 border shadow-sm"
-                title="تخصيص الألوان والهوية البصرية"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl theme-btn-primary text-xs font-black transition-all shrink-0 active:scale-90 border shadow-md cursor-pointer"
+                title="تخصيص ألوان الخط والمربعات والتباين"
                 aria-label="Theme Studio"
               >
-                <Palette className="w-3.5 h-3.5 text-amber-500" />
+                <Palette className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                <span className="hidden sm:inline font-arabic text-[11px]">🎨 الألوان والخط</span>
               </button>
+
+              {/* AI API Keys Modal Button (🔑) */}
+              <button
+                onClick={() => setIsApiKeyModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl theme-btn-secondary text-xs font-bold transition-all shrink-0 active:scale-90 border shadow-sm cursor-pointer hover:border-amber-500/50"
+                title="إعدادات مفاتيح الذكاء الاصطناعي (Gemini, Groq, NVIDIA)"
+                aria-label="AI API Keys"
+              >
+                <Key className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden md:inline font-arabic text-[11px]">🔑 مفاتيح AI</span>
+              </button>
+
+              {/* IndexedDB Backup & Restore Button (💾) */}
+              <button
+                onClick={() => setIsBackupModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl theme-btn-secondary text-xs font-bold transition-all shrink-0 active:scale-90 border shadow-sm cursor-pointer"
+                title="النسخ الاحتياطي والاستعادة (IndexedDB)"
+                aria-label="Backup & Restore"
+              >
+                <Database className="w-3.5 h-3.5 text-blue-400" />
+                <span className="hidden lg:inline font-arabic text-[11px]">نسخ احتياطي</span>
+              </button>
+
 
               {/* Light / Dark Mode Toggle */}
               <button
                 onClick={toggleMode}
-                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl border text-xs font-bold transition-all theme-btn-secondary shrink-0 active:scale-90"
+                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl border text-xs font-bold transition-all theme-btn-secondary shrink-0 active:scale-90 cursor-pointer"
                 title="التبديل بين الوضع الليلي والنهاري"
                 aria-label="Toggle dark/light mode"
               >
@@ -242,7 +273,7 @@ export default function Navbar() {
               {/* Language Switcher */}
               <button
                 onClick={toggleLanguage}
-                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl theme-btn-secondary text-xs font-bold transition-all shrink-0 active:scale-90 border shadow-sm"
+                className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-xl theme-btn-secondary text-xs font-bold transition-all shrink-0 active:scale-90 border shadow-sm cursor-pointer"
                 title={language === 'en' ? 'التحويل إلى العربية' : 'Switch to English'}
               >
                 <Globe className="w-3.5 h-3.5 text-blue-500" />
@@ -261,7 +292,7 @@ export default function Navbar() {
 
                   <button
                     onClick={logoutUser}
-                    className="p-1 rounded-xl hover:bg-rose-500/10 text-rose-500 border border-rose-500/20 active:scale-90 transition-all"
+                    className="p-1 rounded-xl hover:bg-rose-500/10 text-rose-500 border border-rose-500/20 active:scale-90 transition-all cursor-pointer"
                     title="تسجيل الخروج"
                     aria-label="Logout"
                   >
@@ -273,7 +304,7 @@ export default function Navbar() {
               {/* Mobile Drawer Menu Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-1.5 border rounded-xl xl:hidden text-xs font-bold shrink-0 theme-btn-secondary active:scale-90"
+                className="p-1.5 border rounded-xl xl:hidden text-xs font-bold shrink-0 theme-btn-secondary active:scale-90 cursor-pointer"
                 aria-label="Toggle Navigation Menu"
               >
                 {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -285,6 +316,73 @@ export default function Navbar() {
         {/* Mobile Full Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="xl:hidden p-4 border-b space-y-4 bg-[var(--bg-card)] shadow-2xl max-h-[85vh] overflow-y-auto dropdown-animate font-arabic">
+            {/* Quick Color Studio Highlight Card */}
+            <div
+              onClick={() => {
+                setIsThemeModalOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-amber-500/20 border-2 border-amber-500/50 flex items-center justify-between cursor-pointer active:scale-98 transition-all shadow-md"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl theme-btn-primary shadow-sm">
+                  <Palette className="w-5 h-5 text-amber-300" />
+                </div>
+                <div>
+                  <span className="text-xs font-black block">🎨 استوديو ألوان الخط والمربعات</span>
+                  <span className="text-[10px] opacity-75">تخصيص لون النصوص، المربعات والتباين الفائق</span>
+                </div>
+              </div>
+              <span className="text-xs font-black theme-btn-primary px-3 py-1 rounded-xl shadow-sm shrink-0">
+                تخصيص ➔
+              </span>
+            </div>
+
+            {/* Quick AI API Keys Card */}
+            <div
+              onClick={() => {
+                setIsApiKeyModalOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between cursor-pointer active:scale-98 transition-all shadow-sm"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl theme-btn-secondary shadow-sm">
+                  <Key className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <span className="text-xs font-black block">🔑 مفاتيح الذكاء الاصطناعي</span>
+                  <span className="text-[10px] opacity-75">إعداد وتغيير مفتاح Gemini و Groq و NVIDIA</span>
+                </div>
+              </div>
+              <span className="text-xs font-bold theme-btn-secondary px-3 py-1 rounded-xl shadow-sm shrink-0">
+                تعديل ➔
+              </span>
+            </div>
+
+            {/* Quick Backup & Restore Card */}
+            <div
+              onClick={() => {
+                setIsBackupModalOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-between cursor-pointer active:scale-98 transition-all shadow-sm"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl theme-btn-secondary shadow-sm">
+                  <Database className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <span className="text-xs font-black block">💾 النسخ الاحتياطي والاستعادة</span>
+                  <span className="text-[10px] opacity-75">تصدير واستيراد IndexedDB بملف JSON</span>
+                </div>
+              </div>
+              <span className="text-xs font-bold theme-btn-secondary px-3 py-1 rounded-xl shadow-sm shrink-0">
+                فتح ➔
+              </span>
+            </div>
+
+
             {/* User Profile Bar inside drawer */}
             {authUser && (
               <div className="p-3 rounded-2xl border bg-black/5 dark:bg-white/5 flex items-center justify-between">
@@ -374,9 +472,18 @@ export default function Navbar() {
             </button>
           );
         })}
+
+        {/* Mobile Quick Colors studio button in bottom bar */}
+        <button
+          onClick={() => setIsThemeModalOpen(true)}
+          className="flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all duration-150 flex-1 max-w-[65px] text-amber-500 hover:text-amber-400 active:scale-90 font-bold"
+          title="تخصيص ألوان الخط والمربعات"
+        >
+          <Palette className="w-4 h-4 mb-0.5 shrink-0 animate-bounce" />
+          <span className="text-[10px] leading-tight truncate max-w-full font-arabic">الألوان</span>
+        </button>
       </nav>
-      {/* Theme & Color Palette Customizer Modal */}
-      <ThemeColorStudioModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} />
+
     </>
   );
 }

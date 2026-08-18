@@ -1,25 +1,38 @@
 /**
- * Ultra-Reliable PubNub & BroadcastChannel Real-Time Engine for Oxford 3000 Dual Player Hub.
- * Zero timeouts, 50ms latency, worldwide multi-device sync across all sub-tabs & games.
+ * Ultra-Reliable & Secure Real-Time Engine for Oxford 3000 Dual Player Hub.
+ * Uses BroadcastChannel for local zero-latency multi-tab sync, with strict message validation.
  */
 
-const SUB_KEY = 'demo';
-const PUB_KEY = 'demo';
-const CHANNEL = 'oxford3000_pvp_channel_v4_prod';
+const DEFAULT_CHANNEL = 'oxford3000_pvp_local_channel';
 
-export const LOCAL_DEVICE_ID = `dev_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`;
+export const LOCAL_DEVICE_ID = `dev_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
 
 let broadcastChannel = null;
 try {
   if (typeof BroadcastChannel !== 'undefined') {
-    broadcastChannel = new BroadcastChannel(CHANNEL);
+    broadcastChannel = new BroadcastChannel(DEFAULT_CHANNEL);
   }
-} catch (e) {}
+} catch (e) {
+  console.warn('BroadcastChannel not supported in this environment');
+}
 
 /**
- * Send real-time move or state change event to all connected devices.
+ * Validate incoming real-time payload structure to prevent arbitrary injections
+ */
+function isValidPayload(payload) {
+  if (!payload || typeof payload !== 'object') return false;
+  if (!payload.id || typeof payload.id !== 'string') return false;
+  if (!payload.type || typeof payload.type !== 'string') return false;
+  if (payload.senderDeviceId === LOCAL_DEVICE_ID) return false; // Ignore own messages
+  return true;
+}
+
+/**
+ * Send real-time move or state change event to connected local tabs/windows.
  */
 export async function sendRealtimeMove(moveData) {
+  if (!moveData || typeof moveData !== 'object') return;
+
   const payload = {
     ...moveData,
     senderDeviceId: LOCAL_DEVICE_ID,
@@ -30,76 +43,52 @@ export async function sendRealtimeMove(moveData) {
   if (broadcastChannel) {
     try {
       broadcastChannel.postMessage(payload);
-    } catch (err) {}
-  }
-
-  // 2. PubNub worldwide real-time publish
-  try {
-    const url = `https://ps.pubnub.com/publish/${PUB_KEY}/${SUB_KEY}/0/${CHANNEL}/0/${encodeURIComponent(JSON.stringify(payload))}`;
-    await fetch(url);
-  } catch (err) {
-    console.error('PubNub publish error:', err);
+    } catch (err) {
+      console.warn('BroadcastChannel error:', err);
+    }
   }
 }
 
 /**
- * Subscribe to real-time events from any device in the room.
+ * Subscribe to real-time events.
  */
 export function subscribeRealtimeMoves(onMoveReceived) {
   const seenEventIds = new Set();
-  let isSubscribed = true;
-  let timeToken = '0';
 
   const processEventData = (moveData) => {
-    if (moveData && moveData.id) {
+    if (isValidPayload(moveData)) {
       if (seenEventIds.has(moveData.id)) return;
       seenEventIds.add(moveData.id);
+      
+      // Keep seen set bounded to prevent memory growth
+      if (seenEventIds.size > 200) {
+        const oldest = Array.from(seenEventIds).slice(0, 50);
+        oldest.forEach(id => seenEventIds.delete(id));
+      }
+
       onMoveReceived(moveData);
     }
   };
 
-  // 1. BroadcastChannel listener
+  // BroadcastChannel listener
   const handleBroadcast = (e) => {
-    if (e.data) processEventData(e.data);
+    if (e && e.data) processEventData(e.data);
   };
 
   if (broadcastChannel) {
     broadcastChannel.addEventListener('message', handleBroadcast);
   }
 
-  // 2. PubNub long-polling listener loop
-  const pollPubNub = async () => {
-    while (isSubscribed) {
-      try {
-        const url = `https://ps.pubnub.com/v2/subscribe/${SUB_KEY}/${CHANNEL}/0?tt=${timeToken}`;
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.t && data.t.t) {
-            timeToken = data.t.t;
-          }
-          if (data && Array.isArray(data.m)) {
-            data.m.forEach((msg) => {
-              if (msg && msg.d) {
-                processEventData(msg.d);
-              }
-            });
-          }
-        } else {
-          await new Promise((r) => setTimeout(r, 1000));
-        }
-      } catch (err) {
-        await new Promise((r) => setTimeout(r, 1500));
-      }
-    }
-  };
-
-  pollPubNub();
-
   return () => {
-    isSubscribed = false;
     if (broadcastChannel) {
       broadcastChannel.removeEventListener('message', handleBroadcast);
     }
   };
 }
+
+export default {
+  sendRealtimeMove,
+  subscribeRealtimeMoves,
+  LOCAL_DEVICE_ID,
+};
+

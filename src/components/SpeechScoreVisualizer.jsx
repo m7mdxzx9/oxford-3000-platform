@@ -1,13 +1,20 @@
 import React from 'react';
+import { Volume2, RefreshCw, CheckCircle2, XCircle, Mic } from 'lucide-react';
 import { playAudio } from '../services/audioService';
 
 /**
  * SpeechScoreVisualizer Component
- * Visualizes accuracy score (0-100%) with score meter badge, status label (Green for >=90%, Teal for 70-89%, Amber/Rose for <70%),
- * Green ✓ (match) and Red ✗ (mismatch) badges, recognized spoken transcript display, mispronounced words practice list, and retry trigger (onRetry).
+ * Displays:
+ * 1. Accuracy Score % with color indicator
+ * 2. Words spoken correctly (Green ✓)
+ * 3. Words missed or mispronounced (Red ✗) with click-to-listen
+ * 4. Full recognized transcript from the microphone
+ * 5. Retry and Listen actions
  */
-export const SpeechScoreVisualizer = ({
+export const SpeechScoreVisualizer = React.memo(function SpeechScoreVisualizer({
   evaluationResult = null,
+  evalResult = null,
+  targetSentence = '',
   expectedText = '',
   spokenText = '',
   liveTranscript = '',
@@ -15,188 +22,174 @@ export const SpeechScoreVisualizer = ({
   onListenReference = null,
   onPracticeWord = null,
   className = '',
-}) => {
-  if (!evaluationResult && !liveTranscript) return null;
+}) {
+  const result = evaluationResult || evalResult;
+  const sentence = targetSentence || expectedText;
 
-  const score = evaluationResult ? evaluationResult.score : 0;
-  const wordBreakdown = evaluationResult ? evaluationResult.wordBreakdown || [] : [];
-  const recognizedText = (evaluationResult && evaluationResult.transcript) || spokenText || liveTranscript;
+  if (!result && !liveTranscript) return null;
 
-  // Grade styling thresholds per spec: Green for >=90%, Teal for 70-89%, Amber/Rose for <70%
-  let gradeTheme = {
-    badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10',
+  const score = result ? result.score : 0;
+  const wordBreakdown = result ? result.wordBreakdown || [] : [];
+  const recognizedText = (result && result.transcript) || spokenText || liveTranscript;
+
+  const correctWords = wordBreakdown.filter((w) => w && w.match);
+  const missedWords = wordBreakdown.filter((w) => w && !w.match);
+
+  let themeStyle = {
+    badge: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/40',
     bar: 'bg-emerald-500',
-    label: 'Excellent Pronunciation!',
-    icon: '🎉',
+    label: 'نطق ممتاز ومتقن! 🎉',
+    subLabel: 'Excellent Pronunciation!',
+    textColor: 'text-emerald-500',
   };
 
-  if (score < 70) {
-    gradeTheme = {
-      badge: 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-rose-500/10',
+  if (score < 60) {
+    themeStyle = {
+      badge: 'bg-rose-500/20 text-rose-600 dark:text-rose-300 border-rose-500/40',
       bar: 'bg-rose-500',
-      label: 'Needs Practice. Keep Trying!',
-      icon: '💪',
+      label: 'يحتاج إلى مزيد من التدريب 💪',
+      subLabel: 'Needs Practice. Try again!',
+      textColor: 'text-rose-500',
     };
-  } else if (score < 90) {
-    gradeTheme = {
-      badge: 'bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-teal-500/10',
-      bar: 'bg-teal-500',
-      label: 'Good Effort — Almost Perfect!',
-      icon: '👍',
+  } else if (score < 85) {
+    themeStyle = {
+      badge: 'bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-500/40',
+      bar: 'bg-amber-500',
+      label: 'محاولة جيدة جداً، اقتربت من الإتقان! 👍',
+      subLabel: 'Good Effort — Almost Perfect!',
+      textColor: 'text-amber-500',
     };
   }
 
-  const matchedCount = wordBreakdown.filter((w) => w && w.match).length;
-  const totalCount = wordBreakdown.length;
-  const missedWords = wordBreakdown.filter((w) => w && !w.match);
-
-  const handlePracticeSingleWord = (word) => {
+  const handlePlayWord = (word) => {
     playAudio(word, { speed: 0.85 });
     if (onPracticeWord) onPracticeWord(word);
   };
 
+  const handlePlayFullSentence = () => {
+    if (sentence) playAudio(sentence, { speed: 0.9 });
+    if (onListenReference) onListenReference();
+  };
+
   return (
-    <div className={`card-theme-target p-5 rounded-3xl border space-y-4 shadow-xl ${className}`}>
-      {/* Top Header & Score Badge */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-black/10 pb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-2xl theme-btn-primary flex items-center justify-center text-2xl shadow-inner shrink-0">
-            {gradeTheme.icon}
+    <div className={`card-theme-target p-4 sm:p-5 rounded-3xl border shadow-xl space-y-4 font-arabic text-start ${className}`}>
+      {/* Top Header: Score % and Status */}
+      <div className="flex items-center justify-between gap-3 border-b border-black/10 dark:border-white/10 pb-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl theme-btn-primary flex items-center justify-center font-black text-lg shadow-md shrink-0">
+            {score}%
           </div>
           <div>
-            <h4 className="text-base font-extrabold tracking-tight flex items-center gap-2">
-              <span>Speech Evaluation Result</span>
-              <span className={`text-xs px-2.5 py-0.5 rounded-full border font-bold ${gradeTheme.badge}`}>
-                {score}% Score
-              </span>
+            <h4 className="text-sm sm:text-base font-black flex items-center gap-2">
+              <span>{themeStyle.label}</span>
             </h4>
-            <p className="text-xs opacity-75 mt-0.5 font-bold">{gradeTheme.label}</p>
+            <p className="text-[11px] opacity-75 font-mono">{themeStyle.subLabel}</p>
           </div>
         </div>
 
-        {/* Action Controls (Listen Reference & Retry) */}
-        <div className="flex items-center space-x-2 w-full sm:w-auto">
-          {onListenReference && (
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 ms-auto">
+          {sentence && (
             <button
-              type="button"
-              onClick={onListenReference}
-              className="flex-1 sm:flex-initial px-3.5 py-2 theme-btn-secondary text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+              onClick={handlePlayFullSentence}
+              className="px-3 py-1.5 rounded-xl theme-btn-secondary text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              title="استمع للنطق الصحيح للجملة"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12l-4-4H5a1 1 0 01-1-1v-4a1 1 0 011-1h3l4-4z" />
-              </svg>
-              <span>Listen</span>
+              <Volume2 className="w-4 h-4 text-cyan-400" />
+              <span>استمع للجملة</span>
             </button>
           )}
 
           {onRetry && (
             <button
-              type="button"
               onClick={onRetry}
-              className="flex-1 sm:flex-initial px-4 py-2 theme-btn-primary text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5"
+              className="px-3 py-1.5 rounded-xl theme-btn-primary text-xs font-black flex items-center gap-1.5 shadow-sm hover:brightness-110 cursor-pointer"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span>Retry</span>
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>إعادة التدريب</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Progress Accuracy Bar */}
-      {totalCount > 0 && (
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-xs font-extrabold opacity-80">
-            <span>Accuracy Progress</span>
-            <span>
-              {matchedCount} of {totalCount} words matched
-            </span>
-          </div>
-          <div className="w-full h-2.5 rounded-full overflow-hidden border border-black/10 bg-black/10">
-            <div
-              className={`h-full transition-all duration-500 ${gradeTheme.bar}`}
-              style={{ width: `${score}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Word Breakdown Badges Grid (Green ✓ vs Red ✗) */}
-      {wordBreakdown.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <span className="text-xs font-extrabold uppercase tracking-wider opacity-75 block">
-            Word Match Breakdown
+      {/* Accuracy Progress Bar */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-xs font-bold opacity-80">
+          <span>دقة النطق والكلمات المتطابقة:</span>
+          <span className="font-mono font-black">
+            {correctWords.length} من {wordBreakdown.length} كلمات ({score}%)
           </span>
-          <div className="flex flex-wrap gap-2">
-            {wordBreakdown.map((item, idx) => {
-              const isMatch = item && item.match;
-              const wordStr = (item && item.word) || '';
-              return (
-                <span
-                  key={idx}
-                  dir="ltr"
-                  style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
-                  className={`ltr-isolate inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-extrabold border transition-all ${
-                    isMatch
-                      ? 'bg-emerald-500/20 text-emerald-600 border-emerald-500/40 shadow-sm'
-                      : 'bg-rose-500/20 text-rose-600 border-rose-500/40 shadow-sm'
-                  }`}
-                >
-                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black ${
-                    isMatch ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
-                  }`}>
-                    {isMatch ? '✓' : '✗'}
-                  </span>
-                  <span>{wordStr}</span>
-                </span>
-              );
-            })}
+        </div>
+        <div className="w-full h-2.5 rounded-full overflow-hidden bg-black/10 dark:bg-white/10 border">
+          <div
+            className={`h-full transition-all duration-700 ${themeStyle.bar}`}
+            style={{ width: `${Math.max(5, score)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* 🟢 1. Correctly Spoken Words Breakdown */}
+      {correctWords.length > 0 && (
+        <div className="space-y-1.5 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+          <div className="flex items-center gap-1.5 text-xs font-black text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>الكلمات التي نطقتها بشكل صحيح ({correctWords.length}):</span>
           </div>
-        </div>
-      )}
-
-      {/* Recognized Spoken Transcript Display */}
-      {recognizedText && (
-        <div className="p-3.5 rounded-xl border bg-black/5 space-y-1">
-          <span className="text-xs font-extrabold uppercase tracking-wider opacity-75 block">
-            🎙️ Live Recognized Spoken Speech (الكلام المنطوق):
-          </span>
-          <p dir="ltr" style={{ direction: 'ltr', unicodeBidi: 'isolate' }} className="ltr-isolate text-sm font-black font-mono text-amber-500">
-            "{recognizedText}"
-          </p>
-        </div>
-      )}
-
-      {/* Mispronounced Words Practice List */}
-      {missedWords.length > 0 && (
-        <div className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs space-y-2">
-          <span className="font-extrabold text-rose-600 flex items-center gap-1.5">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            Mispronounced Words Practice List ({missedWords.length}):
-          </span>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {missedWords.map((item, i) => (
-              <button
-                key={`missed-${i}-${item.word}`}
-                type="button"
-                onClick={() => handlePracticeSingleWord(item.word)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-600 text-white font-bold transition-all cursor-pointer shadow-sm hover:scale-105"
-                title={`Click to listen to pronunciation for "${item.word}"`}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {correctWords.map((item, idx) => (
+              <span
+                key={idx}
+                className="ltr-token px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-200 border border-emerald-500/40 text-xs font-mono font-bold flex items-center gap-1 shadow-sm"
               >
+                <span>✓</span>
                 <span>{item.word}</span>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                </svg>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 🔴 2. Missed / Incorrectly Spoken Words Breakdown */}
+      {missedWords.length > 0 && (
+        <div className="space-y-1.5 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+          <div className="flex items-center justify-between text-xs font-black text-rose-600 dark:text-rose-400">
+            <span className="flex items-center gap-1.5">
+              <XCircle className="w-4 h-4 shrink-0" />
+              <span>الكلمات التي لم تُنطق أو تحتاج لتحسين ({missedWords.length}):</span>
+            </span>
+            <span className="text-[10px] opacity-70">اضغط على أي كلمة للاستماع لنطقها</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {missedWords.map((item, idx) => (
+              <button
+                key={idx}
+                onClick={() => handlePlayWord(item.word)}
+                className="ltr-token px-2.5 py-1 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-700 dark:text-rose-200 border border-rose-500/40 text-xs font-mono font-bold flex items-center gap-1.5 transition-all hover:scale-105 cursor-pointer shadow-sm"
+                title={`استمع لنطق كلمة ${item.word}`}
+              >
+                <Volume2 className="w-3 h-3 text-rose-500" />
+                <span>{item.word}</span>
+                <span className="text-rose-400 text-[10px]">✗</span>
               </button>
             ))}
           </div>
         </div>
       )}
+
+      {/* 🎙️ 3. Full Live Recognized Microphone Transcript */}
+      {recognizedText && (
+        <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5 border space-y-1 text-xs">
+          <div className="flex items-center gap-1.5 font-bold opacity-75">
+            <Mic className="w-3.5 h-3.5 text-cyan-400" />
+            <span>ما تم التقاطه من صوتك في المايك (Transcribed Speech):</span>
+          </div>
+          <p className="font-mono text-xs sm:text-sm font-bold text-cyan-500 dark:text-cyan-300 ltr-token p-2 rounded-xl bg-black/10 dark:bg-white/10 border border-black/5">
+            "{recognizedText}"
+          </p>
+        </div>
+      )}
     </div>
   );
-};
+});
 
 export default SpeechScoreVisualizer;

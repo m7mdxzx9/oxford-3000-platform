@@ -1,4 +1,17 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+/**
+ * ============================================================================
+ * File: src/components/WordChainGame.jsx
+ * Purpose: Word Chain Game with Solo AI & WebRTC Duo-Player Multiplayer
+ * Connected To: webrtcGame.js, audioService.js, oxford3000.js, AppContext.jsx
+ * Description:
+ *   Supports two distinct game modes:
+ *     1. Solo Mode (الذكاء الاصطناعي): Practice word chaining against Oxford AI bot.
+ *     2. Duo Multiplayer (مبارزة ثنائية WebRTC): Real-time P2P turn-based battle
+ *        with 15s turn timer, room codes, dictionary validation, and live sync.
+ * ============================================================================
+ */
+
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   Gamepad2,
   Send,
@@ -14,20 +27,25 @@ import {
   HelpCircle,
   X,
   BookOpen,
+  Users,
+  Copy,
+  Check,
+  Share2,
+  Clock,
+  Radio,
 } from 'lucide-react';
-import { OXFORD_3000 } from '../data/oxford3000';
+import { OXFORD_3000 } from '../data/oxford3000Data';
 import { playAudio } from '../services/audioService';
 import { useApp } from '../context/AppContext';
-import { getWordExample } from '../utils/exampleSentenceService';
+import { WebRtcGameSession, WEBRTC_PACKETS } from '../services/webrtcGame';
 
-/**
- * WordChainGame Component (لعبة السلسلة اللغوية)
- * Strict local Oxford 3000 dataset turn-based word chain game.
- */
 export default function WordChainGame() {
-  const { t, voicePreset } = useApp();
+  const { t, voicePreset, addNotification, addXp } = useApp();
 
-  // Game State
+  // Mode Selection: 'solo' | 'duo'
+  const [gameMode, setGameMode] = useState('solo');
+
+  // Solo / Shared Game State
   const [chain, setChain] = useState([]);
   const [usedWords, setUsedWords] = useState(new Set());
   const [inputWord, setInputWord] = useState('');
@@ -36,38 +54,26 @@ export default function WordChainGame() {
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedWordModal, setSelectedWordModal] = useState(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
-  const [turnTimeLimit, setTurnTimeLimit] = useState(15); // 10, 15, 30, 60, 0 (Off)
   const [turnTimer, setTurnTimer] = useState(15);
+
+  // WebRTC Multiplayer State
+  const [webRtcSession, setWebRtcSession] = useState(null);
+  const [duoState, setDuoState] = useState('lobby'); // 'lobby' | 'hosting' | 'joining' | 'playing' | 'gameover'
+  const [roomCode, setRoomCode] = useState('');
+  const [inputRoomCode, setInputRoomCode] = useState('');
+  const [isMyTurn, setIsMyTurn] = useState(true);
+  const [isHost, setIsHost] = useState(false);
+  const [opponentName, setOpponentName] = useState('المنافس');
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const logEndRef = useRef(null);
   const inputRef = useRef(null);
-
-  // Turn Countdown Timer
-  useEffect(() => {
-    if (chain.length === 0 || isBotThinking || turnTimeLimit === 0) return;
-
-    setTurnTimer(turnTimeLimit);
-    const timer = setInterval(() => {
-      setTurnTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setErrorMessage('⌛ انتهى الوقت المخصص لدورك! تم إعادة ضبط السلسلة.');
-          setStreak(0);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [chain, isBotThinking, turnTimeLimit]);
 
   // Fast lookup map for Oxford 3000 dataset
   const oxfordMap = useMemo(() => {
     const map = new Map();
     OXFORD_3000.forEach((item) => {
       if (item && item.word) {
-        // Clean word string for matching
         const clean = item.word.toLowerCase().replace(/[^a-z0-9]/g, '');
         if (clean && !map.has(clean)) {
           map.set(clean, item);
@@ -77,7 +83,7 @@ export default function WordChainGame() {
     return map;
   }, []);
 
-  // Get last letter required for the next word
+  // Required starting letter for next turn
   const requiredNextLetter = useMemo(() => {
     if (chain.length === 0) return '';
     const lastPlayed = chain[chain.length - 1].word;
@@ -85,14 +91,39 @@ export default function WordChainGame() {
     return clean ? clean.slice(-1) : '';
   }, [chain]);
 
-  // Auto-scroll to bottom of chain log
+  // Turn Countdown Timer (15 Seconds)
+  useEffect(() => {
+    if (chain.length === 0 || (gameMode === 'solo' && isBotThinking)) return;
+    if (gameMode === 'duo' && (!isMyTurn || duoState !== 'playing')) return;
+
+    setTurnTimer(15);
+    const timer = setInterval(() => {
+      setTurnTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          if (gameMode === 'duo') {
+            handleDuoTimeout();
+          } else {
+            setErrorMessage('⌛ انتهى الوقت المخصص لدورك! تم إعادة ضبط السلسلة.');
+            setStreak(0);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [chain, isBotThinking, gameMode, isMyTurn, duoState]);
+
+  // Auto-scroll chain log
   useEffect(() => {
     if (logEndRef.current) {
       logEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chain, isBotThinking]);
 
-  // Clear error toast after 4 seconds
+  // Clear toast error message
   useEffect(() => {
     if (errorMessage) {
       const timer = setTimeout(() => setErrorMessage(''), 4000);
@@ -100,21 +131,144 @@ export default function WordChainGame() {
     }
   }, [errorMessage]);
 
-  const handleRestart = () => {
-    setChain([]);
-    setUsedWords(new Set());
-    setInputWord('');
-    setScore(0);
-    setStreak(0);
-    setErrorMessage('');
-    setSelectedWordModal(null);
-    setIsBotThinking(false);
-    if (inputRef.current) inputRef.current.focus();
+  // ==========================================
+  // WebRTC Multiplayer Event Handlers
+  // ==========================================
+  const startHosting = () => {
+    const session = new WebRtcGameSession({
+      onOpen: (id) => {
+        setRoomCode(id);
+        setDuoState('hosting');
+      },
+      onConnected: () => {
+        setDuoState('playing');
+        setIsMyTurn(true);
+        setIsHost(true);
+        setChain([]);
+        setUsedWords(new Set());
+        addNotification({ type: 'success', message: 'انضم المنافس للمبارزة! دورك للبدء 🎮' });
+      },
+      onData: (packet) => handleIncomingPacket(packet),
+      onDisconnected: () => {
+        addNotification({ type: 'warning', message: 'انقطع الاتصال مع المنافس.' });
+        setDuoState('lobby');
+      },
+      onError: (err) => {
+        setErrorMessage('تعذر إنشاء الاتصال عبر WebRTC.');
+      },
+    });
+
+    session.initHost();
+    setWebRtcSession(session);
   };
 
-  const handleUserSubmit = (e) => {
+  const joinExistingRoom = () => {
+    if (!inputRoomCode.trim()) return;
+    const session = new WebRtcGameSession({
+      onOpen: () => {
+        setDuoState('joining');
+      },
+      onConnected: () => {
+        setDuoState('playing');
+        setIsMyTurn(false);
+        setIsHost(false);
+        setChain([]);
+        setUsedWords(new Set());
+        addNotification({ type: 'success', message: 'تم الاتصال بالغرفة بنجاح! انتظر دور المنافس.' });
+      },
+      onData: (packet) => handleIncomingPacket(packet),
+      onDisconnected: () => {
+        addNotification({ type: 'warning', message: 'انقطع الاتصال مع المضيف.' });
+        setDuoState('lobby');
+      },
+      onError: () => {
+        setErrorMessage('تعذر الاتصال بالغرفة المحددة. تأكد من صحة الرمز.');
+        setDuoState('lobby');
+      },
+    });
+
+    session.joinRoom(inputRoomCode);
+    setWebRtcSession(session);
+  };
+
+  const handleIncomingPacket = (packet) => {
+    if (!packet || typeof packet !== 'object' || !packet.type) return;
+
+    switch (packet.type) {
+      case WEBRTC_PACKETS.WORD_PLAYED: {
+        const payload = packet.payload;
+        if (!payload || !payload.wordObj || typeof payload.wordObj.word !== 'string') return;
+        
+        const rawWord = payload.wordObj.word.trim();
+        if (rawWord.length === 0 || rawWord.length > 50) return;
+        
+        const cleanWord = rawWord.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!cleanWord) return;
+
+        // Verify it against the Oxford dictionary
+        const found = oxfordMap.get(cleanWord);
+        const verifiedWordObj = found || {
+          word: rawWord.replace(/[^a-zA-Z\s-]/g, ''),
+          arabic: typeof payload.wordObj.arabic === 'string' ? payload.wordObj.arabic.slice(0, 100) : '',
+          pos: typeof payload.wordObj.pos === 'string' ? payload.wordObj.pos.slice(0, 20) : 'word',
+          cefr: typeof payload.wordObj.cefr === 'string' ? payload.wordObj.cefr.slice(0, 5) : 'B1',
+        };
+
+        setChain((prev) => [...prev, { ...verifiedWordObj, playedBy: 'opponent' }]);
+        setUsedWords((prev) => new Set([...prev, cleanWord]));
+        setIsMyTurn(true);
+        playAudio(verifiedWordObj.word, { presetId: voicePreset });
+        break;
+      }
+
+      case WEBRTC_PACKETS.TIMEOUT_FAIL: {
+        // Only accept timeout fail if it was the opponent's turn
+        if (!isMyTurn && duoState === 'playing') {
+          addNotification({ type: 'success', message: 'فاز دورك! انتهى وقت المنافس دون إجابة 🏆' });
+          addXp(50);
+          setIsMyTurn(true);
+        }
+        break;
+      }
+
+      case WEBRTC_PACKETS.REMATCH: {
+        setChain([]);
+        setUsedWords(new Set());
+        setIsMyTurn(!isHost);
+        addNotification({ type: 'info', message: 'بدأت جولة جديدة من السلسلة!' });
+        break;
+      }
+
+      default:
+        break;
+    }
+  };
+
+  const handleDuoTimeout = () => {
+    if (webRtcSession) {
+      webRtcSession.sendPacket(WEBRTC_PACKETS.TIMEOUT_FAIL, {});
+    }
+    setErrorMessage('⌛ انتهى وقتك المحدد (15 ثانية)! فاز المنافس بهذه الجولة.');
+  };
+
+  const copyRoomCode = () => {
+    navigator.clipboard.writeText(roomCode);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+    addNotification({ type: 'success', message: 'تم نسخ رمز الغرفة للحافظة!' });
+  };
+
+  // ==========================================
+  // Word Submission Logic
+  // ==========================================
+  const handleWordSubmit = (e) => {
     if (e) e.preventDefault();
     setErrorMessage('');
+
+    if (gameMode === 'duo' && !isMyTurn) {
+      setErrorMessage('انتظر دور المنافس!');
+      return;
+    }
 
     const rawInput = inputWord.trim();
     if (!rawInput) return;
@@ -125,363 +279,375 @@ export default function WordChainGame() {
       return;
     }
 
-    // Rule A: Is word in Oxford 3000 dataset?
+    // Rule 1: Oxford 3000 validation
     const foundWord = oxfordMap.get(cleanInput);
     if (!foundWord) {
-      setErrorMessage(`الكلمة "${rawInput}" غير موجودة في قاموس أكسفورد الـ 3000! جرب كلمة أخرى.`);
+      setErrorMessage(`الكلمة "${rawInput}" غير موجودة في قاموس أكسفورد الـ 3000!`);
       return;
     }
 
-    // Rule B: Does it start with the required last letter?
+    // Rule 2: Last letter chaining rule
     if (requiredNextLetter && !cleanInput.startsWith(requiredNextLetter)) {
       setErrorMessage(`يجب أن تبدأ الكلمة بحرف '${requiredNextLetter.toUpperCase()}'!`);
       return;
     }
 
-    // Rule C: Has it been used already in current session?
+    // Rule 3: No duplicate words in round
     if (usedWords.has(cleanInput)) {
       setErrorMessage(`الكلمة "${foundWord.word}" تم استخدامها بالفعل في هذه الجولة!`);
       return;
     }
 
-    // VALID USER WORD!
-    const userEntry = {
+    const entry = {
       ...foundWord,
       playedBy: 'user',
-      id: `user-${Date.now()}`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    const newUsed = new Set(usedWords);
-    newUsed.add(cleanInput);
-
-    const pointsEarned = 10 + cleanInput.length * 2;
-    setScore((prev) => prev + pointsEarned);
-    setStreak((prev) => prev + 1);
-    setChain((prev) => [...prev, userEntry]);
-    setUsedWords(newUsed);
+    // Update Local State
+    setChain((prev) => [...prev, entry]);
+    setUsedWords((prev) => new Set([...prev, cleanInput]));
     setInputWord('');
+    setScore((prev) => prev + 10 + streak * 2);
+    setStreak((prev) => prev + 1);
+    addXp(10);
 
-    // Play TTS audio for user word
     playAudio(foundWord.word, { presetId: voicePreset });
 
-    // Bot Response Logic
-    const lastLetterOfUserWord = cleanInput.slice(-1);
+    // Mode Branching:
+    if (gameMode === 'duo') {
+      // Broadcast to Peer
+      if (webRtcSession) {
+        webRtcSession.sendPacket(WEBRTC_PACKETS.WORD_PLAYED, { wordObj: entry });
+      }
+      setIsMyTurn(false);
+    } else {
+      // Trigger Solo AI Bot Turn
+      triggerBotTurn(cleanInput);
+    }
+  };
+
+  // Solo AI Bot turn simulation
+  const triggerBotTurn = (userCleanWord) => {
     setIsBotThinking(true);
+    const lastChar = userCleanWord.slice(-1);
 
     setTimeout(() => {
-      // Find candidate words in Oxford 3000 starting with lastLetterOfUserWord and not used
-      const candidates = OXFORD_3000.filter((w) => {
-        const cClean = w.word.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return cClean.startsWith(lastLetterOfUserWord) && !newUsed.has(cClean);
+      const candidates = OXFORD_3000.filter((item) => {
+        if (!item || !item.word) return false;
+        const clean = item.word.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return clean.startsWith(lastChar) && !usedWords.has(clean) && clean !== userCleanWord;
       });
 
-      if (candidates.length > 0) {
-        // Pick a random candidate word
-        const botWordObj = candidates[Math.floor(Math.random() * candidates.length)];
-        const botClean = botWordObj.word.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-        const botEntry = {
-          ...botWordObj,
-          playedBy: 'bot',
-          id: `bot-${Date.now()}`,
-        };
-
-        newUsed.add(botClean);
-        setUsedWords(newUsed);
-        setChain((prev) => [...prev, botEntry]);
+      if (candidates.length === 0) {
+        setErrorMessage(`🎉 مذهل! استسلم الذكاء الاصطناعي لعدم وجود كلمات تبدأ بحرف '${lastChar.toUpperCase()}'!`);
         setIsBotThinking(false);
-
-        // Play TTS audio for bot word
-        playAudio(botWordObj.word, { presetId: voicePreset });
-      } else {
-        setIsBotThinking(false);
-        setErrorMessage(`🎉 مبروك! لقد هزمت الذكاء الاصطناعي! لم تتبق كلمات تبدأ بحرف '${lastLetterOfUserWord.toUpperCase()}'.`);
+        return;
       }
-    }, 700);
+
+      const botChoice = candidates[Math.floor(Math.random() * candidates.length)];
+      const botClean = botChoice.word.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      const botEntry = {
+        ...botChoice,
+        playedBy: 'bot',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      setChain((prev) => [...prev, botEntry]);
+      setUsedWords((prev) => new Set([...prev, botClean]));
+      setIsBotThinking(false);
+      playAudio(botChoice.word, { presetId: voicePreset });
+    }, 1200);
+  };
+
+  const handleRestart = () => {
+    setChain([]);
+    setUsedWords(new Set());
+    setInputWord('');
+    setScore(0);
+    setStreak(0);
+    setErrorMessage('');
+    if (gameMode === 'duo' && webRtcSession) {
+      webRtcSession.sendPacket(WEBRTC_PACKETS.REMATCH, {});
+      setIsMyTurn(isHost);
+    }
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header Banner */}
-      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-cyan-500/30 flex items-center justify-between shadow-2xl bg-[var(--bg-card)] text-[var(--text-main)]">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold shadow-md">
+    <div className="space-y-6 max-w-4xl mx-auto font-arabic">
+      {/* Header & Mode Switcher */}
+      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border shadow-xl text-center space-y-4">
+        <div className="flex items-center justify-center gap-3">
+          <div className="p-3 theme-btn-primary rounded-2xl shadow-md">
             <Gamepad2 className="w-7 h-7" />
           </div>
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black flex items-center gap-2">
-              <span>لعبة السلسلة اللغوية</span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 font-mono font-bold">
-                Word Chain
-              </span>
-            </h2>
-            <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400">
-              ادخل كلمة إنجليزية من قائمة أكسفورد تبدأ بالحرف الأخير للكلمة السابقة وتحدى البوت!
+            <h2 className="text-2xl sm:text-3xl font-black">سلسلة كلمات أكسفورد 3000™</h2>
+            <p className="text-xs sm:text-sm font-medium opacity-80">
+              اربط الكلمات بالحرف الأخير مع التحقق الفوري من القاموس ومبارزات WebRTC P2P الحية
             </p>
           </div>
         </div>
 
-        {/* Score, Streak & Reset */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="text-center px-3.5 py-2 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider block">
-              {t('score')}
-            </span>
-            <span className="text-xl font-black text-cyan-600 dark:text-cyan-400">{score}</span>
-          </div>
-
-          <div className="text-center px-3.5 py-2 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col items-center">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 text-orange-500" /> {t('streak')}
-            </span>
-            <span className="text-xl font-black text-orange-500">{streak}</span>
-          </div>
+        {/* Mode Selector Tabs */}
+        <div className="flex items-center justify-center gap-2 p-1 rounded-2xl box-surface border max-w-sm mx-auto">
+          <button
+            onClick={() => {
+              setGameMode('solo');
+              handleRestart();
+            }}
+            className={`flex-1 py-2 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+              gameMode === 'solo' ? 'theme-btn-primary shadow-sm' : 'theme-btn-secondary'
+            }`}
+          >
+            <Bot className="w-4 h-4" />
+            <span>لعب فردي (AI)</span>
+          </button>
 
           <button
-            onClick={handleRestart}
-            className="p-3 rounded-2xl theme-btn-secondary text-xs font-black transition-all active:scale-95 shadow-sm"
-            title="إعادة بداية الجولة"
+            onClick={() => {
+              setGameMode('duo');
+              handleRestart();
+            }}
+            className={`flex-1 py-2 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+              gameMode === 'duo' ? 'theme-btn-primary shadow-sm' : 'theme-btn-secondary'
+            }`}
           >
-            <RotateCcw className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+            <Users className="w-4 h-4" />
+            <span>مبارزة ثنائية (WebRTC)</span>
           </button>
         </div>
       </div>
 
-      {/* Timer Control Selector Bar */}
-      <div className="card-theme-target p-3.5 rounded-2xl border text-xs font-black flex items-center justify-between shadow-md">
-        <span className="flex items-center gap-1.5 opacity-80">
-          <HelpCircle className="w-4 h-4 text-cyan-500" /> ضبط وقت الحركة لكل دور:
-        </span>
-        <div className="flex items-center gap-1.5" dir="ltr">
-          {[
-            { value: 10, label: '10s' },
-            { value: 15, label: '15s' },
-            { value: 30, label: '30s' },
-            { value: 60, label: '60s' },
-            { value: 0, label: 'Off' },
-          ].map((tOpt) => (
-            <button
-              key={tOpt.value}
-              onClick={() => {
-                setTurnTimeLimit(tOpt.value);
-                setTurnTimer(tOpt.value);
-              }}
-              className={`px-3 py-1 rounded-xl text-xs font-black transition-all border ${
-                turnTimeLimit === tOpt.value
-                  ? 'theme-btn-primary font-black scale-105 shadow-sm'
-                  : 'theme-btn-secondary opacity-70 hover:opacity-100'
-              }`}
-            >
-              {tOpt.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* DUO WEBRTC LOBBY (If in Duo mode and not playing) */}
+      {gameMode === 'duo' && duoState !== 'playing' && (
+        <div className="card-theme-target p-6 sm:p-8 rounded-3xl border shadow-xl space-y-6 text-center">
+          <div className="max-w-md mx-auto space-y-4">
+            <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-500 text-xs font-bold flex items-center gap-2">
+              <Radio className="w-5 h-5 shrink-0 animate-pulse" />
+              <span>اتصال مباشر فوري Peer-to-Peer (WebRTC) دون خادم وسيط.</span>
+            </div>
 
-      {/* Error Toast Notification Banner */}
-      {errorMessage && (
-        <div className="p-4 rounded-2xl bg-rose-500/15 border-2 border-rose-500/40 text-rose-700 dark:text-rose-300 flex items-center gap-3 font-black text-sm animate-pulse shadow-lg">
-          <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
-          <span className="flex-1">{errorMessage}</span>
-          <button onClick={() => setErrorMessage('')} className="p-1 hover:opacity-80">
-            <X className="w-4 h-4" />
-          </button>
+            {duoState === 'lobby' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Host Game */}
+                <div className="p-5 rounded-2xl box-surface border space-y-3 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-base font-black text-blue-500 mb-1">إنشاء غرفة جديدة</h3>
+                    <p className="text-xs opacity-75">أنشئ غرفة وشارك الرمز مع صديقك للمبارزة مباشرة.</p>
+                  </div>
+                  <button
+                    onClick={startHosting}
+                    className="w-full py-2.5 rounded-xl theme-btn-primary text-xs font-black shadow-md cursor-pointer"
+                  >
+                    إنشاء غرفة وتوليد الرمز ⚡
+                  </button>
+                </div>
+
+                {/* Join Game */}
+                <div className="p-5 rounded-2xl box-surface border space-y-3 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-base font-black text-emerald-500 mb-1">الانضمام لغرفة</h3>
+                    <p className="text-xs opacity-75">أدخل رمز الغرفة التي أنشأها صديقك.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={inputRoomCode}
+                      onChange={(e) => setInputRoomCode(e.target.value)}
+                      placeholder="أدخل رمز الغرفة (مثال: oxf-abc12)"
+                      className="w-full px-3 py-2 rounded-xl glass-input text-xs font-mono font-bold border text-center"
+                    />
+                    <button
+                      onClick={joinExistingRoom}
+                      disabled={!inputRoomCode.trim()}
+                      className="w-full py-2.5 rounded-xl theme-btn-secondary border text-xs font-black shadow-sm cursor-pointer"
+                    >
+                      انضمام للمبارزة ➔
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {duoState === 'hosting' && (
+              <div className="p-6 rounded-2xl box-surface border space-y-4 animate-in fade-in">
+                <h3 className="text-lg font-black text-amber-500">في انتظار انضمام المنافس...</h3>
+                <p className="text-xs opacity-75">شارك هذا الرمز مع صديقك للبدء فوراً:</p>
+
+                <div className="flex items-center justify-center gap-2">
+                  <span className="px-4 py-2 rounded-xl border bg-black/10 dark:bg-white/10 font-mono text-xl font-black text-amber-400 tracking-wider">
+                    {roomCode}
+                  </span>
+                  <button
+                    onClick={copyRoomCode}
+                    className="p-2.5 rounded-xl theme-btn-primary shadow-sm cursor-pointer"
+                    title="نسخ الرمز"
+                  >
+                    {copiedLink ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {duoState === 'joining' && (
+              <div className="p-6 rounded-2xl box-surface border space-y-3 animate-in fade-in">
+                <Clock className="w-8 h-8 text-blue-500 mx-auto animate-spin" />
+                <h3 className="text-base font-black">جاري الاتصال بالغرفة المحددة عبر WebRTC...</h3>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Main Chain Game Board */}
-      <div className="card-theme-target p-6 sm:p-8 rounded-3xl border space-y-6 shadow-2xl min-h-[420px] flex flex-col justify-between">
-        
-        {/* Chain Bubbles Log Container */}
-        <div className="flex-1 overflow-y-auto max-h-[380px] p-4 rounded-2xl border bg-black/5 space-y-4 no-scrollbar">
-          {chain.length === 0 ? (
-            <div className="text-center py-12 space-y-3">
-              <div className="w-16 h-16 rounded-3xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mx-auto shadow-md">
-                <Sparkles className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-black">ابدأ السلسلة اللغوية الآن!</h3>
-              <p className="text-xs opacity-80 font-bold max-w-sm mx-auto">
-                اكتب أي كلمة إنجليزية تبدأ بها اللعبة (مثل: <code dir="ltr" className="ltr-isolate font-mono text-cyan-600 dark:text-cyan-400 font-bold">apple</code>). ستقوم اللعبة باختيار كلمة تبدأ بحرف النهاية!
-              </p>
+      {/* GAME BOARD (Active in Solo mode or Duo Playing) */}
+      {(gameMode === 'solo' || duoState === 'playing') && (
+        <div className="card-theme-target p-5 sm:p-7 rounded-3xl border shadow-xl space-y-5">
+          {/* Status Bar */}
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold opacity-75">النقاط:</span>
+              <span className="text-sm font-mono font-black text-emerald-400 px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                {score} XP
+              </span>
             </div>
-          ) : (
-            chain.map((item, idx) => {
-              const isUser = item.playedBy === 'user';
-              const cleanWord = item.word.toLowerCase().replace(/[^a-z]/g, '');
-              const lastChar = cleanWord.slice(-1).toUpperCase();
 
-              return (
-                <div
-                  key={item.id}
-                  className={`flex items-start gap-3 transition-all ${
-                    isUser ? 'flex-row-reverse' : 'flex-row'
-                  }`}
-                >
-                  {/* Avatar Icon */}
+            {/* Turn & Countdown Timer */}
+            <div className="flex items-center gap-2">
+              <div
+                className={`px-3 py-1 rounded-xl border text-xs font-black flex items-center gap-1.5 ${
+                  (gameMode === 'solo' && !isBotThinking) || (gameMode === 'duo' && isMyTurn)
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 animate-pulse'
+                    : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>
+                  {gameMode === 'duo'
+                    ? isMyTurn
+                      ? `دورك الآن (${turnTimer}s)`
+                      : 'دور المنافس...'
+                    : `دورك (${turnTimer}s)`}
+                </span>
+              </div>
+            </div>
+
+            {/* Next Required Letter Indicator */}
+            {requiredNextLetter && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold opacity-75">الحرف المطلوب:</span>
+                <span className="w-7 h-7 rounded-xl theme-btn-primary flex items-center justify-center font-mono font-black text-sm uppercase shadow-sm">
+                  {requiredNextLetter}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Chain Chat / Log Area */}
+          <div className="min-h-[220px] max-h-[360px] overflow-y-auto p-3 rounded-2xl box-surface border space-y-2.5">
+            {chain.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-60">
+                <Sparkles className="w-8 h-8 mb-2 animate-bounce" />
+                <p className="text-xs font-bold">ابدأ السلسلة بكتابة أي كلمة إنجليزية من قائمة أكسفورد 3000!</p>
+              </div>
+            ) : (
+              chain.map((entry, index) => {
+                const isUser = entry.playedBy === 'user';
+                return (
                   <div
-                    className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 font-bold shadow-sm ${
-                      isUser
-                        ? 'bg-cyan-500 text-slate-950 border border-cyan-400'
-                        : 'bg-purple-600 text-white border border-purple-400'
-                    }`}
+                    key={index}
+                    className={`flex items-start gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
                   >
-                    {isUser ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
+                    {!isUser && (
+                      <div className="w-7 h-7 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-xs shrink-0">
+                        {gameMode === 'duo' ? <Users className="w-3.5 h-3.5 text-blue-400" /> : <Bot className="w-3.5 h-3.5 text-blue-400" />}
+                      </div>
+                    )}
+
+                    <div
+                      className={`p-3 rounded-2xl max-w-[80%] border shadow-sm space-y-1 ${
+                        isUser
+                          ? 'theme-btn-primary rounded-te-none text-start'
+                          : 'box-surface rounded-ts-none text-start border-blue-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span dir="ltr" className="ltr-isolate font-black text-sm">
+                          {entry.word}
+                        </span>
+                        <button
+                          onClick={() => playAudio(entry.word, { presetId: voicePreset })}
+                          className="opacity-70 hover:opacity-100 p-0.5"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-[11px] opacity-80">{entry.arabic}</p>
+                    </div>
+
+                    {isUser && (
+                      <div className="w-7 h-7 rounded-xl theme-btn-primary flex items-center justify-center text-xs shrink-0 font-bold">
+                        <User className="w-3.5 h-3.5" />
+                      </div>
+                    )}
                   </div>
+                );
+              })
+            )}
+            <div ref={logEndRef} />
+          </div>
 
-                  {/* Interactive Word Bubble */}
-                  <div
-                    onClick={() => setSelectedWordModal(item)}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all hover:scale-[1.02] shadow-md max-w-xs sm:max-w-md space-y-1.5 ${
-                      isUser
-                        ? 'bg-cyan-500/15 dark:bg-cyan-500/20 border-cyan-500/40 text-slate-950 dark:text-cyan-100 hover:border-cyan-500'
-                        : 'bg-purple-500/15 dark:bg-purple-500/20 border-purple-500/40 text-slate-950 dark:text-purple-100 hover:border-purple-500'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span dir="ltr" className="ltr-isolate text-xl font-black tracking-tight">
-                        {item.word}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          playAudio(item.word, { presetId: voicePreset });
-                        }}
-                        className="p-1.5 rounded-lg bg-black/10 hover:bg-black/20 text-current transition-all"
-                        title="Listen to word TTS"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs font-extrabold gap-2 border-t border-black/10 pt-1.5">
-                      <span className="font-arabic">{item.arabic}</span>
-                      <span dir="ltr" className="ltr-isolate text-[10px] px-1.5 py-0.5 rounded bg-black/10 font-mono">
-                        {item.cefr} | {item.pos}
-                      </span>
-                    </div>
-
-                    {/* Linking Letter Badge */}
-                    <div className="text-[10px] font-black opacity-80 pt-1 flex items-center justify-between">
-                      <span>{isUser ? 'أنت' : 'الذكاء الاصطناعي'}</span>
-                      <span className="text-cyan-600 dark:text-cyan-400 font-extrabold">
-                        الحرف التالي: <strong className="text-amber-500 text-xs font-black">[{lastChar}]</strong>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+          {/* Error Message Alert */}
+          {errorMessage && (
+            <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-500 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
           )}
 
-          {/* Bot Thinking Animation */}
-          {isBotThinking && (
-            <div className="flex items-center gap-3 flex-row">
-              <div className="w-9 h-9 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm animate-pulse">
-                <Bot className="w-5 h-5" />
-              </div>
-              <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-900 dark:text-purple-300 text-xs font-black flex items-center gap-2 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
-                <span>الذكاء الاصطناعي يفكر في كلمة مطابقة...</span>
-              </div>
-            </div>
-          )}
-
-          <div ref={logEndRef} />
-        </div>
-
-        {/* Required Next Letter Indicator Banner */}
-        {requiredNextLetter && (
-          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between font-black text-xs text-cyan-950 dark:text-cyan-300">
-            <span>دورك الآن! اكتب كلمة تبدأ بالحرف:</span>
-            <span dir="ltr" className="ltr-isolate font-black text-base px-3 py-1 rounded-xl bg-amber-500 text-slate-950 shadow-sm font-mono animate-bounce">
-              {requiredNextLetter.toUpperCase()}
-            </span>
-          </div>
-        )}
-
-        {/* Input Bar */}
-        <form onSubmit={handleUserSubmit} className="flex items-center gap-2 pt-2">
-          <div className="relative flex-1">
-            <input
-              ref={inputRef}
-              type="text"
-              dir="ltr"
-              value={inputWord}
-              onChange={(e) => setInputWord(e.target.value)}
-              placeholder={
-                requiredNextLetter
-                  ? `Write an English word starting with '${requiredNextLetter.toUpperCase()}'...`
-                  : 'Write any English word from Oxford 3000 to start...'
-              }
-              className="ltr-isolate w-full px-4 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-950 dark:text-white font-black text-base placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 shadow-inner"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={!inputWord.trim() || isBotThinking}
-            className="px-6 py-3.5 rounded-2xl theme-btn-primary text-slate-950 font-black text-sm transition-all shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center gap-1.5 shrink-0"
-          >
-            <span>إرسال</span>
-            <Send className="w-4 h-4" />
-          </button>
-        </form>
-      </div>
-
-      {/* Word Details Modal Tooltip */}
-      {selectedWordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="card-theme-target p-6 sm:p-8 rounded-3xl border border-cyan-500/40 max-w-md w-full space-y-5 bg-[var(--bg-card)] text-[var(--text-main)] shadow-2xl">
-            <div className="flex items-start justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-4">
-              <div>
-                <h3 dir="ltr" className="ltr-isolate text-3xl font-black tracking-tight">
-                  {selectedWordModal.word}
-                </h3>
-                <p className="text-cyan-600 dark:text-cyan-400 font-mono text-sm font-bold ltr-isolate" dir="ltr">
-                  /{selectedWordModal.ipa}/ ({selectedWordModal.pos})
-                </p>
-              </div>
-
-              <button
-                onClick={() => setSelectedWordModal(null)}
-                className="p-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
+          {/* Word Input Form */}
+          <form onSubmit={handleWordSubmit} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <input
+                ref={inputRef}
+                type="text"
+                dir="ltr"
+                value={inputWord}
+                onChange={(e) => setInputWord(e.target.value)}
+                disabled={(gameMode === 'duo' && !isMyTurn) || isBotThinking}
+                placeholder={
+                  requiredNextLetter
+                    ? `أدخل كلمة تبدأ بحرف '${requiredNextLetter.toUpperCase()}'...`
+                    : 'أدخل أي كلمة إنجليزية للبدء...'
+                }
+                className="w-full px-4 py-3 rounded-2xl glass-input text-sm font-bold border focus:outline-none disabled:opacity-50"
+              />
+              {requiredNextLetter && (
+                <span className="absolute start-3 top-3 px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 text-xs font-mono font-bold opacity-60">
+                  {requiredNextLetter.toUpperCase()}
+                </span>
+              )}
             </div>
 
-            {/* Arabic Translation & Details */}
-            <div dir="rtl" className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 font-arabic space-y-1 text-right">
-              <span className="text-xs font-black text-amber-700 dark:text-amber-400 block">الترجمة والتعريف العربي:</span>
-              <p className="text-xl font-black text-amber-950 dark:text-amber-300">
-                {selectedWordModal.arabic}
-              </p>
-            </div>
+            <button
+              type="submit"
+              disabled={!inputWord.trim() || (gameMode === 'duo' && !isMyTurn) || isBotThinking}
+              className="p-3 sm:px-5 sm:py-3 rounded-2xl theme-btn-primary text-xs font-black shadow-md flex items-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+            >
+              <Send className="w-4 h-4 rtl:rotate-180" />
+              <span className="hidden sm:inline">إرسال</span>
+            </button>
 
-            {/* Example Sentence */}
-            <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 text-xs space-y-1 font-bold">
-              <span className="text-cyan-400 font-black block">Example Sentence:</span>
-              <p className="ltr-isolate text-sm text-white leading-relaxed" dir="ltr">
-                "{getWordExample(selectedWordModal)}"
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <button
-                onClick={() => playAudio(selectedWordModal.word, { presetId: voicePreset })}
-                className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition-all flex items-center gap-1.5 shadow-md active:scale-95"
-              >
-                <Volume2 className="w-4 h-4" /> استمع للنطق الصوتي
-              </button>
-
-              <button
-                onClick={() => setSelectedWordModal(null)}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-black hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                إغلاق
-              </button>
-            </div>
-          </div>
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="p-3 rounded-2xl theme-btn-secondary border opacity-70 hover:opacity-100 cursor-pointer"
+              title="إعادة بدء السلسلة"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          </form>
         </div>
       )}
     </div>

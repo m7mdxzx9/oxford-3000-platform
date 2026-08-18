@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { assert } from './assert-utils.js';
 import { setupMockEnvironment } from './mock-environment.js';
-import { oxford3000Data } from '../src/data/oxford3000.js';
+import { oxford3000Data } from '../src/data/oxford3000Data.js';
 import audioService from '../src/services/audioService.js';
 import speechEvaluation from '../src/services/speechEvaluation.js';
 import geminiService from '../src/services/geminiService.js';
