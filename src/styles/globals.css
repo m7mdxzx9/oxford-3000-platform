@@ -4,35 +4,132 @@
 
 @layer base {
   :root {
-    --background: 253 251 247;
+    --background: 254 240 138;
     --surface: 255 255 255;
-    --foreground: 10 25 47;
-    --primary: 30 58 138;
+    --foreground: 0 0 0;
+    --primary: 124 58 237;
     --primary-foreground: 255 255 255;
-    --accent: 217 119 6;
+    --accent: 244 63 94;
     --accent-foreground: 255 255 255;
-    --muted: 243 239 230;
-    --muted-foreground: 100 116 139;
-    --border: 226 217 200;
-    --ring: 30 58 138;
+    --muted: 253 224 71;
+    --muted-foreground: 0 0 0;
+    --border: 0 0 0;
+    --ring: 124 58 237;
     --radius: 0.5rem;
-    --font-heading: 'Newsreader', serif;
-    --font-body: 'Inter', sans-serif;
+    --font-heading: 'Clash Display', 'Space Grotesk', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
   }
 
   .dark {
-    --background: 6 13 26;
-    --surface: 12 25 46;
-    --foreground: 241 245 249;
-    --primary: 59 130 246;
-    --primary-foreground: 6 13 26;
-    --accent: 245 158 11;
-    --accent-foreground: 6 13 26;
-    --muted: 17 34 64;
-    --muted-foreground: 148 163 184;
-    --border: 30 41 59;
-    --ring: 59 130 246;
+    --background: 24 24 27;
+    --surface: 39 39 42;
+    --foreground: 255 255 255;
+    --primary: 167 139 250;
+    --primary-foreground: 0 0 0;
+    --accent: 251 113 133;
+    --accent-foreground: 0 0 0;
+    --muted: 63 63 70;
+    --muted-foreground: 228 228 231;
+    --border: 0 0 0;
+    --ring: 167 139 250;
   }
+}
+
+/* ========================================================================= */
+/* DEEP MORPHOLOGICAL ARCHETYPES SYSTEM                                      */
+/* ========================================================================= */
+
+/* 1. Swiss Minimalist Archetype */
+[data-archetype="swiss"] {
+  --radius: 0px !important;
+}
+[data-archetype="swiss"] .archetype-card {
+  border-radius: 0px !important;
+  border: 0.5px solid rgb(var(--foreground) / 0.3) !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+[data-archetype="swiss"] .archetype-card:hover {
+  border-color: rgb(var(--foreground)) !important;
+}
+[data-archetype="swiss"] .archetype-btn {
+  border-radius: 0px !important;
+  border: 0.5px solid rgb(var(--foreground)) !important;
+  box-shadow: none !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+[data-archetype="swiss"] .archetype-badge {
+  border-radius: 0px !important;
+  border: 0.5px solid rgb(var(--foreground) / 0.4) !important;
+}
+
+/* 2. Neo-Brutalism Pop Archetype */
+[data-archetype="neo-brutalism"] .archetype-card {
+  border-radius: 0.5rem !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 4px 4px 0px 0px #000000 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+[data-archetype="neo-brutalism"] .dark .archetype-card {
+  border-color: #ffffff !important;
+  box-shadow: 4px 4px 0px 0px #ffffff !important;
+}
+[data-archetype="neo-brutalism"] .archetype-card:hover {
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 6px 6px 0px 0px #000000 !important;
+}
+[data-archetype="neo-brutalism"] .dark .archetype-card:hover {
+  box-shadow: 6px 6px 0px 0px #ffffff !important;
+}
+[data-archetype="neo-brutalism"] .archetype-btn {
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px 0px #000000 !important;
+  font-weight: 800 !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+[data-archetype="neo-brutalism"] .archetype-btn:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 1px 0px 0px #000000 !important;
+}
+[data-archetype="neo-brutalism"] .archetype-badge {
+  border: 1.5px solid #000000 !important;
+  box-shadow: 2px 2px 0px 0px #000000 !important;
+  font-weight: 800 !important;
+}
+
+/* 3. Organic Terracotta Archetype */
+[data-archetype="organic-terracotta"] {
+  --radius: 1.5rem !important;
+}
+[data-archetype="organic-terracotta"] .archetype-card {
+  border-radius: 1.5rem !important;
+  border: 1px solid rgba(200, 109, 81, 0.25) !important;
+  box-shadow: 0 10px 25px -4px rgba(200, 109, 81, 0.12) !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+[data-archetype="organic-terracotta"] .archetype-card:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+  box-shadow: 0 16px 32px -4px rgba(200, 109, 81, 0.2) !important;
+}
+[data-archetype="organic-terracotta"] .archetype-btn {
+  border-radius: 9999px !important;
+  box-shadow: 0 4px 14px rgba(200, 109, 81, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+[data-archetype="organic-terracotta"] .archetype-badge {
+  border-radius: 9999px !important;
+}
+
+/* 4. Cyber Terminal Archetype */
+[data-archetype="cyber-terminal"] .archetype-card {
+  border-radius: 0.25rem !important;
+  border: 1px solid rgb(var(--primary) / 0.4) !important;
+  box-shadow: 0 0 12px rgb(var(--primary) / 0.15) !important;
+}
+[data-archetype="cyber-terminal"] .archetype-card:hover {
+  border-color: rgb(var(--primary)) !important;
+  box-shadow: 0 0 18px rgb(var(--primary) / 0.3) !important;
 }
 
 /* LTR and RTL Bidirectional Isolation */
@@ -48,47 +145,33 @@
   font-family: 'Segoe UI', Tahoma, 'Noto Sans Arabic', sans-serif;
 }
 
-/* Scrollbar Polish */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
   background: rgba(148, 163, 184, 0.3);
   border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.6);
-}
-
-/* Glassmorphic Backdrop */
-.glass-panel {
-  background: rgba(var(--surface), 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(var(--border), 0.6);
 }
 
 /* 3D Flip Card Styles */
 .perspective-1000 {
   perspective: 1000px;
 }
-
 .transform-style-3d {
   transform-style: preserve-3d;
 }
-
 .backface-hidden {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
-
 .rotate-y-180 {
   transform: rotateY(180deg);
 }

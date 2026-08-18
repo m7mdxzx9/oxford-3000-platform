@@ -16,6 +16,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const colors = isDarkMode ? theme.dark : theme.light;
     const root = document.documentElement;
 
+    // Apply active archetype data attribute for deep morphological transformation
+    root.setAttribute('data-archetype', theme.archetype || 'neo-brutalism');
+
     if (isDarkMode) {
       root.classList.add('dark');
     } else {
